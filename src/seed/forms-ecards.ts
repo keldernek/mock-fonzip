@@ -10,6 +10,8 @@ import {
 } from "./dates";
 import type { SystemRefs } from "./system";
 
+const FORM_PRICE = 450;
+
 export function seedForms(
   ctx: SeedContext,
   users: readonly Row<UserRecord>[],
@@ -80,6 +82,8 @@ export function seedForms(
       archive_date: plan.archived
         ? istanbulDateTime(addDays(created, 90))
         : null,
+      requires_approval: plan.approval,
+      price: plan.paid ? FORM_PRICE : null,
     });
     const question = (
       title: string,
@@ -159,7 +163,7 @@ export function seedForms(
         : 3;
       const transaction = plan.paid
         ? createTransaction(ctx, {
-            amount: 450,
+            amount: FORM_PRICE,
             at,
             status,
             method: 0,

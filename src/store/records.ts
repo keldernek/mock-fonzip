@@ -318,7 +318,10 @@ export type FormRecord = WithNull<
   | "archive_date"
   | "updated_by_id"
   | "update_date"
->;
+> & {
+  requires_approval: boolean;
+  price: number | null;
+};
 
 export type FormQuestionRecord = Own<
   Omit<S["FormQuestion"], "udv_question" | "custom_question">
