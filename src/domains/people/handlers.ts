@@ -1,5 +1,6 @@
 import { notImplemented } from "../../api/errors";
 import type { Fragment } from "../../api/handler";
+import { getUserList } from "./search";
 import {
   createTemplate,
   deleteTemplate,
@@ -19,7 +20,7 @@ import {
 
 export const handlers: Fragment<"people"> = {
   createUser: notImplemented,
-  getUserList: notImplemented,
+  getUserList,
   getUserDetails: notImplemented,
   updateUser: notImplemented,
   deleteUser: notImplemented,
