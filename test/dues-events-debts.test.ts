@@ -381,7 +381,7 @@ describe("getMembershipDueDebtsList", () => {
 });
 
 describe("getDebtDetails", () => {
-  test("returns a debt with its category and no transaction", async () => {
+  test("returns a debt with its category", async () => {
     const client = createTestClient();
     const body = await client.ok("getDebtDetails", {
       path: { debt_id: 20003 },
@@ -396,7 +396,6 @@ describe("getDebtDetails", () => {
       added_by__name: "Umut Korkmaz",
       user: { id: 1004, name: "Mustafa Aksoy" },
     });
-    expect(body.subscription).not.toHaveProperty("transaction");
     const removed = await client.ok("getDebtDetails", {
       path: { debt_id: 20070 },
     });

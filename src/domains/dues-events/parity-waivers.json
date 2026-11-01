@@ -1,1 +1,34 @@
-{ "statuses": [], "inputs": [], "properties": [] }
+{
+  "statuses": [
+    {
+      "status": 404,
+      "operations": [
+        "getMembershipDuesList",
+        "getMembershipDueDebtsList",
+        "getDebtCategoryList",
+        "createDebtCategory",
+        "getEventList",
+        "getTicketSaleList"
+      ],
+      "reason": "The operation names no object in its path or body, so there is nothing that can be missing. Ids in its query (tag_id, event_id, payment_settings_id, debt_category_id) are filters: paths./debts.get documents for debt_category_id that another organisation's id matches nothing, so an unknown id narrows the list to nothing rather than answering 404."
+    }
+  ],
+  "inputs": [],
+  "properties": [
+    {
+      "operationId": "getUserBoughtTicketList",
+      "path": "bought_ticket_list[].transaction__currency__display",
+      "reason": "components.schemas.UsersTickets.transaction__currency__display is typed integer, but it is a currency's display name such as TRY (PARITY.md, schema contradictions). A number cannot carry it, so the property is left out."
+    },
+    {
+      "operationId": "getTicketSaleList",
+      "path": "sales_list[].member.user_defined_values",
+      "reason": "components.schemas.UserDetails.user_defined_values ($ref UserDefinedValuesReference) is described as the member's user defined values as key value pairs, but the schema documents a single literal property named key (default value), which strict validation and the generated type both require. Real keys such as mezuniyet_yili fail it, and a fabricated key entry would be false data. The spec contradicts itself, so the property is left out."
+    },
+    {
+      "operationId": "getTicketSaleDetails",
+      "path": "ticket_sale.member.user_defined_values",
+      "reason": "components.schemas.UserDetails.user_defined_values ($ref UserDefinedValuesReference) is described as the member's user defined values as key value pairs, but the schema documents a single literal property named key (default value), which strict validation and the generated type both require. Real keys such as mezuniyet_yili fail it, and a fabricated key entry would be false data. The spec contradicts itself, so the property is left out."
+    }
+  ]
+}
