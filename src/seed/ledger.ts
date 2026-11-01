@@ -167,48 +167,7 @@ export function seedTimeline(
       calendar_event: null,
       ...extra,
     });
-  for (const user of users) {
-    entry(user.id, 0, user.join_date, "Derneğe katıldı");
-  }
-  for (const donation of db.donations.list()) {
-    const transaction = db.transactions.get(donation.transaction_id);
-    if (!transaction || transaction.payment_status !== 3) continue;
-    entry(
-      donation.user_id,
-      donation.monthly_donation_id === null ? 5 : 6,
-      transaction.complete_date,
-      "Bağış yaptı",
-      {
-        amount: transaction.amount,
-        currency_id: transaction.currency_id,
-        added_by_id: donation.added_by_id,
-      },
-    );
-  }
-  for (const payment of db.subscriptions.list((row) => row.status === 2)) {
-    entry(payment.user_id, 10, payment.operation_date, "Aidat ödedi", {
-      amount: payment.amount,
-      currency_id: 1,
-    });
-  }
-  for (const sale of db.ticketSales.list((row) => row.user_id !== null)) {
-    const event = db.events.get(sale.event_id);
-    entry(
-      sale.user_id ?? 0,
-      2,
-      event?.start_date ?? istanbulDateTime(daysBeforeAnchor(0)),
-      `${event?.name ?? "Etkinlik"} etkinliğine katıldı`,
-    );
-  }
-  for (const answer of db.formAnswers.list((row) => row.user_id !== null)) {
-    entry(answer.user_id ?? 0, 14, answer.complete_date, "Form doldurdu");
-  }
-  for (const link of db.userTags.list()) {
-    entry(link.user_id, 23, link.create_date, "Etiket eklendi", {
-      tag_id: link.tag_id,
-      issuer_id: ctx.adminIds[0],
-    });
-  }
+  const tagIds = db.tags.list().map((tag) => tag.id);
   for (const [index, user] of users.slice(3, 40).entries()) {
     const at = daysBeforeAnchor(rng.int(1, 200));
     entry(
@@ -219,6 +178,8 @@ export function seedTimeline(
       {
         issuer_id: ctx.adminIds[index % ctx.adminIds.length] ?? ctx.adminIds[0],
         custom_date: index % 4 === 0,
+        tag_id:
+          index % 3 === 1 ? (tagIds[index % tagIds.length] ?? null) : null,
         calendar_event:
           index % 3 === 0
             ? {
@@ -230,20 +191,44 @@ export function seedTimeline(
             : null,
       },
     );
-    entry(
-      user.id,
-      27,
-      istanbulDateTime(daysBeforeAnchor(rng.int(1, 300))),
-      "Temas noktası",
-      {
+    const leads = Array.from({ length: (index % 3) + 1 }, () => {
+      const outcome = rng.pick([0, 1, 2, 3, 4] as const);
+      const paid = outcome !== 0 && outcome !== 2;
+      return {
+        at: istanbulDateTime(daysBeforeAnchor(rng.int(1, 300))),
         lead_type: rng.pick([0, 1, 2, 3, 4, 5, 10] as const),
-        outcome: rng.pick([0, 1, 2, 3, 4] as const),
-        sequence_no: index + 1,
-        is_first_touch: index % 5 === 0,
-        amount: rng.pick([100, 250, 500]),
-        currency_id: 1,
-      },
-    );
+        outcome,
+        amount: paid ? rng.pick([100, 250, 500]) : null,
+      };
+    }).sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+    for (const [position, lead] of leads.entries()) {
+      entry(user.id, 27, lead.at, "Temas noktası", {
+        lead_type: lead.lead_type,
+        outcome: lead.outcome,
+        sequence_no: position + 1,
+        is_first_touch: position === 0,
+        amount: lead.amount,
+        currency_id: lead.amount === null ? null : 1,
+        added_by_id: index % 4 === 2 ? ctx.adminIds[0] : null,
+      });
+    }
+  }
+  const channels = [
+    ["allow_comm_via_phone", 18, 21, "Telefon"],
+    ["allow_comm_via_sms", 19, 22, "SMS"],
+    ["allow_comm_via_email", 20, 23, "E-posta"],
+  ] as const;
+  for (const permission of db.communicationPermissions.list()) {
+    if (permission.user_id === null) continue;
+    for (const [field, granted, revoked, label] of channels) {
+      const allowed = permission[field];
+      entry(
+        permission.user_id,
+        allowed ? granted : revoked,
+        permission[`${field}_date`],
+        `${label} ile iletişim izni ${allowed ? "verildi" : "geri alındı"}`,
+      );
+    }
   }
 }
 

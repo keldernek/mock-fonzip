@@ -16,6 +16,7 @@ import { seedBankTransactions, seedTimeline, settleTotals } from "./ledger";
 import {
   ADMIN_COUNT,
   seedCommunicationPermissions,
+  seedContactProfiles,
   seedTags,
   seedUserDefinedValues,
   seedUsers,
@@ -67,6 +68,7 @@ function seedKelder(store: Store, options: SeedOptions): void {
   settleTotals(ctx);
   seedMicroDonationVariety(ctx, system, catalog, campaigns);
   seedDebtTransactions(ctx);
+  seedContactProfiles(ctx, users);
 }
 
 function seedOrnek(store: Store, options: SeedOptions): void {

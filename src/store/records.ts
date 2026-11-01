@@ -88,6 +88,33 @@ export type CommunicationPermissionRecord = Own<CommunicationPermissionItem> & {
   user_id: number | null;
 };
 
+export interface ContactProfileRecord {
+  id: number;
+  user_id: number;
+  create_date: string;
+  last_update_date: string;
+  has_password: boolean;
+  last_login: { date: string; ip_address: string } | null;
+  profile_pic: string | null;
+  language: "tr" | "en";
+  agreement: { version: number; sign_date: string } | null;
+  blocked_mail: boolean;
+  spam_mail: boolean;
+  address_book: boolean;
+  donation_reminder: { period_months: number; next_cycle: string } | null;
+  notify_after_dues_withdrawal: boolean;
+  default_dues_reminder_withdrawal: boolean;
+}
+
+export interface ContactRelationRecord {
+  id: number;
+  user_id: number;
+  related_user_id: number;
+  dues_permission: boolean;
+  comm_permission: boolean;
+  create_date: string;
+}
+
 export type WebhookRecord = Own<Omit<S["Webhook"], "events">> & {
   events: Own<Exclude<S["Webhook"]["events"], undefined>>;
 };

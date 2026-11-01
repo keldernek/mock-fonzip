@@ -199,6 +199,125 @@ export function seedTags(
   return [first, ...rest];
 }
 
+export function seedContactProfiles(
+  ctx: SeedContext,
+  users: readonly Row<UserRecord>[],
+): void {
+  const { db, rng } = ctx;
+  const DAY_MS = 86_400_000;
+  const anchor = daysBeforeAnchor(0).getTime();
+  const between = (from: Date): Date => {
+    const days = Math.max(1, Math.floor((anchor - from.getTime()) / DAY_MS));
+    return daysBeforeAnchor(rng.int(0, days - 1), rng.int(0, 1200));
+  };
+  const note = (
+    userId: number,
+    eventType: 1 | 24 | 26,
+    at: string,
+    details: string,
+  ) =>
+    db.timeline.insert({
+      user_id: userId,
+      details,
+      event_time: at,
+      event_type: eventType,
+      tag_id: null,
+      custom_date: false,
+      lead_type: null,
+      outcome: null,
+      sequence_no: null,
+      is_first_touch: null,
+      amount: null,
+      issuer_id: null,
+      currency_id: null,
+      added_by_id: null,
+      calendar_event: null,
+    });
+  for (const [index, user] of users.entries()) {
+    const created = new Date(user.apply_date);
+    const person = !user.corporate_type;
+    const admin = index < ADMIN_COUNT;
+    const updates = Array.from(
+      { length: rng.chance(0.4) ? rng.int(1, 2) : 0 },
+      () => between(created),
+    ).sort((a, b) => a.getTime() - b.getTime());
+    for (const at of updates) {
+      note(user.id, 1, istanbulDateTime(at), "Profil bilgileri güncellendi");
+    }
+    const hasPassword = admin || (person && rng.chance(0.6));
+    const reminder =
+      person && rng.chance(0.12)
+        ? {
+            period_months: rng.pick([1, 3, 6, 12]),
+            next_cycle: istanbulDate(daysBeforeAnchor(-rng.int(1, 60))),
+            asked: between(created),
+          }
+        : null;
+    if (reminder) {
+      note(
+        user.id,
+        26,
+        istanbulDateTime(reminder.asked),
+        `${reminder.period_months} ayda bir bağış hatırlatması istedi`,
+      );
+    }
+    db.contactProfiles.insert({
+      user_id: user.id,
+      create_date: user.apply_date,
+      last_update_date: istanbulDateTime(updates.at(-1) ?? created),
+      has_password: hasPassword,
+      last_login: hasPassword
+        ? {
+            date: istanbulDateTime(between(created)),
+            ip_address: `78.${rng.int(160, 191)}.${rng.int(0, 255)}.${rng.int(1, 254)}`,
+          }
+        : null,
+      profile_pic:
+        person && rng.chance(0.3)
+          ? `https://kelder.example/media/profil/${user.id}.jpg`
+          : null,
+      language: rng.chance(0.1) ? "en" : "tr",
+      agreement:
+        person && rng.chance(0.7)
+          ? {
+              version: rng.pick([1, 2, 3]),
+              sign_date: istanbulDateTime(between(created)),
+            }
+          : null,
+      blocked_mail: rng.chance(0.04),
+      spam_mail: rng.chance(0.03),
+      address_book: rng.chance(0.25),
+      donation_reminder: reminder
+        ? {
+            period_months: reminder.period_months,
+            next_cycle: reminder.next_cycle,
+          }
+        : null,
+      notify_after_dues_withdrawal: rng.chance(0.5),
+      default_dues_reminder_withdrawal: rng.chance(0.3),
+    });
+  }
+  for (let index = 0; index < 15; index += 1) {
+    const holder = users[10 + index * 9];
+    const related = users[11 + index * 9];
+    if (!holder || !related) continue;
+    const at = istanbulDateTime(between(new Date(holder.join_date)));
+    db.contactRelations.insert({
+      user_id: holder.id,
+      related_user_id: related.id,
+      dues_permission: index % 2 === 0,
+      comm_permission: index % 3 === 0,
+      create_date: at,
+    });
+    note(
+      holder.id,
+      24,
+      at,
+      `İlişkili kişi eklendi: ${related.first_name} ${related.last_name}`.trim(),
+    );
+  }
+}
+
 export function seedCommunicationPermissions(
   ctx: SeedContext,
   users: readonly Row<UserRecord>[],

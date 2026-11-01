@@ -6,6 +6,8 @@ import type {
   BankTransactionRecord,
   CardInfoRecord,
   CommunicationPermissionRecord,
+  ContactProfileRecord,
+  ContactRelationRecord,
   DebtAutomationRecord,
   DebtCategoryRecord,
   DonationCategoryRecord,
@@ -51,6 +53,8 @@ export interface Records {
   userTags: UserTagRecord;
   timeline: TimelineRecord;
   communicationPermissions: CommunicationPermissionRecord;
+  contactProfiles: ContactProfileRecord;
+  contactRelations: ContactRelationRecord;
   webhooks: WebhookRecord;
   templates: TemplateRecord;
   transactions: TransactionRecord;
@@ -102,6 +106,8 @@ export function createStore(): Store {
     userTags: new Collection("userTags", 1),
     timeline: new Collection("timeline", 70_001),
     communicationPermissions: new Collection("communicationPermissions", 5001),
+    contactProfiles: new Collection("contactProfiles", 3001),
+    contactRelations: new Collection("contactRelations", 3601),
     webhooks: new Collection("webhooks", 21),
     templates: new Collection("templates", 301),
     transactions: new Collection("transactions", 900_001),
@@ -149,6 +155,8 @@ export function orgStore(store: Store, org: OrgSlug): OrgStore {
     userTags: store.userTags.for(org),
     timeline: store.timeline.for(org),
     communicationPermissions: store.communicationPermissions.for(org),
+    contactProfiles: store.contactProfiles.for(org),
+    contactRelations: store.contactRelations.for(org),
     webhooks: store.webhooks.for(org),
     templates: store.templates.for(org),
     transactions: store.transactions.for(org),
