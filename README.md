@@ -68,6 +68,8 @@ bun run --cwd apps/mock-fonzip parity --domain giving
 
 Every response a test receives is validated against the operation's documented schema for that status. The validation is strict: it rejects properties the spec does not document and statuses the operation does not list.
 
+`bun run --cwd apps/mock-fonzip smoke` boots the real server on port 8791 and checks it over HTTP with `curl` and `jq`. It covers tokens, auth and plan errors, scopes, a wrong method, a missing parameter, a list from each domain, a donation and a simulated ticket sale with their webhook deliveries, and the rate limit. It exits non-zero on any failed check.
+
 ## Update the spec
 
 1. To download the published spec into `spec/fonzip-openapi.yaml`, run `bun run --cwd apps/mock-fonzip sync-spec`.
