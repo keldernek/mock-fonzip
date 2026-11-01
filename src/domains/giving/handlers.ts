@@ -1,5 +1,13 @@
 import { notImplemented } from "../../api/errors";
 import type { Fragment } from "../../api/handler";
+import { getDonationFormList, getDonationPageList } from "./catalog";
+import {
+  createDonationCategory,
+  deleteDonationCategory,
+  getDonationCategoryList,
+  updateDonationCategory,
+  updateDonationCategoryStatus,
+} from "./categories";
 import {
   deleteDonation,
   getDonationDetails,
@@ -14,11 +22,11 @@ export const handlers: Fragment<"giving"> = {
   getDonationDetails,
   deleteDonation,
   getDonationReport: notImplemented,
-  getDonationCategoryList: notImplemented,
-  createDonationCategory: notImplemented,
-  updateDonationCategory: notImplemented,
-  updateDonationCategoryStatus: notImplemented,
-  deleteDonationCategory: notImplemented,
+  getDonationCategoryList,
+  createDonationCategory,
+  updateDonationCategory,
+  updateDonationCategoryStatus,
+  deleteDonationCategory,
   getMicroDonationList,
   getMicroDonationDetails,
   cancelMonthlyDonation: notImplemented,
@@ -26,8 +34,8 @@ export const handlers: Fragment<"giving"> = {
   changeMonthlyDonationValues: notImplemented,
   sendCardUpdateRequestForMonthlyDonation: notImplemented,
   createMonthlyDonationUpdateRequest: notImplemented,
-  getDonationFormList: notImplemented,
-  getDonationPageList: notImplemented,
+  getDonationFormList,
+  getDonationPageList,
   getUsersDonationList: notImplemented,
   getUsersMicroDonationList: notImplemented,
   getUsersMonthlyDonationList: notImplemented,
