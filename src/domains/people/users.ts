@@ -252,6 +252,7 @@ export const createUser: Handler<"createUser"> = ({ body }, ctx) => {
     work_country_text: "",
     email_second: "",
     admin: false,
+    profile_pic: null,
     ...fields.value,
   });
   for (const tagId of tagIds) {

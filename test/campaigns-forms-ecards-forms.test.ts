@@ -510,7 +510,7 @@ describe("responding to a form answer", () => {
           btn_color: "#333333",
           btn_text_color: "#444444",
           btn_operation: 1,
-          btn_operation_detail: "Any URL for operation 1",
+          btn_operation_detail: "https://kelder.example/burs",
           make_refund: false,
         },
       },
@@ -533,7 +533,7 @@ describe("responding to a form answer", () => {
       btn_color: "#333333",
       btn_text_color: "#444444",
       btn_operation: 1,
-      btn_operation_detail: "Any URL for operation 1",
+      btn_operation_detail: "https://kelder.example/burs",
       category_id: 4,
       translations: {},
     });

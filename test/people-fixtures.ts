@@ -80,6 +80,7 @@ export function person(db: OrgStore, label: string): number {
     work_country_text: "",
     email_second: `${label}@fixture.example`,
     admin: false,
+    profile_pic: null,
   }).id;
 }
 
