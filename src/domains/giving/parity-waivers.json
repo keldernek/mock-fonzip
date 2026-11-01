@@ -1,1 +1,42 @@
-{ "statuses": [], "inputs": [], "properties": [] }
+{
+  "statuses": [
+    {
+      "status": 404,
+      "operations": ["getDonationCategoryList", "createDonationCategory"],
+      "reason": "paths./donation-categories: GET takes only query, start_page and how_many, and POST takes only a name. Neither names an object in its path, query or body, so there is nothing that can be missing."
+    }
+  ],
+  "inputs": [],
+  "properties": [
+    {
+      "operationId": "getDonationDetails",
+      "path": "donation.user.profile_pic",
+      "reason": "components.schemas.UserReference.profile_pic: no documented operation sets a profile picture. CreateUser and UpdateUser carry no such field, and User and UserDetails return none, so no contact has a picture URL to report."
+    },
+    {
+      "operationId": "getMicroDonationDetails",
+      "path": "donation.user.profile_pic",
+      "reason": "components.schemas.UserReference.profile_pic: no documented operation sets a profile picture. CreateUser and UpdateUser carry no such field, and User and UserDetails return none, so no contact has a picture URL to report."
+    },
+    {
+      "operationId": "getMicroDonationList",
+      "path": "donation_list[].marketing_channel__utm_source",
+      "reason": "paths./donations/micro.get query list: the enum leaves out the four marketing_channel__utm_* values that GET /donations offers, and those fields appear only when list asks for them (the rule paths./ecard-transactions.get documents), so a micro donation row can never carry them."
+    },
+    {
+      "operationId": "getMicroDonationList",
+      "path": "donation_list[].marketing_channel__utm_medium",
+      "reason": "paths./donations/micro.get query list: the enum leaves out the four marketing_channel__utm_* values that GET /donations offers, and those fields appear only when list asks for them (the rule paths./ecard-transactions.get documents), so a micro donation row can never carry them."
+    },
+    {
+      "operationId": "getMicroDonationList",
+      "path": "donation_list[].marketing_channel__utm_campaign",
+      "reason": "paths./donations/micro.get query list: the enum leaves out the four marketing_channel__utm_* values that GET /donations offers, and those fields appear only when list asks for them (the rule paths./ecard-transactions.get documents), so a micro donation row can never carry them."
+    },
+    {
+      "operationId": "getMicroDonationList",
+      "path": "donation_list[].marketing_channel__utm_content",
+      "reason": "paths./donations/micro.get query list: the enum leaves out the four marketing_channel__utm_* values that GET /donations offers, and those fields appear only when list asks for them (the rule paths./ecard-transactions.get documents), so a micro donation row can never carry them."
+    }
+  ]
+}
