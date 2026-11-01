@@ -1,3 +1,4 @@
+import { createRng } from "../core/rng";
 import type { Row } from "../store/collection";
 import type { SubscriptionRecord, UserRecord } from "../store/records";
 import { createTransaction, type SeedContext } from "./context";
@@ -180,6 +181,25 @@ export function seedDues(
         details: "Üyelikten ayrılma nedeniyle iptal",
       });
     }
+  }
+}
+
+const DEBT_TRANSACTION_SEED = 51_001;
+
+export function seedDebtTransactions(ctx: SeedContext): void {
+  const own = { ...ctx, rng: createRng(DEBT_TRANSACTION_SEED) };
+  for (const debt of ctx.db.subscriptions.list(
+    (row) => row.status === 1 || row.status === 6 || row.status === 8,
+  )) {
+    const transaction = createTransaction(own, {
+      amount: debt.amount,
+      at: new Date(debt.operation_date),
+      status: 0,
+      method: 1,
+      paymentSettingsId: null,
+      bankAccountId: null,
+    });
+    ctx.db.subscriptions.update(debt.id, { transaction_id: transaction.id });
   }
 }
 

@@ -4,7 +4,7 @@ import { createStore, orgStore, type Store } from "../store/store";
 import { seedCampaigns, seedEcards } from "./campaigns";
 import type { SeedContext } from "./context";
 import { daysBeforeAnchor, istanbulDateTime } from "./dates";
-import { seedDues, seedEvents } from "./dues-events";
+import { seedDebtTransactions, seedDues, seedEvents } from "./dues-events";
 import { seedEcardTransactions, seedForms } from "./forms-ecards";
 import {
   seedDonations,
@@ -66,6 +66,7 @@ function seedKelder(store: Store, options: SeedOptions): void {
   seedTimeline(ctx, users);
   settleTotals(ctx);
   seedMicroDonationVariety(ctx, system, catalog, campaigns);
+  seedDebtTransactions(ctx);
 }
 
 function seedOrnek(store: Store, options: SeedOptions): void {
