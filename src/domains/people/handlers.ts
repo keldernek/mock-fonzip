@@ -7,6 +7,7 @@ import {
   listTemplates,
   updateTemplate,
 } from "./templates";
+import { getUsersTimeline } from "./timeline";
 import {
   createWebhook,
   deleteWebhook,
@@ -24,7 +25,7 @@ export const handlers: Fragment<"people"> = {
   deleteUser: notImplemented,
   getUserDefinedValuesList: notImplemented,
   generateLoginLinkForUser: notImplemented,
-  getUsersTimeline: notImplemented,
+  getUsersTimeline,
   getUsersTagsList: notImplemented,
   addTagToUser: notImplemented,
   removeTagFromUser: notImplemented,
