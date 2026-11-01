@@ -1,4 +1,5 @@
 import type { components } from "../generated/openapi";
+import type { PaymentStatus } from "./reference";
 
 type S = components["schemas"];
 
@@ -100,7 +101,12 @@ export interface TemplateCategory {
 export type CurrencyRecord = Own<S["Currency"]>;
 
 export type TransactionRecord = WithNull<
-  Own<Omit<S["Transaction"], "currency" | "payment_settings" | "bank_account">>,
+  Own<
+    Omit<
+      S["Transaction"],
+      "currency" | "payment_settings" | "bank_account" | "payment_status"
+    >
+  >,
   | "refund_date"
   | "refunded_by_id"
   | "refund_reason"
@@ -114,6 +120,7 @@ export type TransactionRecord = WithNull<
   | "provision_no"
 > & {
   currency_id: number;
+  payment_status: PaymentStatus;
   error_group: TransactionErrorGroup;
 };
 
