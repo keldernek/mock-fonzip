@@ -1,22 +1,43 @@
 import { notImplemented } from "../../api/errors";
 import type { Fragment } from "../../api/handler";
+import {
+  createDebtCategory,
+  deleteDebtCategory,
+  getDebtCategoryList,
+  getDebtCategoryUsage,
+  updateDebtCategory,
+} from "./debt-categories";
+import {
+  createDebt,
+  deleteDebt,
+  getDebtDetails,
+  getMembershipDueDebtsList,
+  updateDebt,
+  updateDebtStatus,
+} from "./debts";
+import {
+  deleteMembershipDue,
+  getMembershipDueDetails,
+  getMembershipDuesList,
+  getUsersMembershipDueList,
+} from "./dues";
 
 export const handlers: Fragment<"dues-events"> = {
-  getMembershipDuesList: notImplemented,
-  getMembershipDueDetails: notImplemented,
-  deleteMembershipDue: notImplemented,
-  getUsersMembershipDueList: notImplemented,
-  getMembershipDueDebtsList: notImplemented,
-  createDebt: notImplemented,
-  getDebtDetails: notImplemented,
-  updateDebt: notImplemented,
-  updateDebtStatus: notImplemented,
-  deleteDebt: notImplemented,
-  getDebtCategoryList: notImplemented,
-  createDebtCategory: notImplemented,
-  getDebtCategoryUsage: notImplemented,
-  updateDebtCategory: notImplemented,
-  deleteDebtCategory: notImplemented,
+  getMembershipDuesList,
+  getMembershipDueDetails,
+  deleteMembershipDue,
+  getUsersMembershipDueList,
+  getMembershipDueDebtsList,
+  createDebt,
+  getDebtDetails,
+  updateDebt,
+  updateDebtStatus,
+  deleteDebt,
+  getDebtCategoryList,
+  createDebtCategory,
+  getDebtCategoryUsage,
+  updateDebtCategory,
+  deleteDebtCategory,
   getEventList: notImplemented,
   createEvent: notImplemented,
   getEventDetails: notImplemented,
