@@ -43,6 +43,7 @@ export type UserRecord = Own<
   >
 > & {
   user_defined_values: Record<string, UdvValue>;
+  profile_pic: string | null;
 };
 
 export type UserDefinedValueRecord = Own<

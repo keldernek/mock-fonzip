@@ -143,6 +143,10 @@ export function seedUsers(
           ? asciiEmail(first, last, index + 501)
           : "",
         admin: index < ADMIN_COUNT,
+        profile_pic:
+          !corporate && index % 3 === 0
+            ? `https://kelder.example/media/profil/${index + 1}.jpg`
+            : null,
       }),
     );
   }

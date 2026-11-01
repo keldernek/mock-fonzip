@@ -107,6 +107,7 @@ function seedOrnek(store: Store, options: SeedOptions): void {
       work_country_text: "",
       email_second: "",
       admin: index === 0,
+      profile_pic: null,
     });
   }
   db.tags.insert({ name: "Üye", color: "tag-2" });
