@@ -1,5 +1,7 @@
-import type { Domain } from "../operations";
-import { isJsonObject, type Json } from "../spec/json";
+import { readFileSync } from "node:fs";
+
+import { DOMAINS, type Domain } from "../operations";
+import { isJsonObject, toJson, type Json } from "../spec/json";
 import { documentedPaths } from "../spec/properties";
 import type { RouteEntry, RouteTable } from "../spec/routes";
 import type { JsonObject } from "../spec/json";
@@ -67,7 +69,11 @@ function selector(node: Json | undefined): OperationSelector | undefined {
   return undefined;
 }
 
-export function parseWaivers(raw: Json, table: RouteTable): Waivers {
+export function parseWaivers(
+  raw: Json,
+  table: RouteTable,
+  domain?: Domain,
+): Waivers {
   if (!isJsonObject(raw)) throw new Error("waivers must be a JSON object");
   const list = (key: string): JsonObject[] => {
     const value = raw[key];
@@ -82,12 +88,18 @@ export function parseWaivers(raw: Json, table: RouteTable): Waivers {
     });
   };
   const known = (operationId: Json | undefined, where: string): string => {
-    if (
-      typeof operationId !== "string" ||
-      !table.byOperationId.has(operationId)
-    ) {
+    const route =
+      typeof operationId === "string"
+        ? table.byOperationId.get(operationId)
+        : undefined;
+    if (typeof operationId !== "string" || !route) {
       throw new Error(
         `${where}: unknown operationId ${JSON.stringify(operationId)}`,
+      );
+    }
+    if (domain !== undefined && route.owner !== domain) {
+      throw new Error(
+        `${where}: ${operationId} belongs to ${route.owner}, not ${domain}`,
       );
     }
     return operationId;
@@ -98,6 +110,11 @@ export function parseWaivers(raw: Json, table: RouteTable): Waivers {
       if (typeof item.status !== "number" || !operations) {
         throw new Error(
           `waivers.statuses[${index}] needs a status and operations`,
+        );
+      }
+      if (domain !== undefined && !Array.isArray(operations)) {
+        throw new Error(
+          `waivers.statuses[${index}]: a domain waiver must list its operations`,
         );
       }
       if (Array.isArray(operations)) {
@@ -222,4 +239,31 @@ export function hasGap(row: OperationParity): boolean {
     row.missingInputs.length > 0 ||
     row.missingProperties.length > 0
   );
+}
+
+export function mergeWaivers(all: readonly Waivers[]): Waivers {
+  return {
+    statuses: all.flatMap((waivers) => waivers.statuses),
+    inputs: all.flatMap((waivers) => waivers.inputs),
+    properties: all.flatMap((waivers) => waivers.properties),
+  };
+}
+
+const GLOBAL_WAIVERS = new URL("../../parity-waivers.json", import.meta.url);
+
+function domainWaivers(domain: Domain): URL {
+  return new URL(`../domains/${domain}/parity-waivers.json`, import.meta.url);
+}
+
+function readJsonFile(url: URL): Json {
+  return toJson(JSON.parse(readFileSync(url, "utf8")));
+}
+
+export function loadWaivers(table: RouteTable): Waivers {
+  return mergeWaivers([
+    parseWaivers(readJsonFile(GLOBAL_WAIVERS), table),
+    ...DOMAINS.filter((domain) => domain !== "foundation").map((domain) =>
+      parseWaivers(readJsonFile(domainWaivers(domain)), table, domain),
+    ),
+  ]);
 }

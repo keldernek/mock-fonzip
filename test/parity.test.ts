@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 
 import { toJson } from "../src/spec/json";
 import { specRuntime } from "../src/spec/runtime";
-import { parseWaivers } from "../src/testing/parity";
+import { loadWaivers, parseWaivers } from "../src/testing/parity";
 
 const { table } = specRuntime();
 
@@ -53,5 +53,48 @@ describe("parity waivers", () => {
         table,
       ),
     ).toThrow("unknown operationId");
+  });
+
+  test("merges the global file with every domain's file", () => {
+    expect(() => loadWaivers(table)).not.toThrow();
+  });
+
+  test("keeps a domain's waivers to the operations it owns", () => {
+    const foreign = {
+      statuses: [
+        {
+          status: 404,
+          operations: ["getTagsList"],
+          reason: "a long enough reason",
+        },
+      ],
+      inputs: [],
+      properties: [],
+    };
+    expect(() => parseWaivers(foreign, table, "giving")).toThrow(
+      "belongs to foundation, not giving",
+    );
+    const broad = {
+      statuses: [
+        { status: 404, operations: "all", reason: "a long enough reason" },
+      ],
+      inputs: [],
+      properties: [],
+    };
+    expect(() => parseWaivers(broad, table, "giving")).toThrow(
+      "must list its operations",
+    );
+    const own = {
+      statuses: [
+        {
+          status: 404,
+          operations: ["getDonationList"],
+          reason: "a long enough reason",
+        },
+      ],
+      inputs: [],
+      properties: [],
+    };
+    expect(parseWaivers(own, table, "giving").statuses).toHaveLength(1);
   });
 });

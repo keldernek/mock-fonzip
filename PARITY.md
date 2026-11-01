@@ -2,7 +2,7 @@
 
 The mock's contract is the pinned Fonzip OpenAPI spec, `spec/fonzip-openapi.yaml` (OpenAPI 3.0.3, `info.version` 2.44.0). This register lists every place where the spec is silent or contradicts itself, and what the mock does there. Each entry names its spec location.
 
-When you resolve a new gap, add a row to the matching table. If the gap makes a documented status, input, or property unreachable, also add a waiver with the same reason to `parity-waivers.json`.
+Gaps found while implementing a domain go in that domain's folder, so parallel work never edits this file. Write the gap in `src/domains/<domain>/GAPS.md`. If it makes a documented status, input, or property unreachable, add a waiver with the same reason to `src/domains/<domain>/parity-waivers.json`. A domain waiver must list its operations by id, and it can only name operations its domain owns. The waivers in the top-level `parity-waivers.json` cover the foundation and rules that hold for every operation.
 
 ## Normalizations applied to the pinned spec
 

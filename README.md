@@ -64,7 +64,7 @@ bun run --cwd apps/mock-fonzip parity
 bun run --cwd apps/mock-fonzip parity --domain giving
 ```
 
-`parity` runs the test suite and records every exchange the tests make. It then prints four matrices: operations that return a real 200, the documented statuses each operation produced, documented inputs no test sent, and documented 200 properties no response carried. Each row names the domain that owns the operation. The command exits non-zero while any gap is not waived. Waivers live in `parity-waivers.json`, and each one needs a reason.
+`parity` runs the test suite and records every exchange the tests make. It then prints four matrices: operations that return a real 200, the documented statuses each operation produced, documented inputs no test sent, and documented 200 properties no response carried. Each row names the domain that owns the operation. The command exits non-zero while any gap is not waived. Waivers live in `parity-waivers.json` and in each domain's `src/domains/<domain>/parity-waivers.json`. Each waiver needs a reason.
 
 Every response a test receives is validated against the operation's documented schema for that status. The validation is strict: it rejects properties the spec does not document and statuses the operation does not list.
 
@@ -84,4 +84,4 @@ Operations are split among five domains in `src/operations.ts`. Each domain owns
 4. Raise webhook events with `ctx.webhooks.emit({operation, status}, objectId)`.
 5. Add simulations to `src/domains/<domain>/simulations.ts`. `src/domains/foundation/simulations.ts` shows the shape.
 6. Write tests in `test/<domain>.test.ts` with `createTestClient()` from `src/testing/client.ts`. `client.ok("operationId", {path, query, body})` asserts a 200 and returns the body typed from the spec. `client.call` returns any status. Both validate every response strictly.
-7. Run `bun run parity --domain <domain>` until it reports no unwaived gaps. A gap the mock cannot close goes in `parity-waivers.json` with a reason, and in `PARITY.md` with its spec location.
+7. Run `bun run parity --domain <domain>` until it reports no unwaived gaps. If the mock cannot close a gap, add a waiver with a reason to `src/domains/<domain>/parity-waivers.json`, and add the spec location to `src/domains/<domain>/GAPS.md`.

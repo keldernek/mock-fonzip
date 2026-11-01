@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { DOMAINS, NOT_SERVED, type Domain } from "../src/operations";
-import { toJson } from "../src/spec/json";
 import { specRuntime } from "../src/spec/runtime";
 import {
   COVERAGE_FILE_ENV,
@@ -13,12 +12,11 @@ import {
 import {
   computeParity,
   hasGap,
-  parseWaivers,
+  loadWaivers,
   type OperationParity,
 } from "../src/testing/parity";
 
 const APP_DIR = fileURLToPath(new URL("..", import.meta.url));
-const WAIVERS_PATH = join(APP_DIR, "parity-waivers.json");
 
 function argument(name: string): string | undefined {
   const index = process.argv.indexOf(name);
@@ -65,10 +63,7 @@ if (!isCoverageSnapshot(parsedCoverage))
   throw new Error("coverage file is malformed");
 
 const { spec, table } = specRuntime();
-const waivers = parseWaivers(
-  toJson(JSON.parse(readFileSync(WAIVERS_PATH, "utf8"))),
-  table,
-);
+const waivers = loadWaivers(table);
 const rows = computeParity(spec, table, parsedCoverage, waivers).filter(
   (row) => domain === undefined || row.owner === domain,
 );
