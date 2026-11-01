@@ -1,6 +1,7 @@
 import type { components } from "../../generated/openapi";
 import type { OrgCollection, Row } from "../../store/collection";
 import {
+  nonEmpty,
   present,
   transactionJoin,
   userName,
@@ -32,10 +33,6 @@ export function lookup<R extends { id: number }>(
   id: number | null,
 ): Row<R> | undefined {
   return id === null ? undefined : collection.get(id);
-}
-
-function filled(text: string): string | undefined {
-  return text === "" ? undefined : text;
 }
 
 function startOfDay(date: string | null): string | undefined {
@@ -76,8 +73,8 @@ export function donationResult(
     recurring_status: donation.recurring_status,
     transaction__payment_status: paymentStatusOf(transaction),
     d_type: donation.d_type,
-    email: filled(donation.email),
-    user__email: user && filled(user.email),
+    email: nonEmpty(donation.email),
+    user__email: user && nonEmpty(user.email),
     details: donation.details,
     name: donation.name,
     user__first_name: user?.first_name,
@@ -90,7 +87,7 @@ export function donationResult(
     transaction__currency__iso_code: tx.transaction__currency__iso_code,
     sub_donation_type_id: present(donation.sub_donation_type_id),
     sub_donation_type__name: category?.name,
-    birthday: filled(donation.birthday),
+    birthday: nonEmpty(donation.birthday),
     sent_mail_id: mail?.id,
     sent_mail__message_id: mail?.message_id,
     sent_mail__status: mail?.status,
@@ -248,9 +245,9 @@ export function donationDetail(
     donor_type: donation.donor_type,
     name: donation.name,
     phone: donation.phone,
-    email: filled(donation.email),
+    email: nonEmpty(donation.email),
     address: donation.address,
-    birthday: filled(donation.birthday),
+    birthday: nonEmpty(donation.birthday),
     city: donation.city,
     district: donation.district,
     details: donation.details,

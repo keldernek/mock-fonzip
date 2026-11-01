@@ -11,7 +11,7 @@ import {
 } from "../../api/listing";
 import { istanbulDate } from "../../seed/dates";
 import type { Row } from "../../store/collection";
-import { present, userName } from "../../store/joins";
+import { nonEmpty, present, userName } from "../../store/joins";
 import type {
   EcardRecord,
   EcardTransactionRecord,
@@ -231,7 +231,7 @@ function baseFields(view: SaleView) {
     user_id: present(sale.user_id),
     first_name: sale.first_name,
     last_name: sale.last_name,
-    email: sale.email,
+    email: nonEmpty(sale.email),
     phone: sale.phone,
     certificate_id: sale.certificate_id,
     certificate_file: sale.certificate_file,
@@ -534,7 +534,7 @@ function toDetail(store: OrgStore, view: SaleView) {
     certificate_file: sale.certificate_file,
     first_name: sale.first_name,
     last_name: sale.last_name,
-    email: sale.email,
+    email: nonEmpty(sale.email),
     phone: sale.phone,
     address: sale.address,
     city: sale.city,

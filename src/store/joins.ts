@@ -4,6 +4,10 @@ import type { TransactionRecord, UserRecord } from "./records";
 import { currencyById } from "./reference";
 import type { OrgStore } from "./store";
 
+export function nonEmpty(text: string): string | undefined {
+  return text === "" ? undefined : text;
+}
+
 export function fullName(
   user: Pick<UserRecord, "first_name" | "last_name">,
 ): string {

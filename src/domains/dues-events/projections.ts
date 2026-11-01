@@ -1,6 +1,7 @@
 import type { Row } from "../../store/collection";
 import {
   fullName,
+  nonEmpty,
   present,
   userDefinedValues,
   userName,
@@ -85,10 +86,6 @@ export function transactionOf(
     : store.transactions.get(transactionId);
 }
 
-function nonEmpty(value: string): string | undefined {
-  return value === "" ? undefined : value;
-}
-
 export function toUserDetails(store: OrgStore, user: Row<UserRecord>) {
   const permission = store.communicationPermissions.find(
     (row) => row.user_id === user.id,
@@ -101,7 +98,7 @@ export function toUserDetails(store: OrgStore, user: Row<UserRecord>) {
     nationality_text: user.nationality_text,
     tckno: user.tckno,
     birthday: nonEmpty(user.birthday),
-    email: user.email,
+    email: nonEmpty(user.email),
     phone: user.phone,
     home_phone_first: user.home_phone_first,
     address: user.address,

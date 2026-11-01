@@ -8,7 +8,7 @@ import {
   parseDateRange,
 } from "../../api/listing";
 import type { Row } from "../../store/collection";
-import { present, userName, userReference } from "../../store/joins";
+import { nonEmpty, present, userName, userReference } from "../../store/joins";
 import type { TransactionRecord } from "../../store/records";
 import { currencyById } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
@@ -50,7 +50,7 @@ export function toMembershipDueDetails(store: OrgStore, row: Subscription) {
     first_name: row.first_name,
     last_name: row.last_name,
     phone: row.phone,
-    email: row.email,
+    email: nonEmpty(row.email),
     tckno: row.tckno,
     amount: row.amount,
     assignment_status: row.assignment_status,
@@ -83,7 +83,7 @@ function toMembershipDues(
     user__name: userName(store, row.user_id),
     first_name: row.first_name,
     last_name: row.last_name,
-    email: row.email,
+    email: nonEmpty(row.email),
     phone: row.phone,
     details: row.details,
     period: row.period,

@@ -381,6 +381,25 @@ describe("getMembershipDueDebtsList", () => {
 });
 
 describe("getDebtDetails", () => {
+  test("leaves out the email of a member who has none", async () => {
+    const client = createTestClient();
+    const created = await client.ok("createUser", {
+      body: { first_name: "Ece" },
+    });
+    const userId = created.user_id;
+    if (userId === undefined) throw new Error("createUser returned no id");
+    await client.ok("createDebt", { body: { user_id: userId, amount: 40 } });
+    const debts = await client.ok("getMembershipDueDebtsList", {
+      query: { user_id: userId, start_page: 1, how_many: 10 },
+    });
+    const debtId = debts.debt_list?.[0]?.id;
+    if (debtId === undefined) throw new Error("the new debt is not listed");
+    const details = await client.ok("getDebtDetails", {
+      path: { debt_id: debtId },
+    });
+    expect(details.subscription?.email, "the debt details").toBeUndefined();
+  });
+
   test("returns a debt with its category and the transaction that holds its amount", async () => {
     const client = createTestClient();
     const body = await client.ok("getDebtDetails", {

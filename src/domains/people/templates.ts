@@ -1,4 +1,5 @@
 import { notFound } from "../../api/errors";
+import { nonEmpty } from "../../store/joins";
 import type { Handler, HandlerInput } from "../../api/handler";
 import { matchesQuery, paginate } from "../../api/listing";
 import type { components } from "../../generated/openapi";
@@ -22,10 +23,6 @@ const BUTTON_KEYWORDS: readonly string[] = [
   "dues",
   "member_card",
 ];
-
-function nonEmpty(value: string): string | undefined {
-  return value === "" ? undefined : value;
-}
 
 function categoryName(categoryId: number): string | undefined {
   return TEMPLATE_CATEGORIES.find((category) => category.id === categoryId)

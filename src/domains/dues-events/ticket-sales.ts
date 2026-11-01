@@ -1,4 +1,5 @@
 import { notFound } from "../../api/errors";
+import { nonEmpty } from "../../store/joins";
 import type { Handler } from "../../api/handler";
 import {
   type DateRange,
@@ -43,7 +44,7 @@ function toTicketSale(
     member: member && toUserDetails(store, member),
     name: sale.name,
     phone: sale.phone,
-    email: sale.email,
+    email: nonEmpty(sale.email),
     address: sale.address,
     city: sale.city,
     district: sale.district,

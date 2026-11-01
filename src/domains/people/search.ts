@@ -2,7 +2,7 @@ import type { Handler } from "../../api/handler";
 import { paginate } from "../../api/listing";
 import type { components } from "../../generated/openapi";
 import type { Row } from "../../store/collection";
-import { fullName, userDefinedValues } from "../../store/joins";
+import { fullName, nonEmpty, userDefinedValues } from "../../store/joins";
 import type { UserDefinedValueRecord, UserRecord } from "../../store/records";
 import type { OrgStore } from "../../store/store";
 import { createFacts, type Facts } from "./facts";
@@ -218,10 +218,6 @@ function tagsAsText(user: User, facts: Facts): string | undefined {
       return tag ? [tag.name] : [];
     });
   return names.length > 0 ? names.join(", ") : undefined;
-}
-
-function nonEmpty(value: string): string | undefined {
-  return value === "" ? undefined : value;
 }
 
 function listItem(

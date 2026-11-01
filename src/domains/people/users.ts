@@ -3,7 +3,7 @@ import type { Handler, HandlerContext } from "../../api/handler";
 import type { components } from "../../generated/openapi";
 import { istanbulDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
-import { fullName, userDefinedValues } from "../../store/joins";
+import { fullName, nonEmpty, userDefinedValues } from "../../store/joins";
 import type {
   CommunicationPermissionRecord,
   UdvValue,
@@ -32,10 +32,6 @@ type UpdateBody = NonNullable<
 
 function failure(error: string): { status: 400; body: { error: string } } {
   return { status: 400, body: { error } };
-}
-
-function nonEmpty(value: string): string | undefined {
-  return value === "" ? undefined : value;
 }
 
 function permissionOf(
