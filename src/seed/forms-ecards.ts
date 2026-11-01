@@ -215,6 +215,53 @@ export function seedForms(
       if (index % 2 === 0) item(note, "Teşekkürler, bilgilendirme bekliyorum.");
     }
   }
+  seedMergeCandidates(ctx, users);
+}
+
+function seedMergeCandidates(
+  ctx: SeedContext,
+  users: readonly Row<UserRecord>[],
+): void {
+  const { db } = ctx;
+  const contacts = db.formAnswers
+    .list((answer) => answer.approval_status === 0)
+    .flatMap((answer) => {
+      const user = users.find((row) => row.id === answer.user_id);
+      return user && user.last_name !== ""
+        ? [{ user, at: answer.complete_date }]
+        : [];
+    });
+  const namesakeOf = (user: Row<UserRecord>) =>
+    users.find(
+      (other) =>
+        !other.admin &&
+        other.id !== user.id &&
+        other.last_name === user.last_name,
+    );
+  const paired = contacts.flatMap((contact) => {
+    const survivor = namesakeOf(contact.user);
+    return survivor ? [{ ...contact, survivor }] : [];
+  });
+  const [namesake] = paired;
+  const withAdmin = contacts.find(
+    (contact) =>
+      namesake !== undefined &&
+      contact.user.id !== namesake.user.id &&
+      contact.user.id !== namesake.survivor.id,
+  );
+  if (!namesake || !withAdmin) {
+    throw new Error("no answers awaiting approval to pair as duplicates");
+  }
+  db.mergeCandidates.insert({
+    first_user_id: namesake.survivor.id,
+    second_user_id: namesake.user.id,
+    create_date: namesake.at,
+  });
+  db.mergeCandidates.insert({
+    first_user_id: ctx.adminIds[ctx.adminIds.length - 1] ?? ctx.adminIds[0],
+    second_user_id: withAdmin.user.id,
+    create_date: withAdmin.at,
+  });
 }
 
 export function seedEcardTransactions(

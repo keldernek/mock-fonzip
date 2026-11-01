@@ -25,6 +25,7 @@ import type {
   FundraisingEventRecord,
   FundraisingTeamRecord,
   MarketingChannelRecord,
+  MergeCandidateRecord,
   MonthlyDonationRequestRecord,
   PaymentSettingsRecord,
   SentEmailRecord,
@@ -78,6 +79,7 @@ export interface Records {
   formQuestions: FormQuestionRecord;
   formAnswers: FormAnswerRecord;
   formAnswerItems: FormAnswerItemRecord;
+  mergeCandidates: MergeCandidateRecord;
   fundraisingCampaigns: FundraisingCampaignRecord;
   fundraisingEvents: FundraisingEventRecord;
   fundraisingTeams: FundraisingTeamRecord;
@@ -128,6 +130,7 @@ export function createStore(): Store {
     formQuestions: new Collection("formQuestions", 7101),
     formAnswers: new Collection("formAnswers", 71_001),
     formAnswerItems: new Collection("formAnswerItems", 72_001),
+    mergeCandidates: new Collection("mergeCandidates", 73_001),
     fundraisingCampaigns: new Collection("fundraisingCampaigns", 801),
     fundraisingEvents: new Collection("fundraisingEvents", 851),
     fundraisingTeams: new Collection("fundraisingTeams", 871),
@@ -174,6 +177,7 @@ export function orgStore(store: Store, org: OrgSlug): OrgStore {
     formQuestions: store.formQuestions.for(org),
     formAnswers: store.formAnswers.for(org),
     formAnswerItems: store.formAnswerItems.for(org),
+    mergeCandidates: store.mergeCandidates.for(org),
     fundraisingCampaigns: store.fundraisingCampaigns.for(org),
     fundraisingEvents: store.fundraisingEvents.for(org),
     fundraisingTeams: store.fundraisingTeams.for(org),

@@ -346,6 +346,13 @@ export interface FormAnswerRecord {
   sent_mail_id: number | null;
 }
 
+export interface MergeCandidateRecord {
+  id: number;
+  first_user_id: number;
+  second_user_id: number;
+  create_date: string;
+}
+
 export interface FormAnswerItemRecord {
   id: number;
   answer_id: number;
