@@ -213,7 +213,10 @@ export function seedCampaigns(
       update_title: index === 1 ? `${title} 2026` : null,
       update_details:
         index === 1 ? "Güncellenmiş takım açıklaması onay bekliyor." : null,
-      update_image: null,
+      update_image:
+        index === 1
+          ? `https://kelder.example/media/teams/${slugify(title)}-yeni.jpg`
+          : null,
     });
     db.teamCampaigns.insert({
       team_id: team.id,
@@ -257,6 +260,15 @@ export function seedCampaigns(
           ? istanbulDateTime(addDays(created, 90))
           : null,
       title: title.trim(),
+      update_title: index === 3 ? `${title.trim()} 2026` : null,
+      update_image:
+        index === 3
+          ? `https://kelder.example/media/campaigns/4-yeni.jpg`
+          : null,
+      update_personal_message:
+        index === 3
+          ? "Hedefimize yaklaştık, desteğiniz için teşekkür ederim."
+          : null,
       url: `https://kelder.example/kampanya/${slugify(title)}`,
       status,
       target_currency_id: 1,

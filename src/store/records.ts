@@ -352,13 +352,21 @@ export interface FormAnswerItemRecord {
   selected_option_ids: number[];
 }
 
+type CampaignDetail = Exclude<
+  components["responses"]["FundraisingCampaignDetailsResponse"]["content"]["application/json"]["campaign"],
+  undefined
+>;
+
 export type FundraisingCampaignRecord = WithNull<
   Own<
     Omit<
-      S["FundraisingCampaignList"] & S["FundraisingCampaign"],
+      S["FundraisingCampaignList"] & S["FundraisingCampaign"] & CampaignDetail,
       "bank_account_list" | "donation_total" | "team_id"
     >
   >,
+  | "update_title"
+  | "update_image"
+  | "update_personal_message"
   | "activation_date"
   | "finish_date"
   | "event_date"
