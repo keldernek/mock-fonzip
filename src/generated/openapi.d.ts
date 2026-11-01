@@ -9655,7 +9655,7 @@ export interface operations {
                 /** @description ordering */
                 order_by?: "start_date" | "-start_date" | "name" | "-name" | "id" | "-id";
                 /** @description true for archived records, null for normal records */
-                archived?: null | true;
+                archived?: null | "true";
             };
             header?: never;
             path?: never;
@@ -10433,7 +10433,7 @@ export interface operations {
                 /** @description How many records should be listed */
                 how_many: components["parameters"]["HowMany"];
                 /** @description true for archived records, null for normal records */
-                archived?: null | true;
+                archived?: null | "true";
                 /**
                  * @description Ordering.
                  *

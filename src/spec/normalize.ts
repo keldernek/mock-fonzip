@@ -41,6 +41,17 @@ function nullableEnumAllowsNull(node: JsonObject): JsonObject {
     : { ...node, enum: [...node.enum, null] };
 }
 
+function stringEnumAsStrings(node: JsonObject): JsonObject {
+  if (node.type !== "string" || !Array.isArray(node.enum)) return node;
+  if (!node.enum.some((value) => typeof value === "boolean")) return node;
+  return {
+    ...node,
+    enum: node.enum.map((value) =>
+      typeof value === "boolean" ? String(value) : value,
+    ),
+  };
+}
+
 function oneOfAsAnyOf(node: JsonObject): JsonObject {
   if (!Array.isArray(node.oneOf)) return node;
   const { oneOf, ...rest } = node;
@@ -99,7 +110,9 @@ export function normalizeSpec(spec: Json): JsonObject {
     key === "requestBody"
       ? node
       : nullableEnumAllowsNull(
-          uniqueEnum(oneOfAsAnyOf(nullableWithoutType(node))),
+          uniqueEnum(
+            stringEnumAsStrings(oneOfAsAnyOf(nullableWithoutType(node))),
+          ),
         ),
   );
   if (!isJsonObject(normalized)) throw new Error("normalization lost the root");

@@ -8,6 +8,7 @@ const windowMs = Number(process.env.MOCK_FONZIP_RATE_WINDOW_MS ?? 60_000);
 const { app, runtime } = createMockFonzip({
   clock: runningClock(),
   rateLimit: { limit, windowMs },
+  selfOrigin: `http://localhost:${port}`,
 });
 
 Bun.serve({ port, fetch: app.fetch });
