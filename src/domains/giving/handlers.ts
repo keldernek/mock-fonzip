@@ -8,6 +8,7 @@ import {
   updateDonationCategory,
   updateDonationCategoryStatus,
 } from "./categories";
+import { createDonation } from "./create-donation";
 import {
   deleteDonation,
   getDonationDetails,
@@ -29,7 +30,7 @@ import {
 } from "./user-lists";
 
 export const handlers: Fragment<"giving"> = {
-  createDonation: notImplemented,
+  createDonation,
   getDonationList,
   getDonationDetails,
   deleteDonation,
