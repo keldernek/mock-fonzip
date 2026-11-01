@@ -256,6 +256,7 @@ describe("e-cards", () => {
     expect(ecard).toMatchObject({
       id: 953,
       title: "Anma Kartı",
+      ecard_type: 4,
       categories: [903],
       has_cargo: true,
       ask_billing_info: true,

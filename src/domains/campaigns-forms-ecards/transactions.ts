@@ -81,7 +81,7 @@ export type Payment =
     }
   | { readonly method: 2; readonly bankAccountId: number };
 
-export interface PaymentContext {
+interface PaymentContext {
   readonly store: OrgStore;
   readonly rng: Rng;
   readonly clock: Clock;

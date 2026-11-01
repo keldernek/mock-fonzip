@@ -10,7 +10,7 @@ import type { FormRecord, UserRecord } from "../../store/records";
 import { PAYMENT_STATUS, TRY_CURRENCY_ID } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
 import { OUTCOME_STATUS, WEBHOOK_OPERATIONS } from "../../webhooks/emitter";
-import { CARD_BINS } from "./ecard-sales";
+import { LOCAL_CREDIT_BIN } from "./ecard-sales";
 import { answerStatus } from "./forms";
 import {
   recordPayment,
@@ -59,7 +59,7 @@ function paymentOf(
   if (cardSettingsId === undefined) {
     return invalid("the association has no card payment settings");
   }
-  const binNumber = input.string("bin_number") ?? CARD_BINS[0] ?? "454360";
+  const binNumber = input.string("bin_number") ?? LOCAL_CREDIT_BIN;
   if (!/^\d{6}$/.test(binNumber)) return invalid("bin_number must be 6 digits");
   return {
     ok: true,

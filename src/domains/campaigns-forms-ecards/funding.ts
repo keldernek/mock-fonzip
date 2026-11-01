@@ -9,7 +9,7 @@ import type { OrgStore } from "../../store/store";
 
 export const DELETED_CAMPAIGN = 4;
 
-export interface Funding {
+interface Funding {
   readonly sum: number;
   readonly count: number;
 }
@@ -18,7 +18,7 @@ export function knownCurrency(id: number): boolean {
   return CURRENCIES.some((currency) => currency.id === id);
 }
 
-export function convert(amount: number, from: number, to: number): number {
+function convert(amount: number, from: number, to: number): number {
   if (from === to) return amount;
   return (amount * currencyById(from).value) / currencyById(to).value;
 }

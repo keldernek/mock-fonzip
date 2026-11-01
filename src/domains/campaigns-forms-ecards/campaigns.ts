@@ -47,9 +47,9 @@ const STATUS = {
   archived: 7,
 } as const;
 
-export const FEATURED_LIMIT = 6;
+const FEATURED_LIMIT = 6;
 
-export function liveCampaign(
+function liveCampaign(
   store: OrgStore,
   campaignId: number,
 ): Campaign | undefined {
@@ -61,10 +61,7 @@ function donationTotal(store: OrgStore, campaign: Campaign): number {
   return funding(store, [campaign], campaign.target_currency_id).sum;
 }
 
-export function toBankAccount(
-  store: OrgStore,
-  account: Row<BankAccountRecord>,
-) {
+function toBankAccount(store: OrgStore, account: Row<BankAccountRecord>) {
   return {
     id: account.id,
     name: account.name,

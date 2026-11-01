@@ -10,7 +10,7 @@ export type CampaignPatch = Partial<Omit<FundraisingCampaignRecord, "id">>;
 type UpdateBody = NonNullable<
   HandlerInput<"updateFundraisingCampaign">["body"]
 >;
-export type CampaignField = NonNullable<UpdateBody["field"]>;
+type CampaignField = NonNullable<UpdateBody["field"]>;
 
 type FieldsOfType<V> = {
   [K in keyof CampaignPatch]-?: NonNullable<CampaignPatch[K]> extends V
@@ -67,7 +67,7 @@ const REFERENCES = {
   }
 >;
 
-export type ReferenceField = keyof typeof REFERENCES;
+type ReferenceField = keyof typeof REFERENCES;
 export const REFERENCE_FIELDS = Object.keys(REFERENCES).filter(
   (key): key is ReferenceField => Object.hasOwn(REFERENCES, key),
 );

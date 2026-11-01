@@ -197,7 +197,7 @@ export const getFormAnswerList: Handler<"getFormAnswerList"> = (
   };
 };
 
-export function answerOfForm(
+function answerOfForm(
   store: OrgStore,
   formId: number,
   answerId: number,

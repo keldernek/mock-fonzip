@@ -3,9 +3,7 @@ import { RELATIONS } from "../../store/relations";
 import type { OrgStore } from "../../store/store";
 import { roundMoney } from "./funding";
 
-export type MergeReport = NonNullable<
-  ResponseBody<"respondFormAnswer", 200>["merge"]
->;
+type MergeReport = NonNullable<ResponseBody<"respondFormAnswer", 200>["merge"]>;
 
 function reassignUser(store: OrgStore, from: number, to: number): void {
   for (const relation of RELATIONS) {

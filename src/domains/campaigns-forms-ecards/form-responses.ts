@@ -26,7 +26,7 @@ type TemplateChange =
   | { readonly kind: "save"; readonly title: string; readonly design: Design }
   | { readonly kind: "update"; readonly id: number; readonly design: Design };
 
-export interface FormResponse {
+interface FormResponse {
   readonly approvalStatus: FormAnswerRecord["approval_status"];
   readonly membership: Membership;
   readonly mail: boolean;

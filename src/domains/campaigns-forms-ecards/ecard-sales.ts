@@ -55,17 +55,17 @@ const PAYMENT_OF: Readonly<Record<ListStatus, number>> = {
   failed: PAYMENT_STATUS.failed,
 };
 
+export const LOCAL_CREDIT_BIN = "454360";
+
 const CARDS: Readonly<
   Record<string, { readonly country: CardCountry; readonly type: CardType }>
 > = {
-  "454360": { country: 1, type: 1 },
+  [LOCAL_CREDIT_BIN]: { country: 1, type: 1 },
   "540667": { country: 1, type: 2 },
   "979203": { country: 1, type: 3 },
   "402277": { country: 2, type: 1 },
 };
 const UNKNOWN_CARD = { country: 3, type: 4 } as const;
-
-export const CARD_BINS = Object.keys(CARDS);
 
 function cardOf(transaction: Row<TransactionRecord>) {
   if (transaction.bin_number === null) return undefined;

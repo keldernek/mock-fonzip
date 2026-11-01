@@ -1,11 +1,11 @@
 import { notFound } from "../../api/errors";
 
-export interface BadRequest {
+interface BadRequest {
   readonly status: 400;
   readonly body: { error: string };
 }
 
-export type Failure = BadRequest | ReturnType<typeof notFound>;
+type Failure = BadRequest | ReturnType<typeof notFound>;
 
 export type Parsed<T> =
   | { readonly ok: true; readonly value: T }

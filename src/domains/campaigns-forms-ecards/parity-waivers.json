@@ -1,1 +1,58 @@
-{ "statuses": [], "inputs": [], "properties": [] }
+{
+  "statuses": [
+    {
+      "status": 404,
+      "operations": [
+        "getFundraisingEvents",
+        "getFundraisingTeams",
+        "getFormList",
+        "getFormAnswerList",
+        "getEcardCategoryList",
+        "createEcardCategory"
+      ],
+      "reason": "The path and body name no object: the inputs are paging, search, archived, status and order_by, or a category name (CreateUpdateCategory). Nothing the request names can be missing, so 404 cannot occur."
+    },
+    {
+      "status": 404,
+      "operations": ["createFundraisingEvent"],
+      "reason": "components.schemas.FundraisingEvent names no object of the association. id is the event being created, and target_currency_id points at the static currency table, so an unknown currency is an invalid value and gets 400."
+    },
+    {
+      "status": 404,
+      "operations": [
+        "getFundraisingCampaignList",
+        "getEcardList",
+        "getEcardTransactionList"
+      ],
+      "reason": "The path names no object. The id parameters are list filters (category_id, team_campaign_id, payment_settings_id and association_campaign_target_id on /fundraising-campaigns, category_id on /ecards, ecard_id, payment_settings_id, bank_account_id and currency_id on /ecard-transactions). The only documented behavior for an id filter naming no object is paths./debts.get debt_category_id: 'Another organisation's id matches nothing'. An unknown id therefore returns an empty list, not 404."
+    }
+  ],
+  "inputs": [],
+  "properties": [
+    {
+      "operationId": "getFundraisingCampaignList",
+      "path": "campaign_list[].user__name",
+      "reason": "components.schemas.FundraisingCampaignList.properties.user__name is described as the 'user unified name' but typed number, so no correct value fits. user__first_name and user__last_name carry the name. PARITY.md lists this contradiction."
+    },
+    {
+      "operationId": "getFundraisingCampaignList",
+      "path": "campaign_list[].target_currency__display",
+      "reason": "components.schemas.FundraisingCampaignList.properties.target_currency__display is a currency display such as 'TRY', typed number. target_currency_id carries the currency. PARITY.md lists this contradiction."
+    },
+    {
+      "operationId": "getFundraisingTeamDetail",
+      "path": "team.campaign_list[].target_currency__display",
+      "reason": "components.schemas.FundraisingTeamCampaignList.properties.target_currency__display is a currency display typed number, while the same field of CreateUpdateFundraisingTeamCampaignResult is a string ('TRY' in its example). target_currency_id carries the currency. PARITY.md lists this contradiction."
+    },
+    {
+      "operationId": "getFundraisingTeamsCampaigns",
+      "path": "team_campaign_list[].target_currency__display",
+      "reason": "components.responses.FundraisingTeamCampaignListResponse item target_currency__display is a currency display typed number. PARITY.md lists this contradiction."
+    },
+    {
+      "operationId": "getFundraisingCampaignDetails",
+      "path": "campaign.user__profile_pic",
+      "reason": "components.responses.FundraisingCampaignDetailsResponse campaign.user__profile_pic is the owner's profile picture URL. No documented operation writes a profile picture: createUser, updateUser and UserSingleFieldUpdate document no profile_pic, which appears only in read schemas (UserReference, UserSearchValues). The only other mention is FormQuestion static_question 10 'profile photo', and no schema carries an uploaded file. A contact never has a picture, so the property is never present."
+    }
+  ]
+}

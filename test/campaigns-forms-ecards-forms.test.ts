@@ -292,6 +292,25 @@ describe("form answer details", () => {
     expect(choice?.answer).toBe("Evet");
   });
 
+  test("gives a select field's question its options", async () => {
+    const client = createTestClient();
+    const details = await answer(client, ARCHIVED_FORM, 71041);
+    const branch = details?.form_answer_list?.find(
+      (item) => item.question?.title === "Şube",
+    );
+    const udv = kelder(client).userDefinedValues.find(
+      (row) => row.value === "sube",
+    );
+    expect(branch?.question?.udv_question).toMatchObject({
+      udv_id: udv?.id,
+      key_type: 7,
+      for: "select",
+      options: udv?.options,
+    });
+    expect(udv?.options.length).toBeGreaterThan(1);
+    expect(udv?.options.map((option) => option.text)).toContain(branch?.answer);
+  });
+
   test("shows who refunded a refunded payment, and the error of a failed one", async () => {
     const client = createTestClient();
     const refunded = await answer(client, YEARBOOK_FORM, 71028);
