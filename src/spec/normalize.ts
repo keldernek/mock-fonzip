@@ -145,6 +145,29 @@ function enumPlaceholderAsPattern(node: JsonObject): JsonObject {
   };
 }
 
+const PLACEHOLDER_KEYED_MAPS: Readonly<Record<string, string>> = {
+  UserDefinedValuesReference: "key",
+};
+
+function placeholderKeyedMaps(spec: JsonObject): JsonObject {
+  const components = spec.components;
+  const schemas = isJsonObject(components) ? components.schemas : undefined;
+  if (!isJsonObject(components) || !isJsonObject(schemas)) return spec;
+  const rewritten: JsonObject = {};
+  for (const [name, placeholder] of Object.entries(PLACEHOLDER_KEYED_MAPS)) {
+    const schema = schemas[name];
+    if (!isJsonObject(schema) || !isJsonObject(schema.properties)) continue;
+    const values = schema.properties[placeholder];
+    if (values === undefined) continue;
+    const { properties: _properties, ...rest } = schema;
+    rewritten[name] = { ...rest, additionalProperties: values };
+  }
+  return {
+    ...spec,
+    components: { ...components, schemas: { ...schemas, ...rewritten } },
+  };
+}
+
 function searchFilterGroups(spec: JsonObject): JsonObject {
   const components = spec.components;
   const schemas = isJsonObject(components) ? components.schemas : undefined;
@@ -244,7 +267,9 @@ function hoistRequestBodySchemas(spec: JsonObject): JsonObject {
 export function normalizeSpec(spec: Json): JsonObject {
   if (!isJsonObject(spec)) throw new Error("the spec is not a JSON object");
   const corrected = mapJson(
-    searchFilterGroups(acceptBareDates(hoistRequestBodySchemas(spec))),
+    placeholderKeyedMaps(
+      searchFilterGroups(acceptBareDates(hoistRequestBodySchemas(spec))),
+    ),
     (node) =>
       enumPlaceholderAsPattern(
         dropDependentDefault(correctDuesListingEnum(node)),

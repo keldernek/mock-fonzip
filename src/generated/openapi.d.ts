@@ -4351,11 +4351,7 @@ export interface components {
         };
         /** @description user defined values as key value pairs */
         UserDefinedValuesReference: {
-            /**
-             * @description UDV Key (value*) paired with corresponding value
-             * @default value
-             */
-            key: string | number | Record<string, unknown> | unknown[] | boolean;
+            [key: string]: string | number | Record<string, unknown> | unknown[] | boolean;
         };
         UserDefinedValues: {
             /**
