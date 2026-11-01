@@ -21,6 +21,8 @@ import type { RequestValidator, Validators } from "../spec/validation";
 import type { HandlerContext, HandlerInput, HandlerResult } from "./handler";
 import { errorBody, json } from "./errors";
 import type { RateLimiter } from "./rate-limit";
+import { orgStore, type Store } from "../store/store";
+import type { WebhookEmitter } from "../webhooks/emitter";
 
 export interface PipelineDeps {
   readonly table: RouteTable;
@@ -28,8 +30,12 @@ export interface PipelineDeps {
   readonly tenancy: Tenancy;
   readonly tokens: TokenService;
   readonly clock: Clock;
-  rng(): Rng;
-  limiter(): RateLimiter;
+  world(): {
+    readonly store: Store;
+    readonly rng: Rng;
+    readonly limiter: RateLimiter;
+    readonly webhooks: WebhookEmitter;
+  };
 }
 
 interface RawRequest {
@@ -118,7 +124,7 @@ export function mountApi(app: Hono, deps: PipelineDeps): void {
     route: PublicRoute,
   ): Promise<Response> {
     const form = await readFormBody(c);
-    if (!deps.limiter().hit(`token|${form.client_id ?? ""}`)) {
+    if (!deps.world().limiter.hit(`token|${form.client_id ?? ""}`)) {
       return json(errorBody(429), 429);
     }
     const raw: RawRequest = { path: {}, query: {}, body: form };
@@ -160,7 +166,7 @@ export function mountApi(app: Hono, deps: PipelineDeps): void {
       return json(errorBody(403), 403);
     }
     const limitKey = `${apiKey.id}|${apiKey.org}|${route.operationId}`;
-    if (!deps.limiter().hit(limitKey)) return json(errorBody(429), 429);
+    if (!deps.world().limiter.hit(limitKey)) return json(errorBody(429), 429);
 
     let body: unknown;
     if (route.body) {
@@ -186,11 +192,14 @@ export function mountApi(app: Hono, deps: PipelineDeps): void {
         400,
       );
     }
+    const world = deps.world();
     const ctx: HandlerContext = {
       org: deps.tenancy.organisation(apiKey.org),
       apiKey,
+      store: orgStore(world.store, apiKey.org),
       clock: deps.clock,
-      rng: deps.rng(),
+      rng: world.rng,
+      webhooks: world.webhooks.forOrg(apiKey.org),
     };
     const result = await invoke(route.operationId, validated.input, ctx);
     return json(result.body, result.status);

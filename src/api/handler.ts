@@ -3,6 +3,8 @@ import type { TokenService } from "../auth/tokens";
 import type { Clock } from "../core/clock";
 import type { Rng } from "../core/rng";
 import type { operations } from "../generated/openapi";
+import type { OrgStore } from "../store/store";
+import type { OrgWebhooks } from "../webhooks/emitter";
 import type {
   BearerOperationId,
   Domain,
@@ -52,8 +54,10 @@ export type ResponseBody<K extends OperationId, S extends Status<K>> = JsonBody<
 export interface HandlerContext {
   readonly org: Organisation;
   readonly apiKey: ApiKey;
+  readonly store: OrgStore;
   readonly clock: Clock;
   readonly rng: Rng;
+  readonly webhooks: OrgWebhooks;
 }
 
 export type Handler<K extends BearerOperationId> = (
