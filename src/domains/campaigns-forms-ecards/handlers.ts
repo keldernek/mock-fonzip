@@ -9,6 +9,13 @@ import {
   updateFundraisingCampaignStatus,
 } from "./campaigns";
 import {
+  getFormAnswerDetails,
+  getFormAnswerList,
+  getFormList,
+  getUserAnswerList,
+  respondFormAnswer,
+} from "./forms";
+import {
   createFundraisingEvent,
   deleteFundraisingEvent,
   getFundraisingEvents,
@@ -46,11 +53,11 @@ export const handlers: Fragment<"campaigns-forms-ecards"> = {
   createFundraisingTeamCampaign,
   updateFundraisingTeamCampaign,
   deleteFundraisingTeamCampaign,
-  getFormList: notImplemented,
-  getFormAnswerList: notImplemented,
-  getFormAnswerDetails: notImplemented,
-  respondFormAnswer: notImplemented,
-  getUserAnswerList: notImplemented,
+  getFormList,
+  getFormAnswerList,
+  getFormAnswerDetails,
+  respondFormAnswer,
+  getUserAnswerList,
   getEcardCategoryList: notImplemented,
   createEcardCategory: notImplemented,
   updateEcardCategory: notImplemented,
