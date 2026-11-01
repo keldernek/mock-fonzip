@@ -21,6 +21,16 @@ export interface CampaignRefs {
   readonly fundraisingEventIds: readonly [number, ...number[]];
 }
 
+const ECARD_TYPE = {
+  single: 1,
+  inHonor: 2,
+  inHonorWithMessage: 3,
+  condolence: 4,
+  condolenceWithMessage: 5,
+} as const;
+
+type EcardType = (typeof ECARD_TYPE)[keyof typeof ECARD_TYPE];
+
 function nonEmpty<T>(items: readonly T[], what: string): readonly [T, ...T[]] {
   const [first, ...rest] = items;
   if (first === undefined) throw new Error(`no ${what} seeded`);
@@ -124,7 +134,7 @@ export function seedEcards(ctx: SeedContext, system: SystemRefs): EcardRefs {
     options: {
       cargo?: boolean;
       active?: boolean;
-      type?: number;
+      type: EcardType;
       amount?: number;
     },
   ) =>
@@ -136,7 +146,7 @@ export function seedEcards(ctx: SeedContext, system: SystemRefs): EcardRefs {
       first_amount: options.amount ?? 250,
       active: options.active ?? true,
       order,
-      ecard_type: options.type ?? 0,
+      ecard_type: options.type,
       starred: order === 1,
       ask_billing_info: options.cargo ?? false,
       background: options.cargo
@@ -144,16 +154,28 @@ export function seedEcards(ctx: SeedContext, system: SystemRefs): EcardRefs {
         : base.background,
     }).id;
   const ids = [
-    ecard("Doğum Günü Burs Kartı", [categories[0]], 1, {}),
-    ecard("Mezuniyet Tebrik Kartı", [categories[1]], 2, { amount: 300 }),
-    ecard("Anma Kartı", [categories[2]], 3, { cargo: true, amount: 500 }),
-    ecard("Bayram Kartı", [categories[3]], 4, {}),
+    ecard("Doğum Günü Burs Kartı", [categories[0]], 1, {
+      type: ECARD_TYPE.inHonor,
+    }),
+    ecard("Mezuniyet Tebrik Kartı", [categories[1]], 2, {
+      type: ECARD_TYPE.inHonor,
+      amount: 300,
+    }),
+    ecard("Anma Kartı", [categories[2]], 3, {
+      type: ECARD_TYPE.condolence,
+      cargo: true,
+      amount: 500,
+    }),
+    ecard("Bayram Kartı", [categories[3]], 4, { type: ECARD_TYPE.single }),
     ecard("Basılı Teşekkür Kartı", [categories[1], categories[3]], 5, {
       cargo: true,
-      type: 1,
+      type: ECARD_TYPE.inHonorWithMessage,
       amount: 750,
     }),
-    ecard("Eski Tasarım Kart", [categories[0]], 6, { active: false }),
+    ecard("Eski Tasarım Kart", [categories[0]], 6, {
+      type: ECARD_TYPE.single,
+      active: false,
+    }),
   ];
   return {
     ecardIds: nonEmpty(ids, "ecards"),
