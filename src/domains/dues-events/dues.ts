@@ -19,13 +19,7 @@ import {
   sameDigits,
   sortRows,
 } from "./filters";
-import {
-  adjustTotalFinancial,
-  isDebt,
-  rebalance,
-  STATUS_NAME,
-  type Subscription,
-} from "./ledger";
+import { isDebt, removeRecord, STATUS_NAME, type Subscription } from "./ledger";
 import {
   paymentStatus,
   toDebtCategory,
@@ -207,39 +201,13 @@ export const getMembershipDueDetails: Handler<"getMembershipDueDetails"> = (
   };
 };
 
-function unmatchBankTransfers(store: OrgStore, subscriptionId: number): void {
-  for (const transfer of store.bankTransactions.list(
-    (row) => row.matched_subscription_id === subscriptionId,
-  )) {
-    store.bankTransactions.update(transfer.id, {
-      payment_status: 8,
-      transaction_type: null,
-      matched_user_id: null,
-      matched_subscription_id: null,
-    });
-  }
-}
-
 export const deleteMembershipDue: Handler<"deleteMembershipDue"> = (
   { path },
   { store },
 ) => {
   const row = store.subscriptions.get(path.subscription_id);
   if (!row) return notFound("Membership due");
-  store.subscriptions.remove(row.id);
-  const tx = transactionOf(store, row.transaction_id);
-  if (row.status === 2 && tx) {
-    for (const refund of store.subscriptions.list(
-      (other) => other.status === 4 && other.transaction_id === tx.id,
-    )) {
-      store.subscriptions.remove(refund.id);
-    }
-    if (tx.payment_status === 3) {
-      adjustTotalFinancial(store, row.user_id, tx, -1);
-    }
-  }
-  unmatchBankTransfers(store, row.id);
-  rebalance(store, row.user_id);
+  removeRecord(store, row);
   return { status: 200, body: { result: "ok" } };
 };
 

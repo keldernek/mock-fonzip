@@ -142,6 +142,7 @@ export type TransactionSpec =
     }
   | {
       readonly kind: "manual";
+      readonly status: 0 | 3;
       readonly amount: number;
       readonly method: Exclude<PaymentMethod, 0>;
       readonly bankAccountId: number | null;
@@ -157,7 +158,7 @@ export function newTransaction(
 ): Row<TransactionRecord> {
   const card = spec.kind === "card";
   const failed = card && spec.outcome === "failed";
-  const status = failed ? 5 : 3;
+  const status = card ? (failed ? 5 : 3) : spec.status;
   const error = failed ? rng.pickFrom(PAYMENT_ERRORS) : undefined;
   const installments = card ? spec.installments : 1;
   return store.transactions.insert({
@@ -212,6 +213,39 @@ export function refundTransaction(
     refund_reason: reason,
     refunded_by_id: null,
   });
+}
+
+function unmatchBankTransfers(store: OrgStore, subscriptionId: number): void {
+  for (const transfer of store.bankTransactions.list(
+    (row) => row.matched_subscription_id === subscriptionId,
+  )) {
+    store.bankTransactions.update(transfer.id, {
+      payment_status: 8,
+      transaction_type: null,
+      matched_user_id: null,
+      matched_subscription_id: null,
+    });
+  }
+}
+
+export function removeRecord(store: OrgStore, row: Subscription): void {
+  store.subscriptions.remove(row.id);
+  const tx =
+    row.transaction_id === null
+      ? undefined
+      : store.transactions.get(row.transaction_id);
+  if (tx && isDebt(row)) store.transactions.remove(tx.id);
+  if (tx && row.status === 2) {
+    for (const refund of store.subscriptions.list(
+      (other) => other.status === 4 && other.transaction_id === tx.id,
+    )) {
+      store.subscriptions.remove(refund.id);
+    }
+    if (tx.payment_status === 3)
+      adjustTotalFinancial(store, row.user_id, tx, -1);
+  }
+  unmatchBankTransfers(store, row.id);
+  rebalance(store, row.user_id);
 }
 
 export function memberSnapshot(user: Row<UserRecord>) {

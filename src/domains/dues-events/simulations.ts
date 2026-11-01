@@ -246,6 +246,7 @@ function ticketSale(
     free || accountId !== undefined
       ? {
           kind: "manual",
+          status: 3,
           amount,
           method: free ? 1 : 2,
           bankAccountId: accountId ?? null,

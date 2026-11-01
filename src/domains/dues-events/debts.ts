@@ -18,6 +18,7 @@ import {
   sameDay,
   sortRows,
 } from "./filters";
+import { transactionOf } from "./projections";
 import {
   isDebt,
   memberBalance,
@@ -25,6 +26,7 @@ import {
   newTransaction,
   rebalance,
   recordPayment,
+  removeRecord,
   type Subscription,
 } from "./ledger";
 
@@ -262,6 +264,15 @@ export const createDebt: Handler<"createDebt"> = (
   const period = body.period ?? istanbulDate(at);
   const recurring = body.recurring ?? false;
   const recurringPeriod = body.recurring_period ?? 0;
+  const debtTransaction = newTransaction(store, rng, at, {
+    kind: "manual",
+    status: 0,
+    amount,
+    method: payment.add ? payment.method : 1,
+    bankAccountId: null,
+    transactionId: undefined,
+    receiptNo: undefined,
+  });
   const debt = store.subscriptions.insert({
     ...memberSnapshot(user),
     status: 1,
@@ -291,7 +302,7 @@ export const createDebt: Handler<"createDebt"> = (
     updated_by_id: null,
     create_date: istanbulDateTime(now),
     debt_category_id: categoryId,
-    transaction_id: null,
+    transaction_id: debtTransaction.id,
   });
   rebalance(store, user.id);
   if (!payment.add) {
@@ -312,6 +323,7 @@ export const createDebt: Handler<"createDebt"> = (
   }
   const tx = newTransaction(store, rng, at, {
     kind: "manual",
+    status: 3,
     amount: paid,
     method: payment.method,
     bankAccountId: payment.bankAccountId,
@@ -340,7 +352,7 @@ export const createDebt: Handler<"createDebt"> = (
 
 export const updateDebt: Handler<"updateDebt"> = (
   { path, body },
-  { store },
+  { store, rng },
 ) => {
   const row = debtOf(store, path.debt_id);
   if (!row) return notFound("Debt");
@@ -367,18 +379,39 @@ export const updateDebt: Handler<"updateDebt"> = (
   ) {
     return notFound("Debt category");
   }
+  const at = new Date(body.operation_date);
+  const current = transactionOf(store, row.transaction_id);
+  const tx =
+    current ??
+    newTransaction(store, rng, at, {
+      kind: "manual",
+      status: 0,
+      amount,
+      method: 1,
+      bankAccountId: null,
+      transactionId: undefined,
+      receiptNo: undefined,
+    });
+  store.transactions.update(tx.id, {
+    amount,
+    installment_amount: amount,
+    complete_date: istanbulDateTime(at),
+    transaction_id: body.transaction?.transaction_id ?? "",
+    payment_method: body.transaction?.payment_method ?? tx.payment_method,
+  });
   store.subscriptions.update(row.id, {
     period: body.period,
     details: body.details ?? "",
     remove_note: row.status === 6 ? (body.remove_note ?? null) : null,
     debt_category_id: categoryId,
-    operation_date: istanbulDateTime(new Date(body.operation_date)),
+    operation_date: istanbulDateTime(at),
     bill_no: body.bill_no ?? null,
     due_date: istanbulDateTime(new Date(body.due_date)),
     recurring_period: body.recurring_period ?? 0,
     amount,
     recurring_amount: row.recurring ? amount : 0,
     updated_by_id: null,
+    transaction_id: tx.id,
   });
   rebalance(store, row.user_id);
   return { status: 200, body: { result: "ok" } };
@@ -411,7 +444,6 @@ export const updateDebtStatus: Handler<"updateDebtStatus"> = (
 export const deleteDebt: Handler<"deleteDebt"> = ({ path }, { store }) => {
   const row = debtOf(store, path.debt_id);
   if (!row) return notFound("Debt");
-  store.subscriptions.remove(row.id);
-  rebalance(store, row.user_id);
+  removeRecord(store, row);
   return { status: 200, body: { result: "ok" } };
 };

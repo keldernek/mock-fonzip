@@ -381,7 +381,7 @@ describe("getMembershipDueDebtsList", () => {
 });
 
 describe("getDebtDetails", () => {
-  test("returns a debt with its category", async () => {
+  test("returns a debt with its category and the transaction that holds its amount", async () => {
     const client = createTestClient();
     const body = await client.ok("getDebtDetails", {
       path: { debt_id: 20003 },
@@ -395,6 +395,15 @@ describe("getDebtDetails", () => {
       added_by_id: 1001,
       added_by__name: "Umut Korkmaz",
       user: { id: 1004, name: "Mustafa Aksoy" },
+      transaction: {
+        amount: 1500,
+        complete_date: "2026-01-15T10:00:00+03:00",
+        payment_status: 0,
+        payment_status_display: "Başlatıldı",
+        payment_method: 1,
+        currency: { iso_code: "TRY" },
+        fonzip_framework: false,
+      },
     });
     const removed = await client.ok("getDebtDetails", {
       path: { debt_id: 20070 },
@@ -452,6 +461,7 @@ describe("createDebt", () => {
       bill_no: "GALA-1",
       assignment_status: 0,
       debt_category: { id: 504, name: "Gala Katılım Bedeli", deleted: false },
+      transaction: { amount: 450, payment_status: 0, payment_method: 1 },
       balance: before - 450,
       first_name: "Mustafa",
       last_name: "Aksoy",
@@ -783,7 +793,7 @@ describe("updateDebt", () => {
     due_date: "2026-03-10T10:00:00+03:00",
     bill_no: "AID-9",
     recurring_period: 0,
-    transaction: { amount: 1000 },
+    transaction: { amount: 1000, transaction_id: "HVL-77", payment_method: 2 },
   };
 
   test("replaces the editable fields and keeps the category when it is left out", async () => {
@@ -806,6 +816,12 @@ describe("updateDebt", () => {
       amount: 1000,
       remove_note: null,
       debt_category: { id: 502 },
+      transaction: {
+        amount: 1000,
+        transaction_id: "HVL-77",
+        payment_method: 2,
+        complete_date: "2026-02-10T10:00:00+03:00",
+      },
     });
     expect(detail.subscription).not.toHaveProperty("updated_by_id");
     expect(
@@ -813,7 +829,10 @@ describe("updateDebt", () => {
       "the balance follows the amount",
     ).toBe(before + 500);
     const { bill_no: _billNo, details: _details, ...rest } = replacement;
-    await client.ok("updateDebt", { path: { debt_id: 20003 }, body: rest });
+    await client.ok("updateDebt", {
+      path: { debt_id: 20003 },
+      body: { ...rest, transaction: { amount: 1000 } },
+    });
     const cleared = await client.ok("getDebtDetails", {
       path: { debt_id: 20003 },
     });
@@ -821,6 +840,10 @@ describe("updateDebt", () => {
       "",
     );
     expect(cleared.subscription).not.toHaveProperty("bill_no");
+    expect(cleared.subscription?.transaction).toMatchObject({
+      transaction_id: "",
+      payment_method: 2,
+    });
   });
 
   test("clears the category with null and refuses a deleted or unknown one", async () => {
@@ -995,8 +1018,14 @@ describe("deleteDebt", () => {
   test("deletes a debt from the detail, the list and the balance", async () => {
     const client = createTestClient();
     const before = await currentBalance(client, 1004);
+    const transactionId =
+      kelder(client).subscriptions.get(20003)?.transaction_id ?? 0;
     const deleted = await client.ok("deleteDebt", { path: { debt_id: 20003 } });
     expect(deleted).toEqual({ result: "ok" });
+    expect(
+      kelder(client).transactions.get(transactionId),
+      "its transaction goes too",
+    ).toBeUndefined();
     const gone = await client.call("getDebtDetails", {
       path: { debt_id: 20003 },
     });

@@ -16,6 +16,16 @@
   "inputs": [],
   "properties": [
     {
+      "operationId": "getDebtDetails",
+      "path": "subscription.transaction.payment_settings",
+      "reason": "The debt's own transaction holds the amount owed (components.requestBodies.UpdateDebt: its amount is the debt amount). No documented input sets a payment system or a bank account on it: UpdateDebt.transaction has only amount, transaction_id and payment_method, and CreateDebt.bank_account_id is the bank account the payment was made to, which the separate payment record carries. Card payments cannot be taken through the API at all."
+    },
+    {
+      "operationId": "getDebtDetails",
+      "path": "subscription.transaction.bank_account",
+      "reason": "The debt's own transaction holds the amount owed (components.requestBodies.UpdateDebt: its amount is the debt amount). No documented input sets a payment system or a bank account on it: UpdateDebt.transaction has only amount, transaction_id and payment_method, and CreateDebt.bank_account_id is the bank account the payment was made to, which the separate payment record carries. Card payments cannot be taken through the API at all."
+    },
+    {
       "operationId": "getUserBoughtTicketList",
       "path": "bought_ticket_list[].transaction__currency__display",
       "reason": "components.schemas.UsersTickets.transaction__currency__display is typed integer, but it is a currency's display name such as TRY (PARITY.md, schema contradictions). A number cannot carry it, so the property is left out."
