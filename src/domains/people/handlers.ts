@@ -1,5 +1,10 @@
 import { notImplemented } from "../../api/errors";
 import type { Fragment } from "../../api/handler";
+import {
+  getCommunicationPermissions,
+  listChangedCommunicationPermissions,
+  updateCommunicationPermissions,
+} from "./permissions";
 import { getUserList } from "./search";
 import {
   createTemplate,
@@ -30,9 +35,9 @@ export const handlers: Fragment<"people"> = {
   getUsersTagsList: notImplemented,
   addTagToUser: notImplemented,
   removeTagFromUser: notImplemented,
-  listChangedCommunicationPermissions: notImplemented,
-  getCommunicationPermissions: notImplemented,
-  updateCommunicationPermissions: notImplemented,
+  listChangedCommunicationPermissions,
+  getCommunicationPermissions,
+  updateCommunicationPermissions,
   createWebhook,
   listWebhooks,
   getWebhookDetails,
