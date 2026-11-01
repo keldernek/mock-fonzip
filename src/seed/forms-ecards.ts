@@ -11,6 +11,7 @@ import {
 import type { SystemRefs } from "./system";
 
 const FORM_PRICE = 450;
+const ARCHIVED_AFTER_DAYS = 90;
 
 export function seedForms(
   ctx: SeedContext,
@@ -65,7 +66,9 @@ export function seedForms(
     },
   ] as const;
   for (const [order, plan] of plans.entries()) {
-    const created = daysBeforeAnchor(400 - order * 60);
+    const age = 400 - order * 60;
+    const created = daysBeforeAnchor(age);
+    const answerWindow = plan.archived ? ARCHIVED_AFTER_DAYS : age;
     const form = db.forms.insert({
       title: plan.title,
       url: `https://kelder.example/form/${order + 1}`,
@@ -80,7 +83,7 @@ export function seedForms(
       updated_by_id: order % 2 === 1 ? secondAdmin : null,
       archived_by_id: plan.archived ? admin : null,
       archive_date: plan.archived
-        ? istanbulDateTime(addDays(created, 90))
+        ? istanbulDateTime(addDays(created, ARCHIVED_AFTER_DAYS))
         : null,
       requires_approval: plan.approval,
       price: plan.paid ? FORM_PRICE : null,
@@ -153,7 +156,10 @@ export function seedForms(
     for (let index = 0; index < plan.answers; index += 1) {
       const user = users[30 + ((order * 23 + index * 3) % 110)];
       if (!user) continue;
-      const at = addDays(created, rng.int(1, 300));
+      const at = addDays(
+        created,
+        ((rng.int(1, 300) - 1) % (answerWindow - 1)) + 1,
+      );
       const status = plan.paid
         ? index % 8 === 6
           ? 5
