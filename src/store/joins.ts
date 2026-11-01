@@ -1,3 +1,4 @@
+import type { components } from "../generated/openapi";
 import type { Row } from "./collection";
 import type { TransactionRecord, UserRecord } from "./records";
 import { currencyById } from "./reference";
@@ -7,6 +8,23 @@ export function fullName(
   user: Pick<UserRecord, "first_name" | "last_name">,
 ): string {
   return `${user.first_name} ${user.last_name}`.trim();
+}
+
+export function userReference(
+  user: Row<UserRecord>,
+): components["schemas"]["UserReference"] {
+  return {
+    id: user.id,
+    email: user.email === "" ? undefined : user.email,
+    phone: user.phone,
+    name: fullName(user),
+    first_name: user.first_name,
+    last_name: user.last_name,
+    tckno: user.tckno,
+    profile_pic: present(user.profile_pic),
+    corporate_type: user.corporate_type,
+    membership_no: user.membership_no,
+  };
 }
 
 export function userName(

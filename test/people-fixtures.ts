@@ -12,6 +12,7 @@ import type {
   TransactionRecord,
 } from "../src/store/records";
 import { orgStore, type OrgStore } from "../src/store/store";
+import { newUser } from "../src/store/users";
 import { createTestClient, type TestClient } from "../src/testing/client";
 
 export type Filter = components["schemas"]["UserSearchFilters"];
@@ -51,37 +52,8 @@ function withoutId<T extends { id: number }>(row: T): Omit<T, "id"> {
 }
 
 export function person(db: OrgStore, label: string): number {
-  return db.users.insert({
-    corporate_type: false,
-    first_name: "",
-    last_name: "",
-    address: "",
-    birthday: "",
-    total_financial: 0,
-    email: "",
-    phone: "",
-    membership_no: 0,
-    tckno: "",
-    apply_date: "",
-    join_date: "",
-    user_defined_values: {},
-    nationality_text: "",
-    home_phone_first: "",
-    post_code: "",
-    district_text: "",
-    city_text: "",
-    country_text: "",
-    work_phone: "",
-    work_address: "",
-    work_post_code: "",
-    private: false,
-    work_district_text: "",
-    work_city_text: "",
-    work_country_text: "",
-    email_second: `${label}@fixture.example`,
-    admin: false,
-    profile_pic: null,
-  }).id;
+  return db.users.insert(newUser({ email_second: `${label}@fixture.example` }))
+    .id;
 }
 
 export interface Payment {

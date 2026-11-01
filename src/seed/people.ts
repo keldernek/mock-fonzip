@@ -1,5 +1,6 @@
 import type { Row } from "../store/collection";
 import type { UdvValue, UserRecord } from "../store/records";
+import { newUser } from "../store/users";
 import type { SeedContext } from "./context";
 import { daysBeforeAnchor, istanbulDate, istanbulDateTime } from "./dates";
 import { mobilePhone, slugify, tcKimlikNo } from "./identity";
@@ -108,46 +109,47 @@ export function seedUsers(
           ilgi_alanlari: ["Burs", rng.pick(["Spor", "Kültür", "Kariyer"])],
         };
     users.push(
-      db.users.insert({
-        corporate_type: corporate,
-        first_name: first,
-        last_name: last,
-        address: `${rng.pick(STREETS)} No:${rng.int(1, 180)} D:${rng.int(1, 24)}`,
-        birthday: corporate ? "" : istanbulDate(birth),
-        total_financial: 0,
-        email: corporate
-          ? `bagis@${slugify(first).split("-")[0] ?? "kurum"}.example`
-          : asciiEmail(first, last, index + 1),
-        phone: mobilePhone(rng),
-        membership_no: index + 1,
-        tckno: corporate ? "" : tcKimlikNo(rng),
-        apply_date: istanbulDateTime(applied),
-        join_date: istanbulDateTime(joined),
-        user_defined_values: values,
-        nationality_text: "Türkiye Cumhuriyeti",
-        home_phone_first: rng.chance(0.3) ? `+90212${rng.digits(7)}` : "",
-        post_code: `34${rng.digits(3)}`,
-        district_text: district,
-        city_text: place.city,
-        country_text: "Türkiye",
-        work_phone: rng.chance(0.4) ? `+90216${rng.digits(7)}` : "",
-        work_address: rng.chance(0.5)
-          ? `${rng.pick(STREETS)} No:${rng.int(1, 90)}`
-          : "",
-        work_post_code: `34${rng.digits(3)}`,
-        private: rng.chance(0.1),
-        work_district_text: rng.pick(work.districts),
-        work_city_text: work.city,
-        work_country_text: "Türkiye",
-        email_second: rng.chance(0.2)
-          ? asciiEmail(first, last, index + 501)
-          : "",
-        admin: index < ADMIN_COUNT,
-        profile_pic:
-          !corporate && index % 3 === 0
-            ? `https://kelder.example/media/profil/${index + 1}.jpg`
-            : null,
-      }),
+      db.users.insert(
+        newUser({
+          corporate_type: corporate,
+          first_name: first,
+          last_name: last,
+          address: `${rng.pick(STREETS)} No:${rng.int(1, 180)} D:${rng.int(1, 24)}`,
+          birthday: corporate ? "" : istanbulDate(birth),
+          email: corporate
+            ? `bagis@${slugify(first).split("-")[0] ?? "kurum"}.example`
+            : asciiEmail(first, last, index + 1),
+          phone: mobilePhone(rng),
+          membership_no: index + 1,
+          tckno: corporate ? "" : tcKimlikNo(rng),
+          apply_date: istanbulDateTime(applied),
+          join_date: istanbulDateTime(joined),
+          user_defined_values: values,
+          nationality_text: "Türkiye Cumhuriyeti",
+          home_phone_first: rng.chance(0.3) ? `+90212${rng.digits(7)}` : "",
+          post_code: `34${rng.digits(3)}`,
+          district_text: district,
+          city_text: place.city,
+          country_text: "Türkiye",
+          work_phone: rng.chance(0.4) ? `+90216${rng.digits(7)}` : "",
+          work_address: rng.chance(0.5)
+            ? `${rng.pick(STREETS)} No:${rng.int(1, 90)}`
+            : "",
+          work_post_code: `34${rng.digits(3)}`,
+          private: rng.chance(0.1),
+          work_district_text: rng.pick(work.districts),
+          work_city_text: work.city,
+          work_country_text: "Türkiye",
+          email_second: rng.chance(0.2)
+            ? asciiEmail(first, last, index + 501)
+            : "",
+          admin: index < ADMIN_COUNT,
+          profile_pic:
+            !corporate && index % 3 === 0
+              ? `https://kelder.example/media/profil/${index + 1}.jpg`
+              : null,
+        }),
+      ),
     );
   }
   const [first, ...rest] = users;

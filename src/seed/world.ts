@@ -1,6 +1,7 @@
 import type { OrgSlug } from "../auth/tenancy";
 import { createRng } from "../core/rng";
 import { createStore, orgStore, type Store } from "../store/store";
+import { newUser } from "../store/users";
 import { seedCampaigns, seedEcards } from "./campaigns";
 import type { SeedContext } from "./context";
 import { daysBeforeAnchor, istanbulDateTime } from "./dates";
@@ -81,37 +82,26 @@ function seedOrnek(store: Store, options: SeedOptions): void {
     ["Sevgi", "Erdem"],
   ] as const;
   for (const [index, [first, last]] of people.entries()) {
-    db.users.insert({
-      corporate_type: false,
-      first_name: first,
-      last_name: last,
-      address: "Atatürk Blv. No:10",
-      birthday: "1980-05-12",
-      total_financial: 0,
-      email: `${first.toLowerCase()}@ornek.example`,
-      phone: mobilePhone(rng),
-      membership_no: index + 1,
-      tckno: tcKimlikNo(rng),
-      apply_date: created,
-      join_date: created,
-      user_defined_values: {},
-      nationality_text: "Türkiye Cumhuriyeti",
-      home_phone_first: "",
-      post_code: "06420",
-      district_text: "Çankaya",
-      city_text: "Ankara",
-      country_text: "Türkiye",
-      work_phone: "",
-      work_address: "",
-      work_post_code: "",
-      private: false,
-      work_district_text: "",
-      work_city_text: "",
-      work_country_text: "",
-      email_second: "",
-      admin: index === 0,
-      profile_pic: null,
-    });
+    db.users.insert(
+      newUser({
+        first_name: first,
+        last_name: last,
+        address: "Atatürk Blv. No:10",
+        birthday: "1980-05-12",
+        email: `${first.toLowerCase()}@ornek.example`,
+        phone: mobilePhone(rng),
+        membership_no: index + 1,
+        tckno: tcKimlikNo(rng),
+        apply_date: created,
+        join_date: created,
+        nationality_text: "Türkiye Cumhuriyeti",
+        post_code: "06420",
+        district_text: "Çankaya",
+        city_text: "Ankara",
+        country_text: "Türkiye",
+        admin: index === 0,
+      }),
+    );
   }
   db.tags.insert({ name: "Üye", color: "tag-2" });
   db.tags.insert({ name: "Bağışçı", color: "tag-5" });

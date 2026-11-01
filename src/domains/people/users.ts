@@ -11,6 +11,7 @@ import type {
   UserRecord,
 } from "../../store/records";
 import type { OrgStore } from "../../store/store";
+import { newUser } from "../../store/users";
 import { recordEvent } from "./timeline";
 import {
   applyFields,
@@ -222,38 +223,16 @@ export const createUser: Handler<"createUser"> = ({ body }, ctx) => {
   const missingTag = tagIds.find((id) => !store.tags.get(id));
   if (missingTag !== undefined) return notFound("Tag");
   const now = istanbulDateTime(clock.now());
-  const user = store.users.insert({
-    corporate_type: false,
-    first_name: body.first_name,
-    last_name: "",
-    address: "",
-    birthday: "",
-    total_financial: 0,
-    email: "",
-    phone: "",
-    membership_no: membership.value,
-    tckno: "",
-    apply_date: now,
-    join_date: now,
-    user_defined_values: udvs.value,
-    nationality_text: "",
-    home_phone_first: "",
-    post_code: "",
-    district_text: "",
-    city_text: "",
-    country_text: "",
-    work_phone: "",
-    work_address: "",
-    work_post_code: "",
-    private: false,
-    work_district_text: "",
-    work_city_text: "",
-    work_country_text: "",
-    email_second: "",
-    admin: false,
-    profile_pic: null,
-    ...fields.value,
-  });
+  const user = store.users.insert(
+    newUser({
+      first_name: body.first_name,
+      membership_no: membership.value,
+      apply_date: now,
+      join_date: now,
+      user_defined_values: udvs.value,
+      ...fields.value,
+    }),
+  );
   for (const tagId of tagIds) {
     store.userTags.insert({
       user_id: user.id,

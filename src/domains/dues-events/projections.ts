@@ -85,21 +85,6 @@ export function transactionOf(
     : store.transactions.get(transactionId);
 }
 
-export function toUserReference(user: Row<UserRecord>) {
-  return {
-    id: user.id,
-    email: user.email,
-    phone: user.phone,
-    name: fullName(user),
-    first_name: user.first_name,
-    last_name: user.last_name,
-    tckno: user.tckno,
-    profile_pic: present(user.profile_pic),
-    corporate_type: user.corporate_type,
-    membership_no: user.membership_no,
-  };
-}
-
 function nonEmpty(value: string): string | undefined {
   return value === "" ? undefined : value;
 }

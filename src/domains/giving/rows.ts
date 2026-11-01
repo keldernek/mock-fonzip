@@ -1,16 +1,12 @@
 import type { components } from "../../generated/openapi";
 import type { OrgCollection, Row } from "../../store/collection";
 import {
-  fullName,
   present,
   transactionJoin,
   userName,
+  userReference,
 } from "../../store/joins";
-import type {
-  DonationRecord,
-  TransactionRecord,
-  UserRecord,
-} from "../../store/records";
+import type { DonationRecord, TransactionRecord } from "../../store/records";
 import { currencyById } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
 import { paymentStatusOf, transactionOf } from "./payments";
@@ -167,21 +163,6 @@ export function donationResult(
     marketing_channel__utm_medium: channel?.utm_medium,
     marketing_channel__utm_campaign: channel?.utm_campaign,
     marketing_channel__utm_content: channel?.utm_content,
-  };
-}
-
-function userReference(user: Row<UserRecord>): S["UserReference"] {
-  return {
-    id: user.id,
-    email: filled(user.email),
-    phone: user.phone,
-    name: fullName(user),
-    first_name: user.first_name,
-    last_name: user.last_name,
-    tckno: user.tckno,
-    profile_pic: present(user.profile_pic),
-    corporate_type: user.corporate_type,
-    membership_no: user.membership_no,
   };
 }
 

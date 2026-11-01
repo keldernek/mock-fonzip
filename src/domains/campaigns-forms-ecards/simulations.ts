@@ -9,6 +9,7 @@ import type { Row } from "../../store/collection";
 import type { FormRecord, UserRecord } from "../../store/records";
 import { PAYMENT_STATUS, TRY_CURRENCY_ID } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
+import { newUser } from "../../store/users";
 import { OUTCOME_STATUS, WEBHOOK_OPERATIONS } from "../../webhooks/emitter";
 import { LOCAL_CREDIT_BIN } from "./ecard-sales";
 import { answerStatus } from "./forms";
@@ -104,37 +105,16 @@ function personOf(input: SimulationInput): Parsed<Person> {
 
 function newContact(ctx: SimulationContext, person: Person): Row<UserRecord> {
   const now = istanbulDateTime(ctx.clock.now());
-  return ctx.store.users.insert({
-    corporate_type: false,
-    first_name: person.first_name,
-    last_name: person.last_name,
-    address: "",
-    birthday: "",
-    total_financial: 0,
-    email: person.email,
-    phone: person.phone,
-    membership_no: 0,
-    tckno: "",
-    apply_date: now,
-    join_date: now,
-    user_defined_values: {},
-    nationality_text: "",
-    home_phone_first: "",
-    post_code: "",
-    district_text: "",
-    city_text: "",
-    country_text: "",
-    work_phone: "",
-    work_address: "",
-    work_post_code: "",
-    private: false,
-    work_district_text: "",
-    work_city_text: "",
-    work_country_text: "",
-    email_second: "",
-    admin: false,
-    profile_pic: null,
-  });
+  return ctx.store.users.insert(
+    newUser({
+      first_name: person.first_name,
+      last_name: person.last_name,
+      email: person.email,
+      phone: person.phone,
+      apply_date: now,
+      join_date: now,
+    }),
+  );
 }
 
 interface Contact {
