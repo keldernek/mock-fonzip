@@ -34,6 +34,21 @@ function correctDuesListingEnum(node: JsonObject): JsonObject {
     : node;
 }
 
+const DEPENDENT_DEFAULT = "The default depends on";
+
+function dropDependentDefault(node: JsonObject): JsonObject {
+  if (
+    typeof node.description !== "string" ||
+    !node.description.includes(DEPENDENT_DEFAULT) ||
+    !isJsonObject(node.schema) ||
+    node.schema.default === undefined
+  ) {
+    return node;
+  }
+  const { default: _default, ...schema } = node.schema;
+  return { ...node, schema };
+}
+
 function nullableEnumAllowsNull(node: JsonObject): JsonObject {
   if (node.nullable !== true || !Array.isArray(node.enum)) return node;
   return node.enum.includes(null)
@@ -102,9 +117,8 @@ function hoistRequestBodySchemas(spec: JsonObject): JsonObject {
 
 export function normalizeSpec(spec: Json): JsonObject {
   if (!isJsonObject(spec)) throw new Error("the spec is not a JSON object");
-  const corrected = mapJson(
-    hoistRequestBodySchemas(spec),
-    correctDuesListingEnum,
+  const corrected = mapJson(hoistRequestBodySchemas(spec), (node) =>
+    dropDependentDefault(correctDuesListingEnum(node)),
   );
   const normalized = mapJson(corrected, (node, key) =>
     key === "requestBody"
