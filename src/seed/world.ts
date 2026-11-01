@@ -44,7 +44,7 @@ function seedKelder(store: Store, options: SeedOptions): void {
   seedCommunicationPermissions(ctx, users);
   const system = seedSystem(ctx, options.apiKeyIds.kelder);
   seedWebhooks(ctx);
-  const catalog = seedGivingCatalog(ctx);
+  const catalog = seedGivingCatalog(ctx, system);
   const ecards = seedEcards(ctx, system);
   const campaigns = seedCampaigns(
     ctx,

@@ -31,7 +31,10 @@ export interface GivingCatalog {
   readonly formIds: readonly [number, ...number[]];
 }
 
-export function seedGivingCatalog(ctx: SeedContext): GivingCatalog {
+export function seedGivingCatalog(
+  ctx: SeedContext,
+  system: SystemRefs,
+): GivingCatalog {
   const { db } = ctx;
   const [admin, secondAdmin = admin] = ctx.adminIds;
   const audit = (daysAgo: number, updated: boolean) => ({
@@ -60,36 +63,42 @@ export function seedGivingCatalog(ctx: SeedContext): GivingCatalog {
         ...audit(800 - index * 40, index % 2 === 0),
       }).id,
   );
+  const category = (index: number): number | null => categoryIds[index] ?? null;
+  const [iyzico, vpos = iyzico] = system.cardSettingsIds;
   const pages = [
-    ["Burs Fonuna Bağış", "burs-fonu"],
-    ["Okulumuz İçin", "okulumuz-icin"],
-    ["Kurban Bağışı", "kurban"],
-    ["Zekat", "zekat"],
+    ["Burs Fonuna Bağış", "burs-fonu", category(1), iyzico],
+    ["Okulumuz İçin", "okulumuz-icin", category(4), vpos],
+    ["Kurban Bağışı", "kurban", category(3), iyzico],
+    ["Zekat", "zekat", category(2), null],
   ] as const;
   const pageIds = pages.map(
-    ([title, slug], index) =>
+    ([title, slug, categoryId, settingsId], index) =>
       db.donationPages.insert({
         order: index + 1,
         title,
         url: `https://kelder.example/bagis/${slug}`,
         active: index !== 3,
         listing: index < 2,
+        category_id: categoryId,
+        payment_settings_id: settingsId,
         ...audit(700 - index * 50, index === 0),
       }).id,
   );
   const forms = [
-    ["Web Sitesi Bağış Formu", 3],
-    ["Mobil Uygulama Formu", 2],
-    ["Gala Gecesi Formu", 1],
+    ["Web Sitesi Bağış Formu", 3, null, iyzico],
+    ["Mobil Uygulama Formu", 2, category(0), vpos],
+    ["Gala Gecesi Formu", 1, category(0), iyzico],
   ] as const;
   const formIds = forms.map(
-    ([title, version], index) =>
+    ([title, version, categoryId, settingsId], index) =>
       db.donationForms.insert({
         order: index + 1,
         title,
         api_url: `https://fonzip.com/api/v2/form/kelder-${index + 1}`,
         live: index !== 2,
         version,
+        category_id: categoryId,
+        payment_settings_id: settingsId,
         custom_parameters: index === 0 ? { kaynak: "web", dil: "tr" } : {},
         ...audit(650 - index * 60, index !== 1),
       }).id,
@@ -245,7 +254,7 @@ export function seedDonations(
       recurring_start_date: monthlyParent ? istanbulDateTime(plan.at) : null,
       cancelled_by_id: cancelled && monthlyParent ? ctx.adminIds[0] : null,
       recurring_limit: monthlyParent ? rng.pick([0, 12, 24]) : null,
-      recurring_withdrawal: plan.monthly !== null,
+      recurring_withdrawal: plan.monthly !== null && !monthlyParent,
       recurring_next_amount:
         monthlyParent && plan.monthly?.status === 1 ? plan.amount : null,
       recurring_error:

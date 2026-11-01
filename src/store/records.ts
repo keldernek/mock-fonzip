@@ -186,12 +186,17 @@ export type DonationCategoryRecord = WithNull<
 export type DonationPageRecord = WithNull<
   Own<Omit<S["DonationPageList"], "last_donation_date">>,
   "created_by_id" | "updated_by_id" | "update_date"
->;
+> & {
+  category_id: number | null;
+  payment_settings_id: number | null;
+};
 
 export type DonationFormRecord = WithNull<
   Own<Omit<S["DonationFormList"], "last_donation_date">>,
   "created_by_id" | "updated_by_id" | "update_date"
 > & {
+  category_id: number | null;
+  payment_settings_id: number | null;
   custom_parameters: Record<string, unknown>;
 };
 
