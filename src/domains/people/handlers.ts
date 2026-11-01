@@ -1,4 +1,3 @@
-import { notImplemented } from "../../api/errors";
 import type { Fragment } from "../../api/handler";
 import {
   getCommunicationPermissions,
@@ -14,6 +13,15 @@ import {
   updateTemplate,
 } from "./templates";
 import { getUsersTimeline } from "./timeline";
+import { addTagToUser, getUsersTagsList, removeTagFromUser } from "./user-tags";
+import {
+  createUser,
+  deleteUser,
+  generateLoginLinkForUser,
+  getUserDefinedValuesList,
+  getUserDetails,
+  updateUser,
+} from "./users";
 import {
   createWebhook,
   deleteWebhook,
@@ -24,17 +32,17 @@ import {
 } from "./webhooks";
 
 export const handlers: Fragment<"people"> = {
-  createUser: notImplemented,
+  createUser,
   getUserList,
-  getUserDetails: notImplemented,
-  updateUser: notImplemented,
-  deleteUser: notImplemented,
-  getUserDefinedValuesList: notImplemented,
-  generateLoginLinkForUser: notImplemented,
+  getUserDetails,
+  updateUser,
+  deleteUser,
+  getUserDefinedValuesList,
+  generateLoginLinkForUser,
   getUsersTimeline,
-  getUsersTagsList: notImplemented,
-  addTagToUser: notImplemented,
-  removeTagFromUser: notImplemented,
+  getUsersTagsList,
+  addTagToUser,
+  removeTagFromUser,
   listChangedCommunicationPermissions,
   getCommunicationPermissions,
   updateCommunicationPermissions,
