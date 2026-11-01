@@ -4,6 +4,16 @@
       "status": 404,
       "operations": ["getDonationCategoryList", "createDonationCategory"],
       "reason": "paths./donation-categories: GET takes only query, start_page and how_many, and POST takes only a name. Neither names an object in its path, query or body, so there is nothing that can be missing."
+    },
+    {
+      "status": 404,
+      "operations": [
+        "getDonationList",
+        "getMicroDonationList",
+        "getDonationPageList",
+        "getDonationFormList"
+      ],
+      "reason": "The path and body name no object. The id parameters are list filters (category_id, donation_page, fundraising_campaign, association_campaign_target, payment_settings_id and bank_account_id on /donations and /donations/micro, category_id and payment_settings_id on /donation-pages and /donation-forms). The only documented behavior for an id filter naming no object is paths./debts.get debt_category_id: 'Another organisation's id matches nothing'. An unknown id therefore returns an empty list, not 404."
     }
   ],
   "inputs": [],

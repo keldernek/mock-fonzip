@@ -1,8 +1,20 @@
 import { describe, expect, test } from "bun:test";
 
 import type { DonationRecord } from "../src/store/records";
-import type { OrgStore } from "../src/store/store";
+import { orgStore, type OrgStore } from "../src/store/store";
+import type { TestClient } from "../src/testing/client";
 import { givingClient, kelder, listAll, PAGE } from "./giving-support";
+
+function unmatchedFilters(
+  client: TestClient,
+): readonly Readonly<Record<string, number>>[] {
+  const ornek = orgStore(client.mock.runtime.world().store, "ornek");
+  return [
+    { category_id: 9 },
+    { payment_settings_id: 9 },
+    { payment_settings_id: ornek.paymentSettings.list()[0]?.id ?? 0 },
+  ];
+}
 
 function latestPaid(
   db: OrgStore,
@@ -146,7 +158,7 @@ describe("donation categories", () => {
     });
     expect(before.total).toBeGreaterThan(0);
     await client.ok("deleteDonationCategory", { path: { category_id: 205 } });
-    const filtered = await client.call("getDonationList", {
+    const filtered = await client.ok("getDonationList", {
       query: {
         status: "paid",
         category_id: 205,
@@ -155,7 +167,10 @@ describe("donation categories", () => {
         end_date: "2027-01-01T00:00:00+03:00",
       },
     });
-    expect(filtered.status, "the category is gone").toBe(404);
+    expect(filtered, "the category is gone").toEqual({
+      donation_list: [],
+      total: 0,
+    });
     const after = await listAll(client, "getDonationList", {
       status: "paid",
       no_category: true,
@@ -298,22 +313,18 @@ describe("getDonationPageList", () => {
     }
   });
 
-  test("answers 404 for an unknown category or payment system", async () => {
+  test("an unknown category or payment system matches nothing", async () => {
     const client = givingClient();
-    const category = await client.call("getDonationPageList", {
-      query: { ...PAGE, category_id: 9 },
-    });
-    expect(category).toMatchObject({
-      status: 404,
-      body: { error: "Donation category not found" },
-    });
-    const settings = await client.call("getDonationPageList", {
-      query: { ...PAGE, payment_settings_id: 9 },
-    });
-    expect(settings).toMatchObject({
-      status: 404,
-      body: { error: "Payment settings not found" },
-    });
+    for (const query of unmatchedFilters(client)) {
+      const body = await client.ok("getDonationPageList", {
+        query: { ...PAGE, ...query },
+      });
+      expect(body, JSON.stringify(query)).toEqual({
+        result: "ok",
+        page_list: [],
+        total: 0,
+      });
+    }
   });
 });
 
@@ -368,17 +379,13 @@ describe("getDonationFormList", () => {
     expect(second).toMatchObject({ total: 3, form_list: [{ id: 43 }] });
   });
 
-  test("answers 404 for an unknown category or payment system", async () => {
+  test("an unknown category or payment system matches nothing", async () => {
     const client = givingClient();
-    const queries: readonly Readonly<Record<string, number>>[] = [
-      { category_id: 9 },
-      { payment_settings_id: 9 },
-    ];
-    for (const query of queries) {
-      const response = await client.call("getDonationFormList", {
+    for (const query of unmatchedFilters(client)) {
+      const body = await client.ok("getDonationFormList", {
         query: { ...PAGE, ...query },
       });
-      expect(response.status, JSON.stringify(query)).toBe(404);
+      expect(body, JSON.stringify(query)).toEqual({ form_list: [], total: 0 });
     }
   });
 });

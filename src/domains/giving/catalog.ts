@@ -1,4 +1,3 @@
-import { notFound } from "../../api/errors";
 import type { Handler } from "../../api/handler";
 import { matchesQuery, paginate } from "../../api/listing";
 import type { operations } from "../../generated/openapi";
@@ -21,25 +20,6 @@ type CatalogEntry = Pick<
   DonationPageRecord,
   "title" | "category_id" | "payment_settings_id"
 >;
-
-function missingFilter(
-  store: OrgStore,
-  query: CatalogQuery,
-): ReturnType<typeof notFound> | undefined {
-  if (
-    query.category_id !== undefined &&
-    !store.donationCategories.get(query.category_id)
-  ) {
-    return notFound("Donation category");
-  }
-  if (
-    query.payment_settings_id !== undefined &&
-    !store.paymentSettings.get(query.payment_settings_id)
-  ) {
-    return notFound("Payment settings");
-  }
-  return undefined;
-}
 
 function matchesCatalog(entry: CatalogEntry, query: CatalogQuery): boolean {
   return (
@@ -117,8 +97,6 @@ export const getDonationPageList: Handler<"getDonationPageList"> = (
   { query },
   { store },
 ) => {
-  const missing = missingFilter(store, query);
-  if (missing) return missing;
   const matching = store.donationPages
     .list((page) => matchesCatalog(page, query))
     .map((page): DatedPage => ({
@@ -170,8 +148,6 @@ export const getDonationFormList: Handler<"getDonationFormList"> = (
   { query },
   { store },
 ) => {
-  const missing = missingFilter(store, query);
-  if (missing) return missing;
   const matching = store.donationForms
     .list((form) => matchesCatalog(form, query))
     .sort((a, b) => a.order - b.order || a.id - b.id);

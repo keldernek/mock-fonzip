@@ -113,11 +113,13 @@ describe("listTemplates", () => {
     expect(newest.template_list?.map((row) => row.id)).toEqual([
       306, 305, 304, 303, 302, 301,
     ]);
-    const unknown = await shared.call("listTemplates", {
+    const unknown = await shared.ok("listTemplates", {
       query: { ...PAGE, category_id: 9 },
     });
-    expect(unknown.status).toBe(404);
-    expect(unknown.body).toEqual({ error: "Template category not found" });
+    expect(unknown, "an unknown category matches nothing").toEqual({
+      total: 0,
+      template_list: [],
+    });
   });
 });
 

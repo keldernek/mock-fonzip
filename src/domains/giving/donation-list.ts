@@ -1,4 +1,3 @@
-import { notFound } from "../../api/errors";
 import type { HandlerResult } from "../../api/handler";
 import {
   inDateRange,
@@ -193,43 +192,6 @@ function listedFields(
   ]);
 }
 
-function missingReference(
-  store: OrgStore,
-  query: DonationListQuery,
-): string | undefined {
-  const references: readonly (readonly [
-    number | undefined,
-    (id: number) => unknown,
-    string,
-  ])[] = [
-    [
-      query.category_id,
-      (id) => store.donationCategories.get(id),
-      "Donation category",
-    ],
-    [query.donation_page, (id) => store.donationPages.get(id), "Donation page"],
-    [
-      query.fundraising_campaign,
-      (id) => store.fundraisingCampaigns.get(id),
-      "Fundraising campaign",
-    ],
-    [
-      query.association_campaign_target,
-      (id) => store.fundraisingEvents.get(id),
-      "Fundraising event",
-    ],
-    [
-      query.payment_settings_id,
-      (id) => store.paymentSettings.get(id),
-      "Payment settings",
-    ],
-    [query.bank_account_id, (id) => store.bankAccounts.get(id), "Bank account"],
-  ];
-  return references.find(
-    ([id, find]) => id !== undefined && find(id) === undefined,
-  )?.[2];
-}
-
 function matchesCategory(
   donation: DonationRecord,
   query: DonationListQuery,
@@ -281,8 +243,6 @@ export function listDonations(
 ): HandlerResult<"getDonationList"> {
   const range = parseDateRange(query.start_date, query.end_date);
   if ("error" in range) return { status: 400, body: { error: range.error } };
-  const missing = missingReference(store, query);
-  if (missing !== undefined) return notFound(missing);
   const paymentStatus = PAYMENT_STATUS_BY_LIST[query.status];
   const matching = source
     .list()

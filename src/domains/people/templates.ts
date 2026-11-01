@@ -169,12 +169,6 @@ export const listTemplates: Handler<"listTemplates"> = (
   { query },
   { store },
 ) => {
-  if (
-    query.category_id !== undefined &&
-    categoryName(query.category_id) === undefined
-  ) {
-    return notFound("Template category");
-  }
   const matching = store.templates
     .list(
       (row) =>

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import type { QueryValue } from "../src/testing/client";
+import { orgStore } from "../src/store/store";
+import type { QueryValue, TestClient } from "../src/testing/client";
 import {
   ALL_TIME,
   givingClient,
@@ -634,26 +635,58 @@ describe("getDonationList refusals", () => {
       body: { error: "start_date must be before end_date" },
     });
   });
+});
 
-  test.each([
-    ["category_id", "Donation category not found"],
-    ["donation_page", "Donation page not found"],
-    ["fundraising_campaign", "Fundraising campaign not found"],
-    ["association_campaign_target", "Fundraising event not found"],
-    ["payment_settings_id", "Payment settings not found"],
-    ["bank_account_id", "Bank account not found"],
-  ])("answers 404 for an unknown %s", async (parameter, error) => {
+const FILTER_IDS: readonly string[] = [
+  "category_id",
+  "donation_page",
+  "fundraising_campaign",
+  "association_campaign_target",
+  "payment_settings_id",
+  "bank_account_id",
+];
+
+function ornekFilterIds(client: TestClient): Readonly<Record<string, number>> {
+  const ornek = orgStore(client.mock.runtime.world().store, "ornek");
+  return {
+    payment_settings_id: ornek.paymentSettings.list()[0]?.id ?? 0,
+    bank_account_id: ornek.bankAccounts.list()[0]?.id ?? 0,
+  };
+}
+
+describe("getDonationList filter ids that name no object", () => {
+  test.each([...FILTER_IDS])(
+    "an unknown %s matches nothing",
+    async (parameter) => {
+      const client = givingClient();
+      const body = await client.ok("getDonationList", {
+        query: {
+          ...ALL_TIME,
+          ...PAID,
+          start_page: 1,
+          how_many: 10,
+          [parameter]: 9,
+        },
+      });
+      expect(body).toEqual({ donation_list: [], total: 0 });
+    },
+  );
+
+  test("another organisation's payment settings and bank account match nothing", async () => {
     const client = givingClient();
-    const response = await client.call("getDonationList", {
-      query: {
-        ...ALL_TIME,
-        ...PAID,
-        start_page: 1,
-        how_many: 10,
-        [parameter]: 9,
-      },
-    });
-    expect(response).toMatchObject({ status: 404, body: { error } });
+    for (const [parameter, id] of Object.entries(ornekFilterIds(client))) {
+      expect(id, parameter).toBeGreaterThan(0);
+      const body = await client.ok("getDonationList", {
+        query: {
+          ...ALL_TIME,
+          ...PAID,
+          start_page: 1,
+          how_many: 10,
+          [parameter]: id,
+        },
+      });
+      expect(body, parameter).toEqual({ donation_list: [], total: 0 });
+    }
   });
 });
 
@@ -772,21 +805,21 @@ describe("getMicroDonationList", () => {
     expect(keysOf(everything.rows)).toEqual(expectedKeys(MICRO_LIST));
   });
 
-  test("answers 404 for unknown filter objects and 400 for a reversed range", async () => {
+  test("filter ids that name no object match nothing, and a reversed range gets 400", async () => {
     const client = givingClient();
     const base = { ...PAID, start_page: 1, how_many: 10 };
-    for (const parameter of [
-      "category_id",
-      "donation_page",
-      "fundraising_campaign",
-      "association_campaign_target",
-      "payment_settings_id",
-      "bank_account_id",
-    ]) {
-      const response = await client.call("getMicroDonationList", {
-        query: { ...ALL_TIME, ...base, [parameter]: 9 },
+    const unmatched = [
+      ...FILTER_IDS.map((parameter) => [parameter, 9] as const),
+      ...Object.entries(ornekFilterIds(client)),
+    ];
+    for (const [parameter, id] of unmatched) {
+      const body = await client.ok("getMicroDonationList", {
+        query: { ...ALL_TIME, ...base, [parameter]: id },
       });
-      expect(response.status, parameter).toBe(404);
+      expect(body, `${parameter}=${id}`).toEqual({
+        donation_list: [],
+        total: 0,
+      });
     }
     const reversed = await client.call("getMicroDonationList", {
       query: {

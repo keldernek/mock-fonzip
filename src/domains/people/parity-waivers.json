@@ -13,6 +13,11 @@
       "status": 404,
       "operations": ["createWebhook"],
       "reason": "requestBodies.Webhook names no existing object. Its id field is the webhook's own id, which a create cannot refer to, so the mock ignores it. name, url, authentication, auth_token and events are plain values. With nothing to look up, ObjectNotFound cannot be produced."
+    },
+    {
+      "status": 404,
+      "operations": ["listTemplates"],
+      "reason": "The path and body name no object. category_id on paths./templates.get is a list filter. The only documented behavior for an id filter naming no object is paths./debts.get debt_category_id: 'Another organisation's id matches nothing'. An unknown template category therefore returns an empty list, not 404."
     }
   ],
   "inputs": [],
