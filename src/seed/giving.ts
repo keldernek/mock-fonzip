@@ -388,3 +388,81 @@ export function seedDonations(
     });
   }
 }
+
+export function seedMicroDonationVariety(
+  ctx: SeedContext,
+  system: SystemRefs,
+  catalog: GivingCatalog,
+  campaigns: CampaignRefs,
+): void {
+  const { db } = ctx;
+  const [admin, secondAdmin = admin] = ctx.adminIds;
+  const [online, onPage, transfer, faceToFace, monthly] =
+    db.microDonations.list();
+  if (!online || !onPage || !transfer || !faceToFace || !monthly) {
+    throw new Error("too few micro donations to vary");
+  }
+  const mail = (messageId: number, status: 1 | 2) =>
+    db.sentEmails.insert({ message_id: messageId, status }).id;
+  const notCard = {
+    payment_settings_id: null,
+    fonzip_framework: false,
+    bin_number: null,
+    last_four: null,
+    provision_no: null,
+    auth_code: null,
+    transaction_id: "",
+  };
+  db.microDonations.update(online.id, {
+    fundraising_campaign_id: campaigns.activeCampaignIds[0],
+    message: "Küçük ama gönülden!",
+    show_message: true,
+    referring: true,
+    referring_name: "Selin Aydın",
+    referring_email: "selin.aydin@eposta.example",
+    referring_phone: "+905321112233",
+    referring_address: "Nispetiye Cad. No:12",
+    referring_city: "İstanbul",
+    referring_district: "Beşiktaş",
+    sent_mail_id: mail(7_100_001, 2),
+    sent_mail_to_referring_id: mail(7_100_002, 1),
+    thanks_mail_id: system.templateIds.donationThanks,
+    marketing_channel_id: system.marketingChannelIds[0],
+    api_tracking_id: "trk-mikro-000001",
+    application_id: system.applicationIds.api,
+  });
+  db.microDonations.update(onPage.id, {
+    fundraising_page_id: catalog.pageIds[0],
+    module_id: null,
+  });
+  db.microDonations.update(transfer.id, {
+    module_id: null,
+    details: "Havale ile gönderildi",
+    added_by_id: admin,
+    updated_by_id: secondAdmin,
+  });
+  db.transactions.update(transfer.transaction_id, {
+    ...notCard,
+    payment_method: 2,
+    bank_account_id: system.tryBankAccountIds[0],
+  });
+  db.microDonations.update(faceToFace.id, {
+    module_id: null,
+    f2f_group_id: system.f2fGroupIds[0],
+    added_by_id: admin,
+  });
+  db.transactions.update(faceToFace.transaction_id, {
+    ...notCard,
+    payment_method: 3,
+  });
+  const started = db.transactions.get(monthly.transaction_id)?.complete_date;
+  db.microDonations.update(monthly.id, {
+    recurring_status: 3,
+    recurring_order_id: "RO-MIKRO-0001",
+    recurring_start_date: started ?? null,
+    recurring_cancel_reason: "Bağışçının talebi",
+    recurring_cancel_date: istanbulDate(daysBeforeAnchor(1)),
+    cancelled_by_id: admin,
+    recurring_limit: 12,
+  });
+}

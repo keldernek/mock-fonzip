@@ -6,7 +6,11 @@ import type { SeedContext } from "./context";
 import { daysBeforeAnchor, istanbulDateTime } from "./dates";
 import { seedDues, seedEvents } from "./dues-events";
 import { seedEcardTransactions, seedForms } from "./forms-ecards";
-import { seedDonations, seedGivingCatalog } from "./giving";
+import {
+  seedDonations,
+  seedGivingCatalog,
+  seedMicroDonationVariety,
+} from "./giving";
 import { iban, mobilePhone, tcKimlikNo } from "./identity";
 import { seedBankTransactions, seedTimeline, settleTotals } from "./ledger";
 import {
@@ -61,6 +65,7 @@ function seedKelder(store: Store, options: SeedOptions): void {
   seedBankTransactions(ctx, system);
   seedTimeline(ctx, users);
   settleTotals(ctx);
+  seedMicroDonationVariety(ctx, system, catalog, campaigns);
 }
 
 function seedOrnek(store: Store, options: SeedOptions): void {
