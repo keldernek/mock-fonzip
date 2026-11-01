@@ -23,6 +23,7 @@ export function seedForms(
   const udvProfession = db.userDefinedValues.find(
     (row) => row.value === "meslek",
   );
+  const udvBranch = db.userDefinedValues.find((row) => row.value === "sube");
   const plans = [
     {
       title: "Burs Başvuru Formu",
@@ -152,6 +153,9 @@ export function seedForms(
     const note = question("Eklemek istedikleriniz", 2, {
       custom: { name: "Not", short: "text" },
     });
+    const branch = plan.archived
+      ? question("Şube", 1, { udvId: udvBranch?.id ?? null })
+      : null;
 
     for (let index = 0; index < plan.answers; index += 1) {
       const user = users[30 + ((order * 23 + index * 3) % 110)];
@@ -219,6 +223,9 @@ export function seedForms(
       item(profession, String(user.user_defined_values.meslek ?? ""));
       item(choice, optionText, [optionId]);
       if (index % 2 === 0) item(note, "Teşekkürler, bilgilendirme bekliyorum.");
+      if (branch !== null) {
+        item(branch, String(user.user_defined_values.sube ?? ""));
+      }
     }
   }
   seedMergeCandidates(ctx, users);
