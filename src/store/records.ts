@@ -411,7 +411,7 @@ export type TeamCampaignRecord = Own<S["FundraisingTeamCampaignList"]> & {
 
 export type EcardCategoryRecord = WithNull<
   Own<S["EcardCategory"]>,
-  "updated_by_id" | "update_date"
+  "created_by_id" | "updated_by_id" | "update_date"
 >;
 
 export type EcardRecord = Own<S["EcardDetails"]>;
