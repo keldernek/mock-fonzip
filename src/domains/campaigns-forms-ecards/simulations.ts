@@ -133,6 +133,7 @@ function newContact(ctx: SimulationContext, person: Person): Row<UserRecord> {
     work_country_text: "",
     email_second: "",
     admin: false,
+    profile_pic: null,
   });
 }
 

@@ -54,5 +54,6 @@ export function createDonor(
     work_country_text: "",
     email_second: "",
     admin: false,
+    profile_pic: null,
   });
 }

@@ -179,6 +179,7 @@ function userReference(user: Row<UserRecord>): S["UserReference"] {
     first_name: user.first_name,
     last_name: user.last_name,
     tckno: user.tckno,
+    profile_pic: present(user.profile_pic),
     corporate_type: user.corporate_type,
     membership_no: user.membership_no,
   };

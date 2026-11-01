@@ -9,16 +9,6 @@
   "inputs": [],
   "properties": [
     {
-      "operationId": "getDonationDetails",
-      "path": "donation.user.profile_pic",
-      "reason": "components.schemas.UserReference.profile_pic: no documented operation sets a profile picture. CreateUser and UpdateUser carry no such field, and User and UserDetails return none, so no contact has a picture URL to report."
-    },
-    {
-      "operationId": "getMicroDonationDetails",
-      "path": "donation.user.profile_pic",
-      "reason": "components.schemas.UserReference.profile_pic: no documented operation sets a profile picture. CreateUser and UpdateUser carry no such field, and User and UserDetails return none, so no contact has a picture URL to report."
-    },
-    {
       "operationId": "getMicroDonationList",
       "path": "donation_list[].marketing_channel__utm_source",
       "reason": "paths./donations/micro.get query list: the enum leaves out the four marketing_channel__utm_* values that GET /donations offers, and those fields appear only when list asks for them (the rule paths./ecard-transactions.get documents), so a micro donation row can never carry them."

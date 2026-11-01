@@ -48,11 +48,6 @@
       "operationId": "getFundraisingTeamsCampaigns",
       "path": "team_campaign_list[].target_currency__display",
       "reason": "components.responses.FundraisingTeamCampaignListResponse item target_currency__display is a currency display typed number. PARITY.md lists this contradiction."
-    },
-    {
-      "operationId": "getFundraisingCampaignDetails",
-      "path": "campaign.user__profile_pic",
-      "reason": "components.responses.FundraisingCampaignDetailsResponse campaign.user__profile_pic is the owner's profile picture URL. No documented operation writes a profile picture: createUser, updateUser and UserSingleFieldUpdate document no profile_pic, which appears only in read schemas (UserReference, UserSearchValues). The only other mention is FormQuestion static_question 10 'profile photo', and no schema carries an uploaded file. A contact never has a picture, so the property is never present."
     }
   ]
 }

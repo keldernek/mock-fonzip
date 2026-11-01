@@ -202,6 +202,7 @@ function toDetail(store: OrgStore, campaign: Campaign) {
     user_id: campaign.user_id,
     user__first_name: owner?.first_name,
     user__last_name: owner?.last_name,
+    user__profile_pic: owner ? present(owner.profile_pic) : undefined,
     create_date: campaign.create_date,
     activation_date: present(campaign.activation_date),
     finish_date: present(campaign.finish_date),
