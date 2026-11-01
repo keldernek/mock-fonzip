@@ -6,19 +6,13 @@ import type { TicketRecord } from "../../store/records";
 import type { OrgStore } from "../../store/store";
 import { hasSales } from "./events";
 import { toTicket } from "./projections";
+import { type Failure, invalid } from "./results";
 
 type TicketBody = HandlerInput<"createTicket">["body"];
 type TicketFields = Omit<
   TicketRecord,
   "id" | "event_id" | "order" | "quantity"
 >;
-
-type Failure = {
-  readonly status: 400 | 404;
-  readonly body: { readonly error: string };
-};
-
-const invalid = (error: string) => ({ status: 400, body: { error } }) as const;
 
 function saleDate(
   onDate: boolean,

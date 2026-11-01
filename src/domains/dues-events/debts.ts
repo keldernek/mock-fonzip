@@ -29,13 +29,7 @@ import {
   removeRecord,
   type Subscription,
 } from "./ledger";
-
-type Failure = {
-  readonly status: 400 | 404;
-  readonly body: { readonly error: string };
-};
-
-const invalid = (error: string) => ({ status: 400, body: { error } }) as const;
+import { type Failure, invalid } from "./results";
 
 function duplicateKey(row: Subscription): string {
   return `${row.user_id}|${row.period}|${row.amount}|${row.debt_category_id ?? ""}`;

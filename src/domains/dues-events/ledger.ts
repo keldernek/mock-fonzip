@@ -17,7 +17,6 @@ import type { OrgStore } from "../../store/store";
 
 export type Subscription = Row<SubscriptionRecord>;
 export type SubscriptionStatus = SubscriptionRecord["status"];
-export type DebtStatus = Extract<SubscriptionStatus, 1 | 6 | 8>;
 
 export const STATUS_NAME: Readonly<Record<SubscriptionStatus, string>> = {
   1: "Ödenmemiş Borç",
@@ -29,12 +28,8 @@ export const STATUS_NAME: Readonly<Record<SubscriptionStatus, string>> = {
   8: "Ödenmiş Borç",
 };
 
-export function isDebtStatus(status: SubscriptionStatus): status is DebtStatus {
-  return status === 1 || status === 6 || status === 8;
-}
-
 export function isDebt(row: Subscription): boolean {
-  return isDebtStatus(row.status);
+  return row.status === 1 || row.status === 6 || row.status === 8;
 }
 
 function paymentCounts(store: OrgStore, row: Subscription): boolean {
@@ -71,7 +66,7 @@ function memberRows(store: OrgStore, userId: number): Subscription[] {
     .sort(chronological);
 }
 
-export function rebalance(store: OrgStore, userId: number): number {
+export function rebalance(store: OrgStore, userId: number): void {
   let running = 0;
   for (const row of memberRows(store, userId)) {
     running = cents(running + BALANCE_EFFECT[row.status](row, store));
@@ -79,7 +74,6 @@ export function rebalance(store: OrgStore, userId: number): number {
       store.subscriptions.update(row.id, { balance: running });
     }
   }
-  return running;
 }
 
 export function memberBalance(store: OrgStore, userId: number): number {

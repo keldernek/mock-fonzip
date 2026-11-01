@@ -8,6 +8,7 @@ import {
 } from "../../control/simulation";
 import { istanbulDate, istanbulDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
+import { fullName } from "../../store/joins";
 import type { TicketRecord, UserRecord } from "../../store/records";
 import { WEBHOOK_OPERATIONS } from "../../webhooks/emitter";
 import {
@@ -261,9 +262,7 @@ function ticketSale(
           installments: 1,
         },
   );
-  const name =
-    input.string("name") ??
-    (user ? `${user.first_name} ${user.last_name}`.trim() : "");
+  const name = input.string("name") ?? (user ? fullName(user) : "");
   const sale = store.ticketSales.insert({
     event_id: event.id,
     transaction_id: tx.id,
