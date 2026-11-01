@@ -12,6 +12,28 @@ function nullableWithoutType(node: JsonObject): JsonObject {
   };
 }
 
+function uniqueEnum(node: JsonObject): JsonObject {
+  if (!Array.isArray(node.enum)) return node;
+  const seen = new Set<string>();
+  const values = node.enum.filter((value) => {
+    const key = JSON.stringify(value);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return values.length === node.enum.length ? node : { ...node, enum: values };
+}
+
+const DUES_LISTING_AS_PUBLISHED = JSON.stringify(["a", "p", "d", "d"]);
+
+function correctDuesListingEnum(node: JsonObject): JsonObject {
+  return node.name === "listing" &&
+    isJsonObject(node.schema) &&
+    JSON.stringify(node.schema.enum) === DUES_LISTING_AS_PUBLISHED
+    ? { ...node, schema: { ...node.schema, enum: ["a", "p", "d", "r"] } }
+    : node;
+}
+
 function oneOfAsAnyOf(node: JsonObject): JsonObject {
   if (!Array.isArray(node.oneOf)) return node;
   const { oneOf, ...rest } = node;
@@ -62,8 +84,14 @@ function hoistRequestBodySchemas(spec: JsonObject): JsonObject {
 
 export function normalizeSpec(spec: Json): JsonObject {
   if (!isJsonObject(spec)) throw new Error("the spec is not a JSON object");
-  const normalized = mapJson(hoistRequestBodySchemas(spec), (node, key) =>
-    key === "requestBody" ? node : oneOfAsAnyOf(nullableWithoutType(node)),
+  const corrected = mapJson(
+    hoistRequestBodySchemas(spec),
+    correctDuesListingEnum,
+  );
+  const normalized = mapJson(corrected, (node, key) =>
+    key === "requestBody"
+      ? node
+      : uniqueEnum(oneOfAsAnyOf(nullableWithoutType(node))),
   );
   if (!isJsonObject(normalized)) throw new Error("normalization lost the root");
   return normalized;

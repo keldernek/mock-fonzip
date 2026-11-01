@@ -1,0 +1,33 @@
+import { notImplemented } from "../../api/errors";
+import type { Fragment } from "../../api/handler";
+
+export const handlers: Fragment<"dues-events"> = {
+  getMembershipDuesList: notImplemented,
+  getMembershipDueDetails: notImplemented,
+  deleteMembershipDue: notImplemented,
+  getUsersMembershipDueList: notImplemented,
+  getMembershipDueDebtsList: notImplemented,
+  createDebt: notImplemented,
+  getDebtDetails: notImplemented,
+  updateDebt: notImplemented,
+  updateDebtStatus: notImplemented,
+  deleteDebt: notImplemented,
+  getDebtCategoryList: notImplemented,
+  createDebtCategory: notImplemented,
+  getDebtCategoryUsage: notImplemented,
+  updateDebtCategory: notImplemented,
+  deleteDebtCategory: notImplemented,
+  getEventList: notImplemented,
+  createEvent: notImplemented,
+  getEventDetails: notImplemented,
+  updateEvent: notImplemented,
+  updateEventStatus: notImplemented,
+  deleteEvent: notImplemented,
+  createTicket: notImplemented,
+  getTicketDetails: notImplemented,
+  updateTicket: notImplemented,
+  deleteTicket: notImplemented,
+  getTicketSaleList: notImplemented,
+  getTicketSaleDetails: notImplemented,
+  getUserBoughtTicketList: notImplemented,
+};

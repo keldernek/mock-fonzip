@@ -25,11 +25,14 @@ export function toJson(value: unknown): Json {
   throw new Error(`not JSON: ${typeof value}`);
 }
 
+const EXAMPLE_KEYS = new Set(["example", "examples"]);
+
 export function mapJson(
   node: Json,
   visit: (object: JsonObject, key: string | null) => JsonObject,
   key: string | null = null,
 ): Json {
+  if (key !== null && EXAMPLE_KEYS.has(key)) return node;
   if (Array.isArray(node)) {
     return node.map((item) => mapJson(item, visit, null));
   }
@@ -39,4 +42,22 @@ export function mapJson(
     out[childKey] = mapJson(item, visit, childKey);
   }
   return visit(out, key);
+}
+
+export function resolvePointer(root: Json, ref: string): Json {
+  if (!ref.startsWith("#/")) throw new Error(`unsupported $ref ${ref}`);
+  let node: Json | undefined = root;
+  for (const raw of ref.slice(2).split("/")) {
+    const segment = raw.replaceAll("~1", "/").replaceAll("~0", "~");
+    node = isJsonObject(node) ? node[segment] : undefined;
+    if (node === undefined) throw new Error(`dangling $ref ${ref}`);
+  }
+  return node;
+}
+
+export function deref(root: Json, node: Json | undefined): Json | undefined {
+  if (isJsonObject(node) && typeof node.$ref === "string") {
+    return deref(root, resolvePointer(root, node.$ref));
+  }
+  return node;
 }

@@ -1,0 +1,30 @@
+import { notImplemented } from "../../api/errors";
+import type { Fragment } from "../../api/handler";
+
+export const handlers: Fragment<"people"> = {
+  createUser: notImplemented,
+  getUserList: notImplemented,
+  getUserDetails: notImplemented,
+  updateUser: notImplemented,
+  deleteUser: notImplemented,
+  getUserDefinedValuesList: notImplemented,
+  generateLoginLinkForUser: notImplemented,
+  getUsersTimeline: notImplemented,
+  getUsersTagsList: notImplemented,
+  addTagToUser: notImplemented,
+  removeTagFromUser: notImplemented,
+  listChangedCommunicationPermissions: notImplemented,
+  getCommunicationPermissions: notImplemented,
+  updateCommunicationPermissions: notImplemented,
+  createWebhook: notImplemented,
+  listWebhooks: notImplemented,
+  getWebhookDetails: notImplemented,
+  updateWebhook: notImplemented,
+  deleteWebhook: notImplemented,
+  sendWebhookTestNotification: notImplemented,
+  createTemplate: notImplemented,
+  listTemplates: notImplemented,
+  getTemplateDetails: notImplemented,
+  updateTemplate: notImplemented,
+  deleteTemplate: notImplemented,
+};

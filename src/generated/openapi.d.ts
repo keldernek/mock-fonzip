@@ -395,7 +395,7 @@ export interface paths {
     "/user/{user_id}/subscriptions": {
         parameters: {
             query: {
-                listing?: "a" | "p" | "d" | "d";
+                listing?: "a" | "p" | "d" | "r";
                 /** @description start page of records */
                 start_page: components["parameters"]["StartPage"];
                 /** @description How many records should be listed */
@@ -2093,7 +2093,7 @@ export interface components {
         UserUdvFieldUpdate: {
             /** @description user defined value id */
             udv_id?: number;
-            value?: string | number | boolean | Record<string, never> | unknown[];
+            value?: string | number | boolean | Record<string, unknown> | unknown[];
         };
         UserMembershipNoUpdate: {
             /**
@@ -2149,15 +2149,15 @@ export interface components {
              */
             join_date?: string;
             /** @description user defined values as key value pairs */
-            user_defined_values?: Record<string, never>;
+            user_defined_values?: Record<string, unknown>;
         };
         AssociationInfo: {
             id?: number;
             name?: string;
             display_name?: string;
-            display_name_translations?: Record<string, never>;
+            display_name_translations?: Record<string, unknown>;
             details?: string;
-            details_translations?: Record<string, never>;
+            details_translations?: Record<string, unknown>;
             phone?: string;
             email?: string;
             url?: string;
@@ -2216,7 +2216,7 @@ export interface components {
              * @enum {string}
              */
             parameter: "name" | "address" | "donation_amount" | "donation_count" | "donation_date" | "fundraising_campaign" | "sub_donation_type" | "donation_page" | "donor_type" | "fundraising_campaign_count" | "apply_date" | "total_financial" | "subscription_payment_date" | "subscription_payment_amount" | "birthdate" | "birthday" | "custom_form" | "recurring_debt" | "recurring_donor" | "total_recurring_withdrawal_count" | "total_recurring_withdrawal_amount" | "email" | "tags" | "registered_event_count" | "event_register_date" | "form_complete_date" | "district" | "allow_comm_via_phone" | "allow_comm_via_sms" | "allow_comm_via_email" | "registered_event" | "join_date" | "fundraising_campaign_start_date" | "fundraising_campaign_end_date" | "fundraising_campaign_donation_total" | "fundraising_campaign_donation_count" | "fundraising_campaign_total_donation_total" | "fundraising_campaign_total_donation_count" | "notes" | "registered_card" | "post_code" | "profile_pic" | "bought_certificate" | "certificate" | "certificate_count" | "certificate_date" | "admin" | "create_date" | "last_update_date" | "city" | "tckno" | "phone" | "total_donation_amount" | "nationality" | "country" | "membership_no" | "age" | "notify_after_dues_withdrawal" | "default_dues_reminder_withdrawal" | "card_add_date" | "dues_card_add_date" | "possible_duplicate" | "reminder_settings" | "automatic_dues_withdrawal" | "reminder_next_cycle" | "reminder_period" | "last_login_date" | "work_district" | "work_city" | "work_country" | "work_address" | "work_post_code" | "corporate_type" | "donation_currency" | "certificate_currency" | "recurring_donation_amount" | "total_recurring_donation_amount" | "total_recurring_donation_count" | "recurring_donation_start_date" | "recurring_donation_cancel_date" | "fundraising_campaign_status" | "fundraising_campaign_target" | "fundraising_campaign_donation_type" | "fundraising_campaign_target_event" | "fundraising_campaign_event_date" | "recurring_amount_change" | "recurring_amount_change_date" | "d_type" | "first_donation_date" | "first_monthly_donation_date" | "address_book" | "debt_record" | "unpaid_debt_record" | "paid_debt_record" | "debt_category" | "unpaid_debt_category" | "paid_debt_category" | "subscription_payment_method" | "ticket_payment_method" | "ecard_payment_method" | "donation_payment_method" | "blocked_mail" | "spam_mail" | "agreement" | "agreement_version" | "agreement_sign_date" | "language" | "fundraising_team" | "fundraising_event" | "fundraising_team_campaign" | "fundraising_team_member" | "fundraising_team_campaign_member" | "password" | "last_ip_address" | "days_since_registration" | "days_since_activation" | "active_membership_duration" | "membership_duration" | "failed_donation_amount" | "failed_donation_date" | "failed_fundraising_campaign" | "failed_sub_donation_type" | "failed_donation_page" | "failed_donation_currency" | "failed_fundraising_team" | "failed_fundraising_event" | "failed_fundraising_team_campaign" | "note_date" | "id" | "added_donation_count" | "added_donation_amount" | "added_total_donation_amount" | "added_monthly_donation_count" | "added_monthly_donation_amount" | "added_total_monthly_donation_amount" | "added_donation_date" | "f2f_group_id" | "allow_comm_via_phone_date" | "allow_comm_via_sms_date" | "allow_comm_via_email_date" | "card_count" | "card_expiry" | "card_for_dues" | "note_tag" | "card_type_for_dues" | "card_type" | "note_count" | "bought_ticket_type" | "history_event_type" | "history_event_date" | "history_event_note" | "history_event_active_days" | "donation_details" | "membership_due_details" | "first_name" | "last_name" | "unpaid_debt_count" | "recurring_limit" | "remaining_recurring_limit" | "is_related_contact" | "has_related_contact" | "related_contact_dues_perm" | "related_contact_comm_perm" | "related_contact_tag" | "related_contact_note" | "related_contact_of" | "cancel_request_date" | "cancel_request" | "work_phone" | "home_phone_first" | "note_added_by" | "debt_amount" | "total_debt_amount" | "ecard_amount" | "total_ecard_sum" | "ecard_category" | "ecard_delivery_date" | "ecard_recipient_count" | "total_ecard_recipient_count" | "ecard_has_cargo" | "donation_utm_source" | "donation_utm_medium" | "donation_utm_campaign" | "donation_utm_content" | "ecard_utm_source" | "ecard_utm_medium" | "ecard_utm_campaign" | "ecard_utm_content" | "saved_iban" | "saved_iban_number" | "saved_iban_bank" | "saved_iban_assignment_type" | "saved_iban_donation_category" | "saved_iban_donation_page" | "saved_iban_fundraising_campaign" | "saved_iban_donation_form" | "saved_iban_count" | "saved_iban_add_date" | "saved_iban_sender_name";
-            value?: number | string | Record<string, never>;
+            value?: number | string | Record<string, unknown>;
             attributes?: components["schemas"]["MainSearchFilter"][];
             /**
              * @description Filtering condition
@@ -2780,10 +2780,10 @@ export interface components {
              * @description field to be updated
              * @enum {string}
              */
-            field?: "title" | "image" | "bank_account_list" | "personal_message" | "has_target" | "hide_donor_list" | "hide_total_donation" | "has_special_date" | "phone_show" | "phone_required" | "birthday_show" | "birthday_required" | "address_show" | "address_required" | "tckno_show" | "tckno_required" | "message_show" | "has_target" | "has_special_date" | "target" | "event_date" | "sub_donation_type_id" | "payment_settings_id" | "thanks_mail_id" | "referral_thanks_mail_id" | "thanks_sms_id" | "certificate_id" | "referral_certificate_id" | "association_campaign_target_id";
+            field?: "title" | "image" | "bank_account_list" | "personal_message" | "has_target" | "hide_donor_list" | "hide_total_donation" | "has_special_date" | "phone_show" | "phone_required" | "birthday_show" | "birthday_required" | "address_show" | "address_required" | "tckno_show" | "tckno_required" | "message_show" | "target" | "event_date" | "sub_donation_type_id" | "payment_settings_id" | "thanks_mail_id" | "referral_thanks_mail_id" | "thanks_sms_id" | "certificate_id" | "referral_certificate_id" | "association_campaign_target_id";
             value?: string | number | boolean | unknown[];
             /** @description key value pairs of fields and values (see example) */
-            data?: Record<string, never>;
+            data?: Record<string, unknown>;
         };
         FundraisingCampaign: {
             /** @description Fundraising campaign id */
@@ -3831,9 +3831,9 @@ export interface components {
             /** @description donation form name */
             module__name?: string;
             /** @description donation forms defined custom parameters */
-            module__custom_parameters?: Record<string, never>;
+            module__custom_parameters?: Record<string, unknown>;
             /** @description donations custom parameters */
-            custom_parameters?: Record<string, never>;
+            custom_parameters?: Record<string, unknown>;
             /** @description template id for success */
             thanks_mail_id?: number;
             /** @description 3rd party application id */
@@ -4359,7 +4359,7 @@ export interface components {
              * @description UDV Key (value*) paired with corresponding value
              * @default value
              */
-            key: string | number | Record<string, never> | unknown[] | boolean;
+            key: string | number | Record<string, unknown> | unknown[] | boolean;
         };
         UserDefinedValues: {
             /**
@@ -4662,7 +4662,7 @@ export interface components {
                  * @enum {integer}
                  */
                 type?: 0 | 1 | 2;
-                value?: string | number | Record<string, never>;
+                value?: string | number | Record<string, unknown>;
             };
         };
         FormAnswerDetails: {
@@ -5234,7 +5234,7 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                "application/json": Record<string, never>;
+                "application/json": Record<string, unknown>;
             };
         };
         /** @description Fundraising team created successfully */
@@ -8282,7 +8282,7 @@ export interface operations {
     getUsersMembershipDueList: {
         parameters: {
             query: {
-                listing?: "a" | "p" | "d" | "d";
+                listing?: "a" | "p" | "d" | "r";
                 /** @description start page of records */
                 start_page: components["parameters"]["StartPage"];
                 /** @description How many records should be listed */
