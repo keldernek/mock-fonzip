@@ -112,6 +112,87 @@ function stringEnumAsStrings(node: JsonObject): JsonObject {
   };
 }
 
+const ENUM_PLACEHOLDERS: Readonly<Record<string, JsonObject>> = {
+  "Any URL for operation 1": { type: "string", format: "uri" },
+  user_defined_values__KEY: {
+    type: "string",
+    pattern: "^user_defined_values__.+$",
+  },
+};
+
+function enumPlaceholderAsPattern(node: JsonObject): JsonObject {
+  if (!Array.isArray(node.enum)) return node;
+  const placeholders = node.enum.filter(
+    (value): value is string =>
+      typeof value === "string" && ENUM_PLACEHOLDERS[value] !== undefined,
+  );
+  if (placeholders.length === 0) return node;
+  const { enum: values, description, ...rest } = node;
+  return {
+    ...(description === undefined ? {} : { description }),
+    anyOf: [
+      {
+        ...rest,
+        enum: values.filter(
+          (value) => typeof value !== "string" || !placeholders.includes(value),
+        ),
+      },
+      ...placeholders.flatMap((value) => {
+        const schema = ENUM_PLACEHOLDERS[value];
+        return schema ? [schema] : [];
+      }),
+    ],
+  };
+}
+
+function searchFilterGroups(spec: JsonObject): JsonObject {
+  const components = spec.components;
+  const schemas = isJsonObject(components) ? components.schemas : undefined;
+  if (!isJsonObject(components) || !isJsonObject(schemas)) return spec;
+  const main = schemas.MainSearchFilter;
+  const filters = schemas.UserSearchFilters;
+  if (!isJsonObject(main) || !isJsonObject(filters)) return spec;
+  if (!isJsonObject(main.properties) || !isJsonObject(filters.properties)) {
+    return spec;
+  }
+  const value = filters.properties.value;
+  const attributes = main.properties.attributes;
+  if (!isJsonObject(value) || !isJsonObject(attributes)) return spec;
+  if (!Array.isArray(value.oneOf)) return spec;
+  const { oneOf: branches, ...valueRest } = value;
+  return {
+    ...spec,
+    components: {
+      ...components,
+      schemas: {
+        ...schemas,
+        MainSearchFilter: {
+          ...main,
+          properties: {
+            ...main.properties,
+            attributes: {
+              ...attributes,
+              items: {
+                anyOf: [
+                  { $ref: "#/components/schemas/UserSearchFilters" },
+                  { $ref: "#/components/schemas/MainSearchFilter" },
+                ],
+              },
+            },
+          },
+        },
+        UserSearchFilters: {
+          ...filters,
+          properties: {
+            ...filters.properties,
+            value: { ...valueRest, anyOf: [...branches, { type: "null" }] },
+          },
+        },
+      },
+    },
+  };
+}
+
 function oneOfAsAnyOf(node: JsonObject): JsonObject {
   if (!Array.isArray(node.oneOf)) return node;
   const { oneOf, ...rest } = node;
@@ -163,8 +244,11 @@ function hoistRequestBodySchemas(spec: JsonObject): JsonObject {
 export function normalizeSpec(spec: Json): JsonObject {
   if (!isJsonObject(spec)) throw new Error("the spec is not a JSON object");
   const corrected = mapJson(
-    acceptBareDates(hoistRequestBodySchemas(spec)),
-    (node) => dropDependentDefault(correctDuesListingEnum(node)),
+    searchFilterGroups(acceptBareDates(hoistRequestBodySchemas(spec))),
+    (node) =>
+      enumPlaceholderAsPattern(
+        dropDependentDefault(correctDuesListingEnum(node)),
+      ),
   );
   const normalized = mapJson(corrected, (node, key) =>
     key === "requestBody"

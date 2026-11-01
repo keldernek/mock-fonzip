@@ -1986,11 +1986,8 @@ export interface components {
              * @enum {integer}
              */
             btn_operation?: 1 | 2;
-            /**
-             * @description button action detail
-             * @enum {string}
-             */
-            btn_operation_detail?: "Any URL for operation 1" | "login" | "cc" | "donation" | "dues" | "member_card";
+            /** @description button action detail */
+            btn_operation_detail?: ("login" | "cc" | "donation" | "dues" | "member_card") | string;
             /** @description Template category id */
             category_id?: number;
             /** @description Template category name */
@@ -2197,7 +2194,7 @@ export interface components {
         MainSearchFilter: {
             /** @enum {string} */
             condition: "and" | "or";
-            attributes: components["schemas"]["UserSearchFilters"][];
+            attributes: (components["schemas"]["UserSearchFilters"] | components["schemas"]["MainSearchFilter"])[];
         };
         UserSearchFilters: {
             /**
@@ -2216,7 +2213,7 @@ export interface components {
              * @enum {string}
              */
             parameter: "name" | "address" | "donation_amount" | "donation_count" | "donation_date" | "fundraising_campaign" | "sub_donation_type" | "donation_page" | "donor_type" | "fundraising_campaign_count" | "apply_date" | "total_financial" | "subscription_payment_date" | "subscription_payment_amount" | "birthdate" | "birthday" | "custom_form" | "recurring_debt" | "recurring_donor" | "total_recurring_withdrawal_count" | "total_recurring_withdrawal_amount" | "email" | "tags" | "registered_event_count" | "event_register_date" | "form_complete_date" | "district" | "allow_comm_via_phone" | "allow_comm_via_sms" | "allow_comm_via_email" | "registered_event" | "join_date" | "fundraising_campaign_start_date" | "fundraising_campaign_end_date" | "fundraising_campaign_donation_total" | "fundraising_campaign_donation_count" | "fundraising_campaign_total_donation_total" | "fundraising_campaign_total_donation_count" | "notes" | "registered_card" | "post_code" | "profile_pic" | "bought_certificate" | "certificate" | "certificate_count" | "certificate_date" | "admin" | "create_date" | "last_update_date" | "city" | "tckno" | "phone" | "total_donation_amount" | "nationality" | "country" | "membership_no" | "age" | "notify_after_dues_withdrawal" | "default_dues_reminder_withdrawal" | "card_add_date" | "dues_card_add_date" | "possible_duplicate" | "reminder_settings" | "automatic_dues_withdrawal" | "reminder_next_cycle" | "reminder_period" | "last_login_date" | "work_district" | "work_city" | "work_country" | "work_address" | "work_post_code" | "corporate_type" | "donation_currency" | "certificate_currency" | "recurring_donation_amount" | "total_recurring_donation_amount" | "total_recurring_donation_count" | "recurring_donation_start_date" | "recurring_donation_cancel_date" | "fundraising_campaign_status" | "fundraising_campaign_target" | "fundraising_campaign_donation_type" | "fundraising_campaign_target_event" | "fundraising_campaign_event_date" | "recurring_amount_change" | "recurring_amount_change_date" | "d_type" | "first_donation_date" | "first_monthly_donation_date" | "address_book" | "debt_record" | "unpaid_debt_record" | "paid_debt_record" | "debt_category" | "unpaid_debt_category" | "paid_debt_category" | "subscription_payment_method" | "ticket_payment_method" | "ecard_payment_method" | "donation_payment_method" | "blocked_mail" | "spam_mail" | "agreement" | "agreement_version" | "agreement_sign_date" | "language" | "fundraising_team" | "fundraising_event" | "fundraising_team_campaign" | "fundraising_team_member" | "fundraising_team_campaign_member" | "password" | "last_ip_address" | "days_since_registration" | "days_since_activation" | "active_membership_duration" | "membership_duration" | "failed_donation_amount" | "failed_donation_date" | "failed_fundraising_campaign" | "failed_sub_donation_type" | "failed_donation_page" | "failed_donation_currency" | "failed_fundraising_team" | "failed_fundraising_event" | "failed_fundraising_team_campaign" | "note_date" | "id" | "added_donation_count" | "added_donation_amount" | "added_total_donation_amount" | "added_monthly_donation_count" | "added_monthly_donation_amount" | "added_total_monthly_donation_amount" | "added_donation_date" | "f2f_group_id" | "allow_comm_via_phone_date" | "allow_comm_via_sms_date" | "allow_comm_via_email_date" | "card_count" | "card_expiry" | "card_for_dues" | "note_tag" | "card_type_for_dues" | "card_type" | "note_count" | "bought_ticket_type" | "history_event_type" | "history_event_date" | "history_event_note" | "history_event_active_days" | "donation_details" | "membership_due_details" | "first_name" | "last_name" | "unpaid_debt_count" | "recurring_limit" | "remaining_recurring_limit" | "is_related_contact" | "has_related_contact" | "related_contact_dues_perm" | "related_contact_comm_perm" | "related_contact_tag" | "related_contact_note" | "related_contact_of" | "cancel_request_date" | "cancel_request" | "work_phone" | "home_phone_first" | "note_added_by" | "debt_amount" | "total_debt_amount" | "ecard_amount" | "total_ecard_sum" | "ecard_category" | "ecard_delivery_date" | "ecard_recipient_count" | "total_ecard_recipient_count" | "ecard_has_cargo" | "donation_utm_source" | "donation_utm_medium" | "donation_utm_campaign" | "donation_utm_content" | "ecard_utm_source" | "ecard_utm_medium" | "ecard_utm_campaign" | "ecard_utm_content" | "saved_iban" | "saved_iban_number" | "saved_iban_bank" | "saved_iban_assignment_type" | "saved_iban_donation_category" | "saved_iban_donation_page" | "saved_iban_fundraising_campaign" | "saved_iban_donation_form" | "saved_iban_count" | "saved_iban_add_date" | "saved_iban_sender_name";
-            value?: number | string | Record<string, unknown>;
+            value?: number | string | Record<string, unknown> | null;
             attributes?: components["schemas"]["MainSearchFilter"][];
             /**
              * @description Filtering condition
@@ -2260,8 +2257,7 @@ export interface components {
              */
             key_type?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
         };
-        /** @enum {string} */
-        UserSearchValues: "id" | "corporate_type" | "first_name" | "last_name" | "nationality_text" | "country_text" | "city_text" | "district_text" | "address" | "birthday" | "total_financial" | "work_address" | "work_phone" | "work_country_text" | "work_city_text" | "work_district_text" | "email" | "tags_as_text" | "last_update_date" | "last_login_date" | "phone" | "profile_pic" | "membership_no" | "tckno" | "apply_date" | "join_date" | "allow_comm_via_email" | "allow_comm_via_phone" | "allow_comm_via_sms" | "allow_comm_via_email_date" | "allow_comm_via_phone_date" | "allow_comm_via_sms_date" | "user_defined_values__KEY";
+        UserSearchValues: ("id" | "corporate_type" | "first_name" | "last_name" | "nationality_text" | "country_text" | "city_text" | "district_text" | "address" | "birthday" | "total_financial" | "work_address" | "work_phone" | "work_country_text" | "work_city_text" | "work_district_text" | "email" | "tags_as_text" | "last_update_date" | "last_login_date" | "phone" | "profile_pic" | "membership_no" | "tckno" | "apply_date" | "join_date" | "allow_comm_via_email" | "allow_comm_via_phone" | "allow_comm_via_sms" | "allow_comm_via_email_date" | "allow_comm_via_phone_date" | "allow_comm_via_sms_date") | string;
         Timeline: {
             /**
              * @description timeline event id <br>
@@ -6914,11 +6910,8 @@ export interface components {
                          * @enum {integer}
                          */
                         btn_operation?: 1 | 2;
-                        /**
-                         * @description button action detail
-                         * @enum {string}
-                         */
-                        btn_operation_detail?: "Any URL for operation 1" | "login" | "cc" | "donation" | "dues" | "member_card";
+                        /** @description button action detail */
+                        btn_operation_detail?: ("login" | "cc" | "donation" | "dues" | "member_card") | string;
                         /** @description ID of the saved template, when `send_from_template` is true */
                         template_id?: number;
                         /** @description refund if there's a payment of form answer */
@@ -7255,11 +7248,8 @@ export interface components {
                      * @enum {integer}
                      */
                     btn_operation?: 1 | 2;
-                    /**
-                     * @description button action detail
-                     * @enum {string}
-                     */
-                    btn_operation_detail?: "Any URL for operation 1" | "login" | "cc" | "donation" | "dues" | "member_card";
+                    /** @description button action detail */
+                    btn_operation_detail?: ("login" | "cc" | "donation" | "dues" | "member_card") | string;
                     /** @description translations of template */
                     translations?: {
                         language_code?: {
@@ -7767,11 +7757,8 @@ export interface components {
                      * @enum {integer}
                      */
                     btn_operation?: 1 | 2;
-                    /**
-                     * @description button action detail
-                     * @enum {string}
-                     */
-                    btn_operation_detail?: "Any URL for operation 1" | "login" | "cc" | "donation" | "dues" | "member_card";
+                    /** @description button action detail */
+                    btn_operation_detail?: ("login" | "cc" | "donation" | "dues" | "member_card") | string;
                     /** @description translations of template */
                     translations?: {
                         language_code?: {
