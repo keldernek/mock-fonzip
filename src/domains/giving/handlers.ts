@@ -15,6 +15,18 @@ import {
   getMicroDonationDetails,
   getMicroDonationList,
 } from "./donations";
+import {
+  cancelMonthlyDonation,
+  changeMonthlyDonationValues,
+  createMonthlyDonationUpdateRequest,
+  respondMonthlyDonationAmountChangeRequest,
+  sendCardUpdateRequestForMonthlyDonation,
+} from "./monthly";
+import {
+  getUsersDonationList,
+  getUsersMicroDonationList,
+  getUsersMonthlyDonationList,
+} from "./user-lists";
 
 export const handlers: Fragment<"giving"> = {
   createDonation: notImplemented,
@@ -29,14 +41,14 @@ export const handlers: Fragment<"giving"> = {
   deleteDonationCategory,
   getMicroDonationList,
   getMicroDonationDetails,
-  cancelMonthlyDonation: notImplemented,
-  respondMonthlyDonationAmountChangeRequest: notImplemented,
-  changeMonthlyDonationValues: notImplemented,
-  sendCardUpdateRequestForMonthlyDonation: notImplemented,
-  createMonthlyDonationUpdateRequest: notImplemented,
+  cancelMonthlyDonation,
+  respondMonthlyDonationAmountChangeRequest,
+  changeMonthlyDonationValues,
+  sendCardUpdateRequestForMonthlyDonation,
+  createMonthlyDonationUpdateRequest,
   getDonationFormList,
   getDonationPageList,
-  getUsersDonationList: notImplemented,
-  getUsersMicroDonationList: notImplemented,
-  getUsersMonthlyDonationList: notImplemented,
+  getUsersDonationList,
+  getUsersMicroDonationList,
+  getUsersMonthlyDonationList,
 };
