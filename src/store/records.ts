@@ -290,8 +290,11 @@ export type EventRecord = WithNull<
   | "sender_account_id"
 >;
 
-export type TicketRecord = Own<Omit<S["EventTicket"], "sold">> & {
-  event_id: number;
+export type TicketRecord = WithNull<
+  Own<Omit<S["EventTicket"], "sold">>,
+  "sales_start" | "sales_end"
+> & {
+  event_id: number | null;
 };
 
 export interface TicketSaleRecord {
