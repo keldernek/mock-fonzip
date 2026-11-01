@@ -1,5 +1,12 @@
 import { notImplemented } from "../../api/errors";
 import type { Fragment } from "../../api/handler";
+import {
+  createTemplate,
+  deleteTemplate,
+  getTemplateDetails,
+  listTemplates,
+  updateTemplate,
+} from "./templates";
 
 export const handlers: Fragment<"people"> = {
   createUser: notImplemented,
@@ -22,9 +29,9 @@ export const handlers: Fragment<"people"> = {
   updateWebhook: notImplemented,
   deleteWebhook: notImplemented,
   sendWebhookTestNotification: notImplemented,
-  createTemplate: notImplemented,
-  listTemplates: notImplemented,
-  getTemplateDetails: notImplemented,
-  updateTemplate: notImplemented,
-  deleteTemplate: notImplemented,
+  createTemplate,
+  listTemplates,
+  getTemplateDetails,
+  updateTemplate,
+  deleteTemplate,
 };
