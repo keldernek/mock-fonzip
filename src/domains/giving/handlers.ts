@@ -1,4 +1,3 @@
-import { notImplemented } from "../../api/errors";
 import type { Fragment } from "../../api/handler";
 import { getDonationFormList, getDonationPageList } from "./catalog";
 import {
@@ -23,6 +22,7 @@ import {
   respondMonthlyDonationAmountChangeRequest,
   sendCardUpdateRequestForMonthlyDonation,
 } from "./monthly";
+import { getDonationReport } from "./report";
 import {
   getUsersDonationList,
   getUsersMicroDonationList,
@@ -34,7 +34,7 @@ export const handlers: Fragment<"giving"> = {
   getDonationList,
   getDonationDetails,
   deleteDonation,
-  getDonationReport: notImplemented,
+  getDonationReport,
   getDonationCategoryList,
   createDonationCategory,
   updateDonationCategory,
