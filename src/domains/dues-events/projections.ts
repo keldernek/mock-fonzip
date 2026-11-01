@@ -1,5 +1,10 @@
 import type { Row } from "../../store/collection";
-import { fullName, present, userName } from "../../store/joins";
+import {
+  fullName,
+  present,
+  userDefinedValues,
+  userName,
+} from "../../store/joins";
 import type {
   DebtCategoryRecord,
   EventRecord,
@@ -139,6 +144,7 @@ export function toUserDetails(store: OrgStore, user: Row<UserRecord>) {
     allow_comm_via_email_date: permission?.allow_comm_via_email_date,
     join_date: user.join_date,
     total_financial: user.total_financial,
+    user_defined_values: userDefinedValues(user),
   };
 }
 

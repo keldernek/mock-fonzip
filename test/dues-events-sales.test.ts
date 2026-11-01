@@ -286,6 +286,43 @@ describe("getTicketSaleDetails", () => {
   });
 });
 
+describe("ticket-sale members", () => {
+  const MEMBER_1021 = {
+    mezuniyet_yili: 2018,
+    meslek: "Mühendis",
+    sube: "Türkçe-Matematik",
+    burs_gonullusu: false,
+    ilgi_alanlari: ["Burs", "Kariyer"],
+  };
+
+  test("carry the user-defined values getUserDetails returns", async () => {
+    const client = createTestClient();
+    for (const [saleId, userId, values] of [
+      [61001, 1021, MEMBER_1021],
+      [61023, 1058, {}],
+    ] as const) {
+      const details = await client.ok("getUserDetails", {
+        path: { user_id: userId },
+      });
+      expect(details.user?.user_defined_values, `user ${userId}`).toEqual(
+        values,
+      );
+      const sale = await client.ok("getTicketSaleDetails", {
+        path: { ticket_sale_id: saleId },
+      });
+      expect(sale.ticket_sale?.member, `sale ${saleId}`).toMatchObject({
+        id: userId,
+        user_defined_values: values,
+      });
+      const listed = (await sales(client)).find((row) => row.id === saleId);
+      expect(listed?.member, `listed sale ${saleId}`).toMatchObject({
+        id: userId,
+        user_defined_values: values,
+      });
+    }
+  });
+});
+
 describe("getUserBoughtTicketList", () => {
   test("lists a member's successful purchases, newest first", async () => {
     const client = createTestClient();

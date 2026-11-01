@@ -3,7 +3,7 @@ import type { Handler, HandlerContext } from "../../api/handler";
 import type { components } from "../../generated/openapi";
 import { istanbulDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
-import { fullName } from "../../store/joins";
+import { fullName, userDefinedValues } from "../../store/joins";
 import type {
   CommunicationPermissionRecord,
   UdvValue,
@@ -16,7 +16,6 @@ import {
   applyFields,
   isUpdatableField,
   parseUdvValue,
-  userDefinedValues,
   type UpdatableField,
 } from "./user-fields";
 

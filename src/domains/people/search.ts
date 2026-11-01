@@ -2,7 +2,7 @@ import type { Handler } from "../../api/handler";
 import { paginate } from "../../api/listing";
 import type { components } from "../../generated/openapi";
 import type { Row } from "../../store/collection";
-import { fullName } from "../../store/joins";
+import { fullName, userDefinedValues } from "../../store/joins";
 import type { UserDefinedValueRecord, UserRecord } from "../../store/records";
 import type { OrgStore } from "../../store/store";
 import { createFacts, type Facts } from "./facts";
@@ -15,7 +15,6 @@ import {
   type Test,
 } from "./search-conditions";
 import { lastUpdateDate, SEARCH_FIELDS } from "./search-fields";
-import { userDefinedValues } from "./user-fields";
 
 type Schemas = components["schemas"];
 type FilterNode = Schemas["UserSearchFilters"] | Schemas["MainSearchFilter"];

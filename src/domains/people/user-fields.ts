@@ -203,14 +203,3 @@ export function parseUdvValue(
       return fail(`${label} has an unknown key_type`);
   }
 }
-
-export function userDefinedValues(
-  user: Pick<UserRecord, "user_defined_values">,
-): Record<string, string | number | boolean | string[]> {
-  const values: Record<string, string | number | boolean | string[]> = {};
-  for (const [key, value] of Object.entries(user.user_defined_values)) {
-    if (value === null) continue;
-    values[key] = typeof value === "object" ? [...value] : value;
-  }
-  return values;
-}
