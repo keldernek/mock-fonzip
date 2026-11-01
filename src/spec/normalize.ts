@@ -49,6 +49,51 @@ function dropDependentDefault(node: JsonObject): JsonObject {
   return { ...node, schema };
 }
 
+const BARE_DATE_PARAMETERS: Readonly<Record<string, readonly string[]>> = {
+  "/debts": ["start_date", "end_date", "create_start_date", "create_end_date"],
+};
+
+function acceptBareDates(spec: JsonObject): JsonObject {
+  const paths = spec.paths;
+  if (!isJsonObject(paths)) return spec;
+  const rewritten: JsonObject = { ...paths };
+  for (const [path, names] of Object.entries(BARE_DATE_PARAMETERS)) {
+    const item = paths[path];
+    if (!isJsonObject(item) || !isJsonObject(item.get)) continue;
+    const parameters = item.get.parameters;
+    if (!Array.isArray(parameters)) continue;
+    rewritten[path] = {
+      ...item,
+      get: {
+        ...item.get,
+        parameters: parameters.map((parameter) => {
+          if (
+            !isJsonObject(parameter) ||
+            typeof parameter.name !== "string" ||
+            !names.includes(parameter.name) ||
+            !isJsonObject(parameter.schema) ||
+            parameter.schema.format !== "date-time"
+          ) {
+            return parameter;
+          }
+          const { format: _format, type: _type, ...schema } = parameter.schema;
+          return {
+            ...parameter,
+            schema: {
+              ...schema,
+              anyOf: [
+                { type: "string", format: "date-time" },
+                { type: "string", format: "date" },
+              ],
+            },
+          };
+        }),
+      },
+    };
+  }
+  return { ...spec, paths: rewritten };
+}
+
 function nullableEnumAllowsNull(node: JsonObject): JsonObject {
   if (node.nullable !== true || !Array.isArray(node.enum)) return node;
   return node.enum.includes(null)
@@ -117,8 +162,9 @@ function hoistRequestBodySchemas(spec: JsonObject): JsonObject {
 
 export function normalizeSpec(spec: Json): JsonObject {
   if (!isJsonObject(spec)) throw new Error("the spec is not a JSON object");
-  const corrected = mapJson(hoistRequestBodySchemas(spec), (node) =>
-    dropDependentDefault(correctDuesListingEnum(node)),
+  const corrected = mapJson(
+    acceptBareDates(hoistRequestBodySchemas(spec)),
+    (node) => dropDependentDefault(correctDuesListingEnum(node)),
   );
   const normalized = mapJson(corrected, (node, key) =>
     key === "requestBody"
