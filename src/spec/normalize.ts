@@ -34,6 +34,13 @@ function correctDuesListingEnum(node: JsonObject): JsonObject {
     : node;
 }
 
+function nullableEnumAllowsNull(node: JsonObject): JsonObject {
+  if (node.nullable !== true || !Array.isArray(node.enum)) return node;
+  return node.enum.includes(null)
+    ? node
+    : { ...node, enum: [...node.enum, null] };
+}
+
 function oneOfAsAnyOf(node: JsonObject): JsonObject {
   if (!Array.isArray(node.oneOf)) return node;
   const { oneOf, ...rest } = node;
@@ -91,7 +98,9 @@ export function normalizeSpec(spec: Json): JsonObject {
   const normalized = mapJson(corrected, (node, key) =>
     key === "requestBody"
       ? node
-      : uniqueEnum(oneOfAsAnyOf(nullableWithoutType(node))),
+      : nullableEnumAllowsNull(
+          uniqueEnum(oneOfAsAnyOf(nullableWithoutType(node))),
+        ),
   );
   if (!isJsonObject(normalized)) throw new Error("normalization lost the root");
   return normalized;

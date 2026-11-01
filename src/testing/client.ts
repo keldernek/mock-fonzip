@@ -1,3 +1,6 @@
+import type { ValidateFunction } from "ajv";
+
+import type { HandlerResult } from "../api/handler";
 import { createMockFonzip, type MockFonzip, type MockOptions } from "../app";
 import type { ClientCredentials } from "../auth/tenancy";
 import { manualClock } from "../core/clock";
@@ -84,6 +87,19 @@ export function buildUrl(route: RouteEntry, input: CallInput): string {
   return `${API_BASE}${path}${query}`;
 }
 
+export type OkBody<K extends ServedOperationId> = Extract<
+  HandlerResult<K>,
+  { status: 200 }
+>["body"];
+
+function conforms<K extends ServedOperationId>(
+  validate: ValidateFunction,
+  _operationId: K,
+  body: unknown,
+): body is OkBody<K> {
+  return validate(body);
+}
+
 export interface TestClient {
   readonly mock: MockFonzip;
   request(path: string, init?: RequestInit): Promise<Response>;
@@ -92,6 +108,10 @@ export interface TestClient {
     operationId: ServedOperationId,
     input?: CallInput,
   ): Promise<CallResponse>;
+  ok<K extends ServedOperationId>(
+    operationId: K,
+    input?: CallInput,
+  ): Promise<OkBody<K>>;
 }
 
 export function createTestClient(options: MockOptions = {}): TestClient {
@@ -159,7 +179,27 @@ export function createTestClient(options: MockOptions = {}): TestClient {
     return { route, status: response.status, body: parsed };
   };
 
-  return { mock, request, token, call };
+  const ok = async <K extends ServedOperationId>(
+    operationId: K,
+    input: CallInput = {},
+  ): Promise<OkBody<K>> => {
+    const response = await call(operationId, input);
+    if (response.status !== 200) {
+      throw new Error(
+        `${operationId} answered ${response.status}: ${JSON.stringify(response.body)}`,
+      );
+    }
+    const validate = specRuntime().validators.response(response.route, 200);
+    if (!validate) throw new Error(`${operationId} documents no 200 body`);
+    if (!conforms(validate, operationId, response.body)) {
+      throw new Error(
+        `${operationId} 200 body breaks its schema: ${JSON.stringify(validate.errors)}`,
+      );
+    }
+    return response.body;
+  };
+
+  return { mock, request, token, call, ok };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
