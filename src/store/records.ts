@@ -277,7 +277,7 @@ export type DebtCategoryRecord = WithNull<
 export interface DebtAutomationRecord {
   id: number;
   title: string;
-  debt_category_id: number;
+  debt_category_id: number | null;
 }
 
 export type EventRecord = WithNull<
