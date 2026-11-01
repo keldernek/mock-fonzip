@@ -111,6 +111,7 @@ describe("the token endpoint", () => {
           client_id: clientId,
           client_secret: clientSecret,
           code: "c",
+          redirect_uri: "https://kelder.example/oauth",
         }),
         400,
         {

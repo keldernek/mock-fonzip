@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 
 import { errorBody, json } from "./api/errors";
-import { mountApi } from "./api/pipeline";
+import { mountApi, type Exchange } from "./api/pipeline";
 import {
   createRateLimiter,
   DEFAULT_RATE_LIMIT,
@@ -38,6 +38,7 @@ export interface MockOptions {
   readonly seed?: number;
   readonly selfOrigin?: string;
   readonly fetch?: WebhookFetch;
+  readonly observe?: (exchange: Exchange) => void;
 }
 
 export interface World {
@@ -119,6 +120,7 @@ export function createMockFonzip(options: MockOptions = {}): MockFonzip {
     tokens,
     clock,
     world: () => world,
+    ...(options.observe ? { observe: options.observe } : {}),
   });
   app.notFound(() => json(errorBody(404), 404));
   return { app, runtime };

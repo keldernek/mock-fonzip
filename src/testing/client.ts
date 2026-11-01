@@ -8,6 +8,7 @@ import type { ServedOperationId } from "../operations";
 import type { Json } from "../spec/json";
 import { API_BASE, type RouteEntry } from "../spec/routes";
 import { specRuntime } from "../spec/runtime";
+import { createContractObserver } from "./contract";
 import { sampleValue } from "./sample";
 
 export type QueryValue =
@@ -115,9 +116,23 @@ export interface TestClient {
 }
 
 export function createTestClient(options: MockOptions = {}): TestClient {
-  const mock = createMockFonzip({ clock: manualClock(), ...options });
-  const request = async (path: string, init?: RequestInit): Promise<Response> =>
-    mock.app.request(path, init);
+  const contract = createContractObserver();
+  const mock = createMockFonzip({
+    clock: manualClock(),
+    ...options,
+    observe: (exchange) => contract.observe(exchange),
+  });
+  const request = async (
+    path: string,
+    init?: RequestInit,
+  ): Promise<Response> => {
+    const response = await mock.app.request(path, init);
+    const violations = contract.takeViolations();
+    if (violations.length > 0) {
+      throw new Error(`contract violation:\n${violations.join("\n")}`);
+    }
+    return response;
+  };
   let defaultToken: string | undefined;
 
   const token = async (

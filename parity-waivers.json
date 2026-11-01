@@ -1,0 +1,44 @@
+{
+  "statuses": [
+    {
+      "status": 501,
+      "operations": "all",
+      "reason": "NotImplemented marks an operation the mock does not serve yet. A finished mock serves every operation, so 501 is never a correct answer."
+    },
+    {
+      "status": 500,
+      "operations": ["getAccessToken"],
+      "reason": "GenerateTokenFail is Fonzip's unexpected internal error. Issuing a token in memory cannot fail."
+    },
+    {
+      "status": 403,
+      "operations": { "scope": "read" },
+      "reason": "Every API key holds the read scope, so a read operation is never refused for scope."
+    },
+    {
+      "status": 400,
+      "operations": { "requestInput": false },
+      "reason": "The operation takes no parameters and no body, so no request to it can fail validation."
+    },
+    {
+      "status": 404,
+      "operations": [
+        "getTagsList",
+        "createTag",
+        "getBankAccountList",
+        "getMarketingChannelList",
+        "getMarketingChannelFilterValues",
+        "getPaymentSystemsList"
+      ],
+      "reason": "The operation names no object in its path or body, so there is nothing that can be missing."
+    }
+  ],
+  "inputs": [],
+  "properties": [
+    {
+      "operationId": "getAccessToken",
+      "path": "refresh_token",
+      "reason": "The spec returns refresh_token only for the authorization_code grant, which the mock refuses by decision."
+    }
+  ]
+}
