@@ -282,6 +282,7 @@ export interface DebtAutomationRecord {
 
 export type EventRecord = WithNull<
   Own<Omit<S["EventList"] & S["Event"], "ticket_types">>,
+  | "created_by_id"
   | "archived_by_id"
   | "archive_date"
   | "updated_by_id"
