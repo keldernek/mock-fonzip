@@ -7,6 +7,14 @@ import {
   listTemplates,
   updateTemplate,
 } from "./templates";
+import {
+  createWebhook,
+  deleteWebhook,
+  getWebhookDetails,
+  listWebhooks,
+  sendWebhookTestNotification,
+  updateWebhook,
+} from "./webhooks";
 
 export const handlers: Fragment<"people"> = {
   createUser: notImplemented,
@@ -23,12 +31,12 @@ export const handlers: Fragment<"people"> = {
   listChangedCommunicationPermissions: notImplemented,
   getCommunicationPermissions: notImplemented,
   updateCommunicationPermissions: notImplemented,
-  createWebhook: notImplemented,
-  listWebhooks: notImplemented,
-  getWebhookDetails: notImplemented,
-  updateWebhook: notImplemented,
-  deleteWebhook: notImplemented,
-  sendWebhookTestNotification: notImplemented,
+  createWebhook,
+  listWebhooks,
+  getWebhookDetails,
+  updateWebhook,
+  deleteWebhook,
+  sendWebhookTestNotification,
   createTemplate,
   listTemplates,
   getTemplateDetails,
