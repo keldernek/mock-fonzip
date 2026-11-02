@@ -60,6 +60,14 @@ The control plane lives under `/__mock`, outside the API. It takes and returns J
 | `GET /__mock/simulations`                               | List the simulations of events that only happen on the public site, with their inputs.                                             |
 | `POST /__mock/simulations/{domain}/{name}?org=kelder`   | Run one simulation. The body is the simulation's JSON input.                                                                       |
 
+`spec/mock-control-openapi.yaml` describes these routes and their bodies. `test/control-spec.test.ts` checks every response the router gives against it.
+
+## Typed client
+
+`client/` holds `@keldernek/fonzip-client`, a typed TypeScript client for the API and for the control plane. Its types are generated from the pinned spec and from `spec/mock-control-openapi.yaml`, with a named type for every schema and operation. [client/README.md](client/README.md) covers installing and using it.
+
+`bun run client:check` typechecks the client and tests it against the mock. `bun run client:build` builds it into `client/dist`, and `bun run client:pack` writes `client/keldernek-fonzip-client-<version>.tgz`.
+
 ## Check parity with the spec
 
 ```sh
@@ -143,7 +151,7 @@ It never prints a string, an id, an email, a URL that carries one, a token, or a
 ## Update the spec
 
 1. To download the published spec into `spec/fonzip-openapi.yaml`, run `bun run sync-spec`.
-2. To regenerate `src/generated/openapi.d.ts`, run `bun run generate`.
+2. To regenerate `src/generated/openapi.d.ts` and the client's types in `client/src/generated/`, run `bun run generate`.
 3. Run `bun run test`. `test/spec.test.ts` fails when the committed types are stale.
 
 ## Add an operation
@@ -158,6 +166,24 @@ Operations are split among five domains in `src/operations.ts`. Each domain owns
 6. Write tests in `test/<domain>.test.ts` with `createTestClient()` from `src/testing/client.ts`. `client.ok("operationId", {path, query, body})` asserts a 200 and returns the body typed from the spec. `client.call` returns any status. Both validate every response strictly.
 7. Run `bun run parity --domain <domain>` until it reports no unwaived gaps. If the mock cannot close a gap, add a waiver with a reason to `src/domains/<domain>/parity-waivers.json`, and add the spec location to `src/domains/<domain>/GAPS.md`.
 
+## CI and client releases
+
+`.github/workflows/ci.yml` runs on every pull request and every push to main. It fails if `bun run generate` changes or adds a file, so commit regenerated files with the change that caused them. It then runs the type check, the format check, the tests, the parity check, the smoke test, `bun run client:check` and `bun run client:build`.
+
+`.github/workflows/release-client.yml` publishes `@keldernek/fonzip-client` on every push to main. It runs the same generate, client check and client build steps. It packs the client as `<version>-main.<run number>`, where `<version>` comes from `client/package.json`. Before it publishes anything, it installs the tarball in a scratch project and imports it. Each build becomes a release tagged `client-v<version>-main.<run number>`, and its notes give the commit and the SHA-256 of `spec/fonzip-openapi.yaml`. The release tagged `client-latest` holds the newest main build. Each run's summary prints both install lines. For example:
+
+```json
+"@keldernek/fonzip-client": "https://github.com/keldernek/mock-fonzip/releases/download/client-v0.1.0-main.42/keldernek-fonzip-client-0.1.0-main.42.tgz"
+```
+
+```json
+"@keldernek/fonzip-client": "https://github.com/keldernek/mock-fonzip/releases/download/client-latest/keldernek-fonzip-client-latest.tgz"
+```
+
+A versioned release never changes after it is published, so a lockfile entry for it stays valid. The `client-latest` tarball changes on every push to main, so a lockfile hash recorded for it goes stale.
+
+To try the release workflow from a branch, run `gh workflow run release-client.yml --ref <branch>`. A run from any ref except main publishes a prerelease and leaves `client-latest` where it is. Keep release immutability turned off in the repository settings. With it on, the workflow cannot replace the `client-latest` asset or move its tag.
+
 ## License
 
-The code is released under the [MIT License](LICENSE). `spec/fonzip-openapi.yaml` is Fonzip's published API description, pinned so the mock can be checked against it, and `src/generated/openapi.d.ts` is generated from it. The MIT License does not cover that document.
+The code is released under the [MIT License](LICENSE). `spec/fonzip-openapi.yaml` is Fonzip's published API description, pinned so the mock can be checked against it, and `src/generated/openapi.d.ts` and the client's `client/src/generated/api.ts` and `operations.ts` are generated from it. The MIT License does not cover that document.

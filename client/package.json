@@ -1,0 +1,29 @@
+{
+  "name": "@keldernek/fonzip-client",
+  "version": "0.1.0",
+  "description": "Typed Fonzip API v2 client, generated from mock-fonzip's pinned OpenAPI spec",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keldernek/mock-fonzip.git",
+    "directory": "client"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./mock": {
+      "types": "./dist/mock.d.ts",
+      "default": "./dist/mock.js"
+    }
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0",
+    "openapi-typescript-helpers": "^0.1.0"
+  }
+}

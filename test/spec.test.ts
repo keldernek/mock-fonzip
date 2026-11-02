@@ -1,17 +1,18 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { relative } from "node:path";
 
-import { generateTypes } from "../scripts/generate-types";
+import { generatedFiles } from "../scripts/generate";
 import { deref, isJsonObject } from "../src/spec/json";
 import { specRuntime } from "../src/spec/runtime";
-import { GENERATED_TYPES_PATH } from "../src/spec/source";
 
-test("the committed types match the pinned spec", async () => {
-  const committed = readFileSync(GENERATED_TYPES_PATH, "utf8");
-  expect(
-    committed === (await generateTypes()),
-    "src/generated/openapi.d.ts is stale: run `bun run generate`",
-  ).toBe(true);
+test("the committed generated files match the specs", async () => {
+  for (const [path, generated] of await generatedFiles()) {
+    expect(
+      readFileSync(path, "utf8") === generated,
+      `${relative(process.cwd(), path)} is stale: run \`bun run generate\``,
+    ).toBe(true);
+  }
 });
 
 function responseExamples(): {

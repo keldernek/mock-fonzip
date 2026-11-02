@@ -1,0 +1,232 @@
+name: Release client
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+  queue: max
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      asset: ${{ steps.version.outputs.asset }}
+      spec-sha256: ${{ steps.version.outputs.spec-sha256 }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - name: Generated files are committed
+        run: |
+          bun run generate
+          git diff --exit-code
+          untracked="$(git ls-files --others --exclude-standard)"
+          if [ -n "$untracked" ]; then
+            echo "::error::bun run generate wrote files that are not committed"
+            echo "$untracked"
+            exit 1
+          fi
+      - name: Client type check and tests
+        run: bun run client:check
+      - name: Client build
+        run: bun run client:build
+      - name: Compute the publish version
+        id: version
+        run: |
+          base="$(jq -r .version client/package.json)"
+          if [[ ! "$base" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error file=client/package.json::version must be MAJOR.MINOR.PATCH, not '$base'"
+            exit 1
+          fi
+          label=main
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            label=dispatch
+          fi
+          version="$base-$label.$GITHUB_RUN_NUMBER"
+          spec_sha256="$(sha256sum spec/fonzip-openapi.yaml | cut -d ' ' -f 1)"
+          {
+            echo "version=$version"
+            echo "asset=keldernek-fonzip-client-$version.tgz"
+            echo "spec-sha256=$spec_sha256"
+          } >> "$GITHUB_OUTPUT"
+      - name: Pack the client at the publish version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          ASSET: ${{ steps.version.outputs.asset }}
+        run: |
+          jq --arg version "$VERSION" '.version = $version' client/package.json > "$RUNNER_TEMP/package.json"
+          cp "$RUNNER_TEMP/package.json" client/package.json
+          bun run client:pack
+          git restore client/package.json
+          if [ ! -f "client/$ASSET" ]; then
+            echo "::error::bun run client:pack did not write client/$ASSET"
+            ls -l client
+            exit 1
+          fi
+      - name: Install the tarball in a consumer project
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          ASSET: ${{ steps.version.outputs.asset }}
+        run: |
+          consumer="$RUNNER_TEMP/consumer"
+          mkdir "$consumer"
+          cp "client/$ASSET" "$consumer/"
+          cd "$consumer"
+          echo '{ "name": "consumer", "private": true }' > package.json
+          bun add "./$ASSET"
+          installed="$(jq -r .version node_modules/@keldernek/fonzip-client/package.json)"
+          if [ "$installed" != "$VERSION" ]; then
+            echo "::error::the tarball installs version $installed, not $VERSION"
+            exit 1
+          fi
+          bun -e 'const client = await import("@keldernek/fonzip-client"); console.log("exports:", Object.keys(client).join(", ") || "none");'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: client-tarball
+          path: client/${{ steps.version.outputs.asset }}
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.build.outputs.version }}
+      ASSET: ${{ needs.build.outputs.asset }}
+      SPEC_SHA256: ${{ needs.build.outputs.spec-sha256 }}
+      TAG: client-v${{ needs.build.outputs.version }}
+      LATEST_TAG: client-latest
+      LATEST_ASSET: keldernek-fonzip-client-latest.tgz
+      DOWNLOAD_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: client-tarball
+          path: release
+      - name: Publish the versioned release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if tagged="$(gh api "repos/$GH_REPO/commits/tags/$TAG" --jq .sha 2> /dev/null)" && [ "$tagged" != "$GITHUB_SHA" ]; then
+            echo "::error::tag $TAG already points at $tagged, not $GITHUB_SHA"
+            exit 1
+          fi
+          state="$(gh release view "$TAG" --json isDraft --jq 'if .isDraft then "draft" else "published" end' 2> /dev/null || echo missing)"
+          if [ "$state" = published ]; then
+            echo "::notice::$TAG is already published, so this run leaves it unchanged and reuses its asset"
+            gh release download "$TAG" --pattern "$ASSET" --dir release --clobber
+            exit 0
+          fi
+          if [ "$state" = draft ]; then
+            gh release delete "$TAG" --yes
+          fi
+          title="fonzip-client $VERSION"
+          prerelease=false
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            title="$title from $GITHUB_REF_NAME"
+            prerelease=true
+          fi
+          {
+            echo "Built from commit $GITHUB_SHA on \`$GITHUB_REF_NAME\` by $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."
+            echo
+            echo "The types come from \`spec/fonzip-openapi.yaml\` with SHA-256 \`$SPEC_SHA256\`."
+            echo
+            echo '```json'
+            echo "\"@keldernek/fonzip-client\": \"$DOWNLOAD_URL/$TAG/$ASSET\""
+            echo '```'
+          } > "$RUNNER_TEMP/notes.md"
+          gh release create "$TAG" "release/$ASSET" \
+            --target "$GITHUB_SHA" \
+            --title "$title" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --prerelease="$prerelease"
+      - name: Point client-latest at this build
+        id: latest
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if current="$(gh api "repos/$GH_REPO/commits/tags/$LATEST_TAG" --jq .sha 2> /dev/null)"; then
+            status="$(gh api "repos/$GH_REPO/compare/$current...$GITHUB_SHA" --jq .status)"
+            if [ "$status" = behind ]; then
+              echo "::notice::$LATEST_TAG is at $current, which is newer than $GITHUB_SHA, so this run leaves it there"
+              echo "moved=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          cp "release/$ASSET" "$RUNNER_TEMP/$LATEST_ASSET"
+          {
+            echo "Every push to main replaces this release's asset and moves its tag. It now holds [$TAG]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG), built from commit $GITHUB_SHA."
+            echo
+            echo "The types come from \`spec/fonzip-openapi.yaml\` with SHA-256 \`$SPEC_SHA256\`."
+            echo
+            echo '```json'
+            echo "\"@keldernek/fonzip-client\": \"$DOWNLOAD_URL/$LATEST_TAG/$LATEST_ASSET\""
+            echo '```'
+          } > "$RUNNER_TEMP/latest-notes.md"
+          title="fonzip-client latest ($VERSION)"
+          if gh release view "$LATEST_TAG" > /dev/null 2>&1; then
+            gh release delete "$LATEST_TAG" --yes
+          fi
+          if gh api "repos/$GH_REPO/git/ref/tags/$LATEST_TAG" > /dev/null 2>&1; then
+            gh api --method DELETE "repos/$GH_REPO/git/refs/tags/$LATEST_TAG"
+          fi
+          gh release create "$LATEST_TAG" "$RUNNER_TEMP/$LATEST_ASSET" \
+            --target "$GITHUB_SHA" \
+            --title "$title" \
+            --notes-file "$RUNNER_TEMP/latest-notes.md" \
+            --latest=false
+          echo "moved=true" >> "$GITHUB_OUTPUT"
+      - name: Write the install lines to the summary
+        env:
+          MOVED: ${{ steps.latest.outputs.moved }}
+        run: |
+          {
+            echo "### @keldernek/fonzip-client $VERSION"
+            echo
+            echo "Pinned to this build:"
+            echo
+            echo '```json'
+            echo "\"@keldernek/fonzip-client\": \"$DOWNLOAD_URL/$TAG/$ASSET\""
+            echo '```'
+            echo
+            echo "Follows main:"
+            echo
+            echo '```json'
+            echo "\"@keldernek/fonzip-client\": \"$DOWNLOAD_URL/$LATEST_TAG/$LATEST_ASSET\""
+            echo '```'
+            case "$MOVED" in
+              true) ;;
+              false)
+                echo
+                echo "\`$LATEST_TAG\` already points at a newer commit, so this run left it there."
+                ;;
+              *)
+                echo
+                echo "This run is from \`$GITHUB_REF_NAME\`, not main, so it did not move \`$LATEST_TAG\`."
+                ;;
+            esac
+          } >> "$GITHUB_STEP_SUMMARY"

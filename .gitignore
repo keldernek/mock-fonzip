@@ -15,3 +15,7 @@ coverage/
 .DS_Store
 .idea/
 .vscode/
+
+# Client package build output
+client/dist/
+client/*.tgz

@@ -7,3 +7,6 @@ export const SPEC_PATH = fileURLToPath(
 export const GENERATED_TYPES_PATH = fileURLToPath(
   new URL("../generated/openapi.d.ts", import.meta.url),
 );
+export const CONTROL_SPEC_PATH = fileURLToPath(
+  new URL("../../spec/mock-control-openapi.yaml", import.meta.url),
+);
