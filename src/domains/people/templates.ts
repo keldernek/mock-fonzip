@@ -1,4 +1,5 @@
 import { notFound } from "../../api/errors";
+import { istanbulDateTime } from "../../seed/dates";
 import { userName } from "../../store/joins";
 import type { Handler, HandlerInput } from "../../api/handler";
 import { matchesQuery, paginate } from "../../api/listing";
@@ -223,10 +224,10 @@ const ORDER: Readonly<
   "-create_date": (a, b) => b.id - a.id,
 };
 
-// Production writes its template dates in UTC with milliseconds, unlike the
-// +03:00 date-times of the rest of the API.
+// Production writes every date-time in UTC with milliseconds. The mock keeps
+// one format, Istanbul time with +03:00, for all of them (see PARITY.md).
 function stamp(clock: { now(): Date }): string {
-  return clock.now().toISOString();
+  return istanbulDateTime(clock.now());
 }
 
 export const listTemplates: Handler<"listTemplates"> = (

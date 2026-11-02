@@ -172,11 +172,11 @@ export function seedSystem(
       btn_operation_detail: spec.button?.detail ?? null,
       category_id: spec.categoryId,
       translations: spec.translations,
-      create_date: daysBeforeAnchor(spec.createdDaysAgo).toISOString(),
+      create_date: istanbulDateTime(daysBeforeAnchor(spec.createdDaysAgo)),
       update_date:
         spec.updated === null
           ? null
-          : daysBeforeAnchor(spec.updated.daysAgo).toISOString(),
+          : istanbulDateTime(daysBeforeAnchor(spec.updated.daysAgo)),
       created_by_id: spec.createdBy,
       updated_by_id: spec.updated?.by ?? null,
     }).id;
