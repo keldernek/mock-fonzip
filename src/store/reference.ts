@@ -85,6 +85,16 @@ export const PAYMENT_STATUS_DISPLAY: Readonly<Record<PaymentStatus, string>> = {
   6: "Silindi",
 };
 
+// The `approval_status` of a form answer. Production showed 1 on 8 of 8
+// answers waiting for approval and 2 on its one accepted answer. It had no
+// rejected answer, so 3 is inferred as the next code. A form that needs no
+// approval is inferred to answer 2, as its answers are listed as accepted.
+export const APPROVAL_STATUS = {
+  waiting: 1,
+  approved: 2,
+  rejected: 3,
+} as const;
+
 export const PAYMENT_ERRORS: readonly {
   readonly code: string;
   readonly text: string;

@@ -7,7 +7,11 @@ import {
 import { addDays, istanbulDate, apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import type { FormRecord, UserRecord } from "../../store/records";
-import { PAYMENT_STATUS, TRY_CURRENCY_ID } from "../../store/reference";
+import {
+  APPROVAL_STATUS,
+  PAYMENT_STATUS,
+  TRY_CURRENCY_ID,
+} from "../../store/reference";
 import type { OrgStore } from "../../store/store";
 import { TRANSACTION_TYPE } from "../../store/transactions";
 import { newUser } from "../../store/users";
@@ -221,7 +225,9 @@ function submitForm(
     email_verification: false,
     complete_date: apiDateTime(ctx.clock.now()),
     transaction_id: transaction?.id ?? null,
-    approval_status: form.requires_approval ? 0 : 1,
+    approval_status: form.requires_approval
+      ? APPROVAL_STATUS.waiting
+      : APPROVAL_STATUS.approved,
     sent_mail_id: null,
     // The public site sends no location. A documentation address stands in,
     // and nobody has responded yet.

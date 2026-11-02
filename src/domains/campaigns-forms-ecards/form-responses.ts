@@ -2,6 +2,7 @@ import { notFound } from "../../api/errors";
 import type { HandlerContext, HandlerInput } from "../../api/handler";
 import type { Row } from "../../store/collection";
 import type { FormAnswerRecord, TemplateRecord } from "../../store/records";
+import { APPROVAL_STATUS } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
 import { OUTCOME_STATUS, WEBHOOK_OPERATIONS } from "../../webhooks/emitter";
 import { badRequest, failed, parsed, type Parsed } from "./failures";
@@ -168,7 +169,9 @@ export function parseResponse(
   const template = templateChange(store, details);
   if (!template.ok) return template;
   return parsed({
-    approvalStatus: approve ? 1 : 2,
+    approvalStatus: approve
+      ? APPROVAL_STATUS.approved
+      : APPROVAL_STATUS.rejected,
     membership: membership.value,
     mail: details.send_mail === true,
     refund: details.make_refund === true,

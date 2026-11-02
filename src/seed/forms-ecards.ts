@@ -1,6 +1,7 @@
 import { SEED_ANCHOR } from "../core/clock";
 import type { Row } from "../store/collection";
 import type { UdvValue, UserRecord } from "../store/records";
+import { APPROVAL_STATUS } from "../store/reference";
 import { TRANSACTION_TYPE } from "../store/transactions";
 import type { EcardRefs } from "./campaigns";
 import { createTransaction, type SeedContext } from "./context";
@@ -266,12 +267,23 @@ export function seedForms(
                 status: 1,
               }).id
             : null;
+      // A form that asks for approval cycles through waiting, approved and
+      // rejected. Any other form needs no approval, so its answers read as
+      // approved.
       const approval = plan.approval
-        ? (([0, 1, 2] as const)[index % 3] ?? 0)
-        : 1;
+        ? ((
+            [
+              APPROVAL_STATUS.waiting,
+              APPROVAL_STATUS.approved,
+              APPROVAL_STATUS.rejected,
+            ] as const
+          )[index % 3] ?? APPROVAL_STATUS.waiting)
+        : APPROVAL_STATUS.approved;
       // A form that asks for approval is answered by deciding. Any other form
       // is answered by the mail it sends.
-      const responded = plan.approval ? approval !== 0 : sentMailId !== null;
+      const responded = plan.approval
+        ? approval !== APPROVAL_STATUS.waiting
+        : sentMailId !== null;
       const anonymous = index % 7 === 6;
       const answer = db.formAnswers.insert({
         form_id: form.id,
@@ -342,7 +354,7 @@ function seedMergeCandidates(
 ): void {
   const { db } = ctx;
   const contacts = db.formAnswers
-    .list((answer) => answer.approval_status === 0)
+    .list((answer) => answer.approval_status === APPROVAL_STATUS.waiting)
     .flatMap((answer) => {
       const user = users.find((row) => row.id === answer.user_id);
       return user && user.last_name !== ""

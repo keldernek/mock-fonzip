@@ -422,7 +422,7 @@ describe("form answer details", () => {
       complete_date: "2026-10-12T06:00:00.000Z",
       user: { id: 1077, name: expect.any(String), membership_no: 77 },
       email_verification: true,
-      approval_status: 1,
+      approval_status: 2,
       sent_mail: { id: 600_253, message_id: expect.any(String), status: 1 },
       transaction: {
         amount: 450,
@@ -654,7 +654,7 @@ describe("form answer details", () => {
     const client = createTestClient();
     const waiting = await answer(client, SCHOLARSHIP_FORM, 71004);
     expect(waiting).toMatchObject({
-      approval_status: 0,
+      approval_status: 1,
       respond_date: null,
       responded_by: null,
       source: 0,
@@ -792,7 +792,7 @@ describe("responding to a form answer", () => {
     });
     expect(result).toEqual({ result: "ok", merge: { status: "none" } });
     const details = await answer(client, SCHOLARSHIP_FORM, 71013);
-    expect(details?.approval_status).toBe(1);
+    expect(details?.approval_status).toBe(2);
     expect(details?.user).toMatchObject({ id: 1067, membership_no: 151 });
     expect(await answerIds(client, "waiting_approval")).not.toContain(71013);
     expect(await answerIds(client, "answer")).toContain(71013);
@@ -812,7 +812,7 @@ describe("responding to a form answer", () => {
     expect(missing.status).toBe(400);
     expect(
       (await answer(client, SCHOLARSHIP_FORM, 71010))?.approval_status,
-    ).toBe(0);
+    ).toBe(1);
     await client.ok("respondFormAnswer", {
       path: { form_id: SCHOLARSHIP_FORM, answer_id: 71010 },
       body: {
@@ -833,7 +833,7 @@ describe("responding to a form answer", () => {
     expect(
       (await answer(client, SCHOLARSHIP_FORM, 71007))?.approval_status,
       "an anonymous answer is approved without a contact",
-    ).toBe(1);
+    ).toBe(2);
   });
 
   test("rejecting with a mail records the sent mail, and rejecting leaves membership alone", async () => {
@@ -851,7 +851,7 @@ describe("responding to a form answer", () => {
       },
     });
     const details = await answer(client, SCHOLARSHIP_FORM, 71013);
-    expect(details?.approval_status).toBe(2);
+    expect(details?.approval_status).toBe(3);
     expect(details?.sent_mail).toEqual({
       id: expect.any(Number),
       message_id: expect.any(String),
@@ -886,7 +886,7 @@ describe("responding to a form answer", () => {
       expect(response.status, JSON.stringify(details)).toBe(400);
     }
     const untouched = await answer(client, YEARBOOK_FORM, 71025);
-    expect(untouched?.approval_status).toBe(1);
+    expect(untouched?.approval_status).toBe(2);
     expect(untouched?.transaction?.payment_status, "not refunded").toBe(3);
     expect(notifications(client)).toEqual([]);
   });
@@ -1032,7 +1032,7 @@ describe("responding to a form answer", () => {
     ).toBe(404);
     expect(
       (await answer(client, SCHOLARSHIP_FORM, 71013))?.approval_status,
-    ).toBe(0);
+    ).toBe(1);
   });
 
   test("merges the answer's contact into its pending duplicate", async () => {
@@ -1099,7 +1099,7 @@ describe("responding to a form answer", () => {
     }
     expect(
       (await answer(client, SCHOLARSHIP_FORM, 71001))?.approval_status,
-    ).toBe(1);
+    ).toBe(2);
     expect(kelder(client).users.get(1031), "nobody was merged").toBeDefined();
   });
 
@@ -1132,12 +1132,85 @@ describe("responding to a form answer", () => {
     expect(foreign.status).toBe(404);
     expect(
       (await answer(client, SCHOLARSHIP_FORM, 71013))?.approval_status,
-    ).toBe(0);
+    ).toBe(1);
     const unknown = await client.call("respondFormAnswer", {
       path: { form_id: SCHOLARSHIP_FORM, answer_id: 79_999 },
       body: { response_type: "approve", answer: {} },
     });
     expect(unknown.status).toBe(404);
+  });
+});
+
+// Production showed 1 on 8 of 8 answers waiting for approval and 2 on its one
+// accepted answer. Rejected is 3 and a form without approval reads 2 by
+// inference (PARITY.md). The numbers are written out here on purpose, so that
+// changing the table in the store fails a test.
+describe("the approval_status codes", () => {
+  test("each answer list holds answers carrying its code", async () => {
+    const client = createTestClient();
+    const lists = [
+      { status: "waiting_approval", code: 1 },
+      { status: "answer", code: 2 },
+      { status: "rejected", code: 3 },
+    ] as const;
+    for (const { status, code } of lists) {
+      const list = await client.ok("getFormAnswerList", {
+        query: { ...RANGE, ...PAGE, status },
+      });
+      const rows = list.answer_list ?? [];
+      expect(rows.length, `${status} is not empty`).toBeGreaterThan(0);
+      for (const row of rows) {
+        const details = await answer(
+          client,
+          row.custom_form_id ?? 0,
+          row.id ?? 0,
+        );
+        expect(details?.approval_status, `${status} ${row.id}`).toBe(code);
+      }
+    }
+  });
+
+  test("approving writes 2 and rejecting writes 3", async () => {
+    const client = createTestClient();
+    for (const id of [71013, 71010]) {
+      expect(
+        (await answer(client, SCHOLARSHIP_FORM, id))?.approval_status,
+        `${id} starts out waiting`,
+      ).toBe(1);
+    }
+    await client.ok("respondFormAnswer", {
+      path: { form_id: SCHOLARSHIP_FORM, answer_id: 71013 },
+      body: { response_type: "approve", answer: {} },
+    });
+    await client.ok("respondFormAnswer", {
+      path: { form_id: SCHOLARSHIP_FORM, answer_id: 71010 },
+      body: { response_type: "reject", answer: {} },
+    });
+    expect(
+      (await answer(client, SCHOLARSHIP_FORM, 71013))?.approval_status,
+    ).toBe(2);
+    expect(
+      (await answer(client, SCHOLARSHIP_FORM, 71010))?.approval_status,
+    ).toBe(3);
+    expect(await answerIds(client, "answer")).toContain(71013);
+    expect(await answerIds(client, "rejected")).toContain(71010);
+  });
+
+  test("an answer to a form without approval reads 2", async () => {
+    const client = createTestClient();
+    const store = kelder(client);
+    const open = store.forms.list((form) => !form.requires_approval);
+    expect(open.length).toBeGreaterThan(0);
+    const answers = store.formAnswers.list((row) =>
+      open.some((form) => form.id === row.form_id),
+    );
+    expect(answers.length).toBeGreaterThan(0);
+    for (const row of answers) {
+      expect(
+        (await answer(client, row.form_id, row.id))?.approval_status,
+        `answer ${row.id} of form ${row.form_id}`,
+      ).toBe(2);
+    }
   });
 });
 

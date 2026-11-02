@@ -78,7 +78,7 @@ describe("a form answered on the public site", () => {
     });
     expect(answer).toMatchObject({
       id: answerId,
-      approval_status: 1,
+      approval_status: 2,
       email_verification: false,
       complete_date: "2026-11-01T06:00:00.000Z",
       user: { id: userId, name: "Deniz Ergin", membership_no: 0 },
@@ -131,6 +131,10 @@ describe("a form answered on the public site", () => {
       query: { ...RANGE, ...PAGE, status: "waiting_approval" },
     });
     expect(waiting.answer_list?.[0]?.id).toBe(idOf(result.body, "answer_id"));
+    const { answer } = await client.ok("getFormAnswerDetails", {
+      path: { form_id: 701, answer_id: idOf(result.body, "answer_id") },
+    });
+    expect(answer?.approval_status, "waiting for approval is 1").toBe(1);
   });
 
   test("queues a new contact whose phone matches an existing one, and the response merges them", async () => {
@@ -165,7 +169,7 @@ describe("a form answered on the public site", () => {
       path: { form_id: 701, answer_id: answerId },
     });
     expect(answer?.user?.id).toBe(1100);
-    expect(answer?.approval_status).toBe(1);
+    expect(answer?.approval_status).toBe(2);
   });
 
   test("records a failed card payment with its error and fires the FORM webhook with status 5", async () => {
