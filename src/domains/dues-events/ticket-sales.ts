@@ -52,7 +52,7 @@ function toTicketSale(
     details: sale.details,
     sent_mail: mail && {
       id: mail.id,
-      message_id: mail.message_id,
+      message_id: String(mail.message_id),
       status: mail.status,
     },
   };

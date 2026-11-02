@@ -2711,7 +2711,7 @@ export interface components {
             /** @description Sent email id */
             id?: number;
             /** @description Sent email message id */
-            message_id?: number;
+            message_id?: string;
             /**
              * @description Sent email status  <br>
              *     - 0: Sent <br>
@@ -4210,12 +4210,12 @@ export interface components {
              */
             complete_date?: string;
             /** @description Transaction id */
-            transaction_id?: number;
+            transaction_id?: number | null;
             /**
              * Format: double
              * @description Transaction amount
              */
-            transaction__amount?: number;
+            transaction__amount?: number | null;
             /** @description Form id */
             custom_form_id?: number;
             /** @description Form title */
@@ -4472,18 +4472,18 @@ export interface components {
              */
             create_date?: string;
             /** @description Event created by user id */
-            created_by_id?: number;
+            created_by_id?: number | null;
             /** @description Event created by user name */
-            created_by__name?: string;
+            created_by__name?: string | null;
             /**
              * Format: date-time
              * @description last update date
              */
-            update_date?: string;
+            update_date?: string | null;
             /** @description Event last updated by user id */
-            updated_by_id?: number;
+            updated_by_id?: number | null;
             /** @description Event last updated by user name */
-            updated_by__name?: string;
+            updated_by__name?: string | null;
             /** @description Event archived by user id */
             archived_by_id?: number;
             /** @description Event archived by user name */
@@ -4514,12 +4514,12 @@ export interface components {
             /** @description User id */
             user_id?: number;
             /** @description transaction id */
-            transaction_id?: number;
+            transaction_id?: number | null;
             /**
              * Format: double
              * @description payment amount
              */
-            transaction__amount?: number;
+            transaction__amount?: number | null;
             /** @description form id */
             custom_form_id?: number;
             /** @description Form title */
@@ -4529,6 +4529,10 @@ export interface components {
             /** @description error text ( only returned when `status=failed` ) */
             transaction__transaction_error__text?: string;
             transaction__transaction_error__group?: components["schemas"]["TransactionErrorGroup"];
+            /** @description payment currency display, null without a payment */
+            transaction__currency__display?: string | null;
+            /** @description payment currency ISO code, null without a payment */
+            transaction__currency__iso_code?: string | null;
         };
         EcardDetails: {
             /** @description ecard id */
@@ -4684,7 +4688,7 @@ export interface components {
         FormAnswerDetails: {
             /** @description Form Answer ID */
             id?: number;
-            transaction?: components["schemas"]["Transaction"];
+            transaction?: components["schemas"]["Transaction"] | null;
             /**
              * Format: date-time
              * @description transaction date
@@ -4697,7 +4701,7 @@ export interface components {
              */
             email?: string;
             /** @description Verified Email */
-            email_verification?: boolean;
+            email_verification?: boolean | null;
             /** @description First name */
             first_name?: string;
             /** @description Last name */
@@ -4707,6 +4711,21 @@ export interface components {
             /** @description Form answer details */
             form_answer_list?: components["schemas"]["FormAnswerDetail"][];
             sent_mail?: components["schemas"]["SentEmail"];
+            /** @description city the answer was sent from */
+            city?: string | null;
+            /** @description country the answer was sent from */
+            country?: string | null;
+            /** @description IP address the answer was sent from */
+            ip_address?: string;
+            /**
+             * Format: date-time
+             * @description date of the response, null until someone responds
+             */
+            respond_date?: string | null;
+            /** @description who responded, null until someone responds */
+            responded_by?: components["schemas"]["UserFormAnswerDetails"] | null;
+            /** @description where the answer came from, 0 is the only value seen */
+            source?: number;
         };
         FormAnswerDetail: {
             /** @description Answer ID */
@@ -4740,9 +4759,10 @@ export interface components {
             /** @description required */
             required?: boolean;
             /** @description additional information */
-            information?: string;
+            information?: string | null;
             /**
              * @description Static Question ID
+             *     - 0: not a static question
              *     - 1: phone
              *     - 2: Identity Number
              *     - 30: District
@@ -4763,15 +4783,99 @@ export interface components {
              *     - 10: profile photo
              * @enum {integer}
              */
-            static_question?: 1 | 2 | 30 | 31 | 32 | 33 | 34 | 4 | 6 | 7 | 40 | 41 | 42 | 43 | 44 | 8 | 9 | 10;
-            udv_question?: components["schemas"]["UserDefinedValues"];
-            custom_question?: components["schemas"]["CustomQuestion"];
+            static_question?: 0 | 1 | 2 | 30 | 31 | 32 | 33 | 34 | 4 | 6 | 7 | 40 | 41 | 42 | 43 | 44 | 8 | 9 | 10;
+            udv_question?: {
+                /** @description custom field id */
+                id?: number;
+                /** @description custom field key */
+                key?: string;
+                /**
+                 * @description User defined value type
+                 *     - 0: text
+                 *     - 1: paragraph
+                 *     - 2: number
+                 *     - 3: date
+                 *     - 4: year
+                 *     - 5: date-time
+                 *     - 6: boolean
+                 *     - 7: select
+                 *     - 8: multiple select
+                 * @enum {integer}
+                 */
+                key_type?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+                /** @description custom field slug */
+                slug?: string;
+                /** @description the field shows on the member's profile */
+                show_at_profile?: boolean;
+                /** @description true text of a boolean field, null for any other field */
+                boolean_true_text?: string | null;
+                /** @description false text of a boolean field, null for any other field */
+                boolean_false_text?: string | null;
+                /** @description select text of a select field, null for any other field */
+                select_text?: string | null;
+                /** @description select options */
+                options?: {
+                    /** @description option id, null for an option that is not stored */
+                    id?: number | null;
+                    /** @description option order */
+                    order?: number;
+                    /** @description option text */
+                    text?: string;
+                }[];
+                /** @description what an uploaded file may be */
+                file_constraints?: {
+                    /** @description allowed file extensions, without a dot */
+                    allowed_extensions?: string[];
+                    /** @description largest allowed file, in megabytes */
+                    max_file_size_mb?: number;
+                };
+                /** @description folder id of an uploaded file field */
+                folder_id?: number | null;
+                /** @description folder name of an uploaded file field */
+                folder_name?: string | null;
+                /** @description application of the field's OAuth credentials */
+                oauth_credentials__application?: string | null;
+                /** @description status of the field's OAuth credentials */
+                oauth_credentials__status?: string | null;
+                /** @description id of the field's OAuth credentials */
+                oauth_credentials_id?: number | null;
+                /** @description Translated texts of the field, by language code. Each language holds an object of strings. */
+                translations?: {
+                    [key: string]: {
+                        [key: string]: string;
+                    };
+                };
+                /** @description limits on the field's value, only those that are set */
+                validation?: {
+                    /** @description the length is limited */
+                    limit?: boolean;
+                    /** @description longest length */
+                    limit_value?: number;
+                    /** @description the value has a maximum */
+                    max?: boolean;
+                    /** @description largest value */
+                    max_value?: number;
+                };
+            } | null;
+            custom_question?: components["schemas"]["CustomQuestion"] | null;
             /**
              * @description True when the question has been deleted from the form. Answers given before
              *     the deletion are kept and still returned. A deleted question built on a custom
              *     field that was deleted too has no `udv_question`.
              */
             deleted?: boolean;
+            /** @description the question has additional information */
+            additional_info_for_question?: boolean;
+            /** @description id of the question this one stands in for, null for none. The type is inferred. */
+            another_question?: number | null;
+            /** @description ids of the options that other questions depend on */
+            dependent_question_option_ids?: number[];
+            /** @description the question shows depending on another answer */
+            depends_on_another_question_answer?: boolean;
+            /** @description id of the form section the question sits in */
+            section_id?: number;
+            /** @description a multiple choice question offers an Other option */
+            show_other_for_multiple?: boolean;
         };
         SelectedOptionDetail: {
             /** @description Option ID */
@@ -10495,7 +10599,7 @@ export interface operations {
                 start_page: components["parameters"]["StartPage"];
                 /** @description How many records should be listed */
                 how_many: components["parameters"]["HowMany"];
-                status: "answer" | "waiting_approval" | "rejected" | "refund" | "failed";
+                status?: "answer" | "waiting_approval" | "rejected" | "refund" | "failed";
             };
             header?: never;
             path?: never;

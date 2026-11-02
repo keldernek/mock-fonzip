@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { isJsonObject, type Json } from "../src/spec/json";
+import { specRuntime } from "../src/spec/runtime";
 import { createTestClient, type TestClient } from "../src/testing/client";
 import {
   dateOf,
@@ -14,6 +16,7 @@ const VOLUNTEER_FORM = 702;
 const YEARBOOK_FORM = 703;
 const SURVEY_FORM = 704;
 const ARCHIVED_FORM = 705;
+const SUMMER_FORM = 706;
 const RANGE = {
   start_date: "2024-01-01T00:00:00+03:00",
   end_date: "2026-11-02T00:00:00+03:00",
@@ -43,11 +46,70 @@ async function answer(client: TestClient, formId: number, answerId: number) {
   return body.answer;
 }
 
+function inSpec(...path: (string | number)[]): Json | undefined {
+  let node: Json | undefined = specRuntime().spec;
+  for (const key of path) {
+    if (Array.isArray(node)) node = node[Number(key)];
+    else node = isJsonObject(node) ? node[String(key)] : undefined;
+  }
+  return node;
+}
+
+describe("the corrected spec", () => {
+  test("says what production sent about forms", () => {
+    expect(
+      inSpec("paths", "/form-answers", "get", "parameters", 5),
+      "status is optional, with its default",
+    ).toMatchObject({
+      name: "status",
+      required: false,
+      schema: { default: "answer" },
+    });
+    expect(
+      JSON.stringify(
+        inSpec(
+          "components",
+          "schemas",
+          "FormQuestion",
+          "properties",
+          "udv_question",
+        ),
+      ),
+      "a question's custom field is its own schema, which may be null",
+    ).not.toContain("UserDefinedValues");
+    expect(
+      inSpec("components", "schemas", "SentEmail", "properties", "message_id"),
+    ).toMatchObject({ type: "string" });
+    expect(
+      inSpec(
+        "components",
+        "schemas",
+        "FormAnswerDetails",
+        "properties",
+        "transaction",
+      ),
+      "the payment of an answer may be null",
+    ).toMatchObject({
+      anyOf: [{ $ref: "#/components/schemas/Transaction" }, { type: "null" }],
+    });
+    expect(
+      inSpec(
+        "components",
+        "schemas",
+        "FormQuestion",
+        "properties",
+        "static_question",
+        "enum",
+      ),
+    ).toContain(0);
+  });
+});
+
 describe("form list", () => {
   test("lists live forms in menu order with their answer counts", async () => {
     const client = createTestClient();
     const list = await client.ok("getFormList", { query: PAGE });
-    expect(list.total).toBe(4);
+    expect(list.total).toBe(5);
     expect(list.form_list?.[0]).toEqual({
       id: SCHOLARSHIP_FORM,
       title: "Burs Başvuru Formu",
@@ -62,6 +124,9 @@ describe("form list", () => {
       create_date: "2025-09-27T09:00:00+03:00",
       created_by_id: 1001,
       created_by__name: expect.any(String),
+      update_date: null,
+      updated_by_id: null,
+      updated_by__name: null,
     });
     expect(list.form_list?.[1]).toMatchObject({
       id: VOLUNTEER_FORM,
@@ -74,6 +139,35 @@ describe("form list", () => {
       list.form_list?.find((form) => form.id === YEARBOOK_FORM)?.response_count,
       "the failed payment is not a response",
     ).toBe(8);
+  });
+
+  test("sends null, not a missing property, for what a form lacks", async () => {
+    const client = createTestClient();
+    const list = await client.ok("getFormList", { query: PAGE });
+    const imported = list.form_list?.find((form) => form.id === YEARBOOK_FORM);
+    expect(imported).toMatchObject({
+      created_by_id: null,
+      created_by__name: null,
+      update_date: null,
+      updated_by_id: null,
+      updated_by__name: null,
+    });
+    const summer = list.form_list?.find((form) => form.id === SUMMER_FORM);
+    expect(summer, "nobody has answered it").toMatchObject({
+      last_answer_date: null,
+      response_count: 0,
+      waiting_approval: 0,
+      created_by_id: null,
+    });
+    const survey = list.form_list?.find((form) => form.id === SURVEY_FORM);
+    expect(survey?.last_answer_date).toEqual(expect.any(String));
+    expect(survey?.updated_by_id).toBe(1002);
+    for (const form of list.form_list ?? []) {
+      expect(
+        form,
+        `live form ${form.id} has no archive properties`,
+      ).not.toHaveProperty("archived_by_id");
+    }
   });
 
   test("lists archived forms only when archived=true", async () => {
@@ -98,7 +192,7 @@ describe("form list", () => {
     const found = await client.ok("getFormList", {
       query: { ...PAGE, query: "form" },
     });
-    expect(found.form_list?.map((form) => form.id)).toEqual([701, 702]);
+    expect(found.form_list?.map((form) => form.id)).toEqual([701, 702, 706]);
     const excluded = await client.ok("getFormList", {
       query: { ...PAGE, query: "-form" },
     });
@@ -106,8 +200,8 @@ describe("form list", () => {
     const page = await client.ok("getFormList", {
       query: { start_page: 2, how_many: 3 },
     });
-    expect(page.form_list?.map((form) => form.id)).toEqual([704]);
-    expect(page.total).toBe(4);
+    expect(page.form_list?.map((form) => form.id)).toEqual([704, 706]);
+    expect(page.total).toBe(5);
   });
 
   test("an unknown order_by falls back to order", async () => {
@@ -119,7 +213,7 @@ describe("form list", () => {
       expect(
         body.form_list?.map((form) => form.id),
         order_by,
-      ).toEqual([701, 702, 703, 704]);
+      ).toEqual([701, 702, 703, 704, 706]);
     }
   });
 
@@ -129,7 +223,7 @@ describe("form list", () => {
       (await client.ok("getFormList", { query: { ...PAGE, order_by } }))
         .form_list ?? [];
     expect((await order("order")).map((form) => form.id)).toEqual([
-      701, 702, 703, 704,
+      701, 702, 703, 704, 706,
     ]);
     expectOrdered(await order("title"), (form) => form.title, false, "title");
     expectOrdered(await order("-title"), (form) => form.title, true, "-title");
@@ -149,14 +243,27 @@ describe("form list", () => {
     }
     expect(
       (await order("waiting_approval")).map((form) => form.id),
-      "three forms tie at 0 and sort by title",
-    ).toEqual([SURVEY_FORM, VOLUNTEER_FORM, YEARBOOK_FORM, SCHOLARSHIP_FORM]);
+      "four forms tie at 0 and sort by title",
+    ).toEqual([
+      SURVEY_FORM,
+      VOLUNTEER_FORM,
+      YEARBOOK_FORM,
+      SUMMER_FORM,
+      SCHOLARSHIP_FORM,
+    ]);
     expect((await order("-waiting_approval")).map((form) => form.id)).toEqual([
       SCHOLARSHIP_FORM,
       SURVEY_FORM,
       VOLUNTEER_FORM,
       YEARBOOK_FORM,
+      SUMMER_FORM,
     ]);
+    for (const order_by of ["last_answer_date", "-last_answer_date"]) {
+      expect(
+        (await order(order_by)).at(-1)?.id,
+        `${order_by}: the form nobody answered comes last`,
+      ).toBe(SUMMER_FORM);
+    }
   });
 });
 
@@ -191,6 +298,8 @@ describe("form answer list", () => {
         user_id: 1086,
         transaction_id: expect.any(Number),
         transaction__amount: 450,
+        transaction__currency__display: "TRY",
+        transaction__currency__iso_code: "TRY",
         custom_form_id: YEARBOOK_FORM,
         custom_form__title: "Mezuniyet Yıllığı Siparişi",
       },
@@ -208,6 +317,59 @@ describe("form answer list", () => {
       failed.answer_list?.[0]?.user_id,
       "an anonymous answer",
     ).toBeUndefined();
+  });
+
+  test("sends null, not a missing property, for the payment of a free answer", async () => {
+    const client = createTestClient();
+    const list = await client.ok("getFormAnswerList", {
+      query: { ...RANGE, ...PAGE, status: "answer" },
+    });
+    const rows = list.answer_list ?? [];
+    const free = rows.find((row) => row.custom_form_id === SURVEY_FORM);
+    expect(free).toMatchObject({
+      transaction_id: null,
+      transaction__amount: null,
+      transaction__currency__display: null,
+      transaction__currency__iso_code: null,
+    });
+    const paid = rows.find((row) => row.custom_form_id === YEARBOOK_FORM);
+    expect(paid).toMatchObject({
+      transaction_id: expect.any(Number),
+      transaction__amount: 450,
+      transaction__currency__display: "TRY",
+      transaction__currency__iso_code: "TRY",
+    });
+    for (const row of rows) {
+      expect(Object.keys(row), `answer ${row.id} names its payment`).toEqual(
+        expect.arrayContaining([
+          "transaction_id",
+          "transaction__amount",
+          "transaction__currency__display",
+          "transaction__currency__iso_code",
+        ]),
+      );
+    }
+  });
+
+  test("lists the answers of status=answer when status is left out", async () => {
+    const client = createTestClient();
+    const query = { ...RANGE, ...PAGE };
+    const plain = await client.ok("getFormAnswerList", { query });
+    const answered = await client.ok("getFormAnswerList", {
+      query: { ...query, status: "answer" },
+    });
+    expect(plain).toEqual(answered);
+    expect(plain.total).toBe(31);
+    const waiting = await answerIds(client, "waiting_approval");
+    for (const row of plain.answer_list ?? []) {
+      expect(waiting, `answer ${row.id} is not waiting`).not.toContain(row.id);
+    }
+    const unknown = await client.call("getFormAnswerList", {
+      query: { ...query, status: "pending" },
+    });
+    expect(unknown.status, "a status outside the enum is still refused").toBe(
+      400,
+    );
   });
 
   test("filters by the date range, searches, and pages", async () => {
@@ -261,7 +423,7 @@ describe("form answer details", () => {
       user: { id: 1077, name: expect.any(String), membership_no: 77 },
       email_verification: true,
       approval_status: 1,
-      sent_mail: { id: 600_253, message_id: expect.any(Number), status: 1 },
+      sent_mail: { id: 600_253, message_id: expect.any(String), status: 1 },
       transaction: {
         amount: 450,
         payment_status: 3,
@@ -286,12 +448,14 @@ describe("form answer details", () => {
     ]);
     const profession = details?.form_answer_list?.[2];
     expect(profession?.question?.udv_question).toMatchObject({
-      id: "C12",
-      udv_id: 12,
-      value: "meslek",
+      id: 12,
+      key: "meslek",
+      slug: "meslek",
       key_type: 0,
-      boolean_false_text: 0,
-      select_text: 0,
+      boolean_true_text: null,
+      boolean_false_text: null,
+      select_text: null,
+      options: [],
     });
     const choice = details?.form_answer_list?.[3];
     expect(choice?.question?.custom_question).toEqual({
@@ -315,13 +479,205 @@ describe("form answer details", () => {
       (row) => row.value === "sube",
     );
     expect(branch?.question?.udv_question).toMatchObject({
-      udv_id: udv?.id,
+      id: udv?.id,
+      key: "sube",
       key_type: 7,
-      for: "select",
+      select_text: expect.any(String),
       options: udv?.options,
     });
     expect(udv?.options.length).toBeGreaterThan(1);
     expect(udv?.options.map((option) => option.text)).toContain(branch?.answer);
+  });
+
+  test("the newest answered form answer has the shape production sent", async () => {
+    const client = createTestClient();
+    const list = await client.ok("getFormAnswerList", {
+      query: { ...RANGE, ...PAGE },
+    });
+    const first = list.answer_list?.[0];
+    expect(first?.id, "the answer the comparison reads").toBe(71037);
+    const details = await answer(
+      client,
+      first?.custom_form_id ?? 0,
+      first?.id ?? 0,
+    );
+    expect(details).toMatchObject({
+      transaction: null,
+      email_verification: null,
+      city: expect.any(String),
+      country: expect.any(String),
+      ip_address: expect.stringMatching(/^\d{1,3}(\.\d{1,3}){3}$/),
+      respond_date: "2026-10-24T09:00:00+03:00",
+      responded_by: {
+        id: expect.any(Number),
+        name: expect.any(String),
+        membership_no: expect.any(Number),
+      },
+      sent_mail: {
+        id: expect.any(Number),
+        message_id: expect.any(String),
+        status: 1,
+      },
+      source: 0,
+    });
+    const questions = (details?.form_answer_list ?? []).map(
+      (item) => item.question,
+    );
+    expect(questions.length).toBeGreaterThan(5);
+    for (const question of questions) {
+      expect(question, question?.title).toMatchObject({
+        custom_question: null,
+        another_question: null,
+        dependent_question_option_ids: [],
+        depends_on_another_question_answer: false,
+        show_other_for_multiple: false,
+        section_id: expect.any(Number),
+        additional_info_for_question: expect.any(Boolean),
+      });
+      expect(
+        question?.udv_question === null,
+        `${question?.title}: only a static question has no custom field`,
+      ).toBe(question?.question_type === 0);
+      expect(
+        question?.static_question === 0,
+        `${question?.title}: only a custom field has static code 0`,
+      ).toBe(question?.question_type !== 0);
+    }
+    expect(
+      questions.filter((question) => question?.udv_question !== null).length,
+      "most questions are custom fields",
+    ).toBeGreaterThan(
+      questions.filter((question) => question?.udv_question === null).length,
+    );
+    expect(
+      questions.map((question) => question?.information === null),
+      "some questions carry information, most do not",
+    ).toEqual(expect.arrayContaining([true, false]));
+  });
+
+  test("a custom field question has production's properties and no others", async () => {
+    const client = createTestClient();
+    const details = await answer(client, SURVEY_FORM, 71037);
+    const fields = new Map(
+      (details?.form_answer_list ?? []).flatMap((item) => {
+        const field = item.question?.udv_question;
+        return field ? [[field.key ?? "", field] as const] : [];
+      }),
+    );
+    expect([...fields.keys()]).toEqual([
+      "meslek",
+      "mezuniyet_yili",
+      "sube",
+      "burs_gonullusu",
+      "ilgi_alanlari",
+      "ozgecmis_notu",
+    ]);
+    for (const [key, field] of fields) {
+      expect(Object.keys(field).sort(), key).toEqual([
+        "boolean_false_text",
+        "boolean_true_text",
+        "file_constraints",
+        "folder_id",
+        "folder_name",
+        "id",
+        "key",
+        "key_type",
+        "oauth_credentials__application",
+        "oauth_credentials__status",
+        "oauth_credentials_id",
+        "options",
+        "select_text",
+        "show_at_profile",
+        "slug",
+        "translations",
+        "validation",
+      ]);
+      expect(field, key).toMatchObject({
+        id: expect.any(Number),
+        slug: key.replaceAll("_", "-"),
+        show_at_profile: true,
+        folder_id: null,
+        folder_name: null,
+        oauth_credentials__application: null,
+        oauth_credentials__status: null,
+        oauth_credentials_id: null,
+        translations: { tr: { name: expect.any(String) } },
+        file_constraints: {
+          allowed_extensions: [
+            "doc",
+            "docx",
+            "gif",
+            "heic",
+            "jpeg",
+            "jpg",
+            "pdf",
+            "png",
+            "xls",
+            "xlsx",
+          ],
+          max_file_size_mb: 10,
+        },
+      });
+    }
+    expect(fields.get("meslek")).toMatchObject({
+      select_text: null,
+      boolean_true_text: null,
+      options: [],
+      validation: {},
+    });
+    expect(fields.get("sube")?.select_text, "a select asks to choose").toBe(
+      "Seçiniz",
+    );
+    expect(
+      fields.get("sube")?.options?.map((option) => option.id),
+      "stored options keep their ids",
+    ).toEqual([1, 2, 3, 4, 5]);
+    expect(fields.get("burs_gonullusu")).toMatchObject({
+      boolean_true_text: "Evet",
+      boolean_false_text: "Hayır",
+      options: [
+        { id: null, order: 0, text: "Evet" },
+        { id: null, order: 1, text: "Hayır" },
+      ],
+    });
+    expect(fields.get("ozgecmis_notu")?.validation).toEqual({
+      limit: true,
+      limit_value: 1000,
+    });
+    expect(fields.get("mezuniyet_yili")?.validation).toEqual({
+      max: true,
+      max_value: 2100,
+    });
+  });
+
+  test("an answer nobody has responded to has no response date or responder", async () => {
+    const client = createTestClient();
+    const waiting = await answer(client, SCHOLARSHIP_FORM, 71004);
+    expect(waiting).toMatchObject({
+      approval_status: 0,
+      respond_date: null,
+      responded_by: null,
+      source: 0,
+    });
+    const anonymous = await answer(client, SCHOLARSHIP_FORM, 71007);
+    expect(anonymous, "no contact, so no location").toMatchObject({
+      city: null,
+      country: null,
+      ip_address: expect.any(String),
+    });
+    expect(anonymous?.user).toBeUndefined();
+    const decided = await answer(client, SCHOLARSHIP_FORM, 71002);
+    expect(decided?.respond_date).toEqual(expect.any(String));
+    expect(decided?.responded_by).toEqual({
+      id: expect.any(Number),
+      name: expect.any(String),
+      membership_no: expect.any(Number),
+    });
+    expect(
+      Date.parse(decided?.respond_date ?? "") -
+        Date.parse(decided?.complete_date ?? ""),
+      "the response comes after the answer",
+    ).toBeGreaterThan(0);
   });
 
   test("shows who refunded a refunded payment, and the error of a failed one", async () => {
@@ -347,7 +703,7 @@ describe("form answer details", () => {
     ).toBeUndefined();
     expect(failed?.user, "an anonymous answer has no contact").toBeUndefined();
     const free = await answer(client, VOLUNTEER_FORM, 71016);
-    expect(free?.transaction, "a free form has no payment").toBeUndefined();
+    expect(free?.transaction, "a free form has no payment").toBeNull();
     expect(free?.sent_mail).toBeUndefined();
   });
 
@@ -361,6 +717,66 @@ describe("form answer details", () => {
       path: { form_id: SCHOLARSHIP_FORM, answer_id: 79_999 },
     });
     expect(unknown.status).toBe(404);
+  });
+});
+
+describe("sent mail message ids", () => {
+  test("every SentEmail object sends the message id as a string", async () => {
+    const client = createTestClient();
+    const db = kelder(client);
+    const messageId = (id: number | null | undefined) =>
+      String(db.sentEmails.get(id ?? 0)?.message_id);
+
+    const donation = db.donations.find((row) => row.sent_mail_id !== null);
+    const donationBody = await client.ok("getDonationDetails", {
+      path: { donation_id: donation?.id ?? 0 },
+    });
+    expect(donationBody.donation?.sent_mail).toMatchObject({
+      id: donation?.sent_mail_id,
+      message_id: messageId(donation?.sent_mail_id),
+      status: expect.any(Number),
+    });
+
+    const micro = db.microDonations.find(
+      (row) => row.sent_mail_to_referring_id !== null,
+    );
+    const microBody = await client.ok("getMicroDonationDetails", {
+      path: { donation_id: micro?.id ?? 0 },
+    });
+    expect(microBody.donation?.sent_mail_to_referring).toMatchObject({
+      id: micro?.sent_mail_to_referring_id,
+      message_id: messageId(micro?.sent_mail_to_referring_id),
+      status: expect.any(Number),
+    });
+
+    const sale = db.ticketSales.find((row) => row.sent_mail_id !== null);
+    const saleBody = await client.ok("getTicketSaleDetails", {
+      path: { ticket_sale_id: sale?.id ?? 0 },
+    });
+    expect(saleBody.ticket_sale?.sent_mail).toMatchObject({
+      id: sale?.sent_mail_id,
+      message_id: messageId(sale?.sent_mail_id),
+      status: expect.any(Number),
+    });
+
+    const details = await answer(client, YEARBOOK_FORM, 71025);
+    expect(details?.sent_mail?.message_id).toBe(
+      messageId(details?.sent_mail?.id),
+    );
+  });
+
+  test("the flat sent_mail__message_id columns of a sale list stay integers", async () => {
+    const client = createTestClient();
+    const sales = await client.ok("getEcardTransactionList", {
+      query: { ...RANGE, ...PAGE },
+    });
+    const ids = (sales.sale_list ?? []).flatMap((row) =>
+      row.sent_mail__message_id === undefined
+        ? []
+        : [row.sent_mail__message_id],
+    );
+    expect(ids.length).toBeGreaterThan(0);
+    for (const id of ids) expect(typeof id).toBe("number");
   });
 });
 
@@ -438,9 +854,16 @@ describe("responding to a form answer", () => {
     expect(details?.approval_status).toBe(2);
     expect(details?.sent_mail).toEqual({
       id: expect.any(Number),
-      message_id: expect.any(Number),
+      message_id: expect.any(String),
       status: 0,
     });
+    expect(details?.respond_date, "answered now").toBe(
+      "2026-11-01T09:00:00+03:00",
+    );
+    expect(
+      details?.responded_by,
+      "an API key is not a contact, so nobody responded",
+    ).toBeNull();
     expect(details?.user?.membership_no, "rejection assigns nothing").toBe(67);
     expect(await answerIds(client, "rejected")).toContain(71013);
   });
@@ -644,11 +1067,14 @@ describe("responding to a form answer", () => {
       query: PAGE,
     });
     expect(survivorAnswers.answer_list?.map((row) => row.id)).toContain(71004);
-    const gone = await client.call("getUserAnswerList", {
+    const gone = await client.ok("getUserAnswerList", {
       path: { user_id: 1040 },
       query: PAGE,
     });
-    expect(gone.status).toBe(404);
+    expect(gone, "the merged contact has no answers").toEqual({
+      answer_list: [],
+      total: 0,
+    });
     const again = await client.ok("respondFormAnswer", {
       path: { form_id: SCHOLARSHIP_FORM, answer_id: 71004 },
       body: { response_type: "approve", answer: {} },
@@ -740,7 +1166,10 @@ describe("a contact's form answers", () => {
       query: PAGE,
     });
     expect(free.answer_list?.map((row) => row.id)).toEqual([71015]);
-    expect(free.answer_list?.[0]?.transaction_id).toBeUndefined();
+    expect(free.answer_list?.[0]).toMatchObject({
+      transaction_id: null,
+      transaction__amount: null,
+    });
     const none = await client.ok("getUserAnswerList", {
       path: { user_id: 1001 },
       query: PAGE,
@@ -748,12 +1177,15 @@ describe("a contact's form answers", () => {
     expect(none).toEqual({ answer_list: [], total: 0 });
   });
 
-  test("answers 404 for an unknown contact", async () => {
+  test("answers an empty list for an unknown contact, as production does", async () => {
     const client = createTestClient();
-    const response = await client.call("getUserAnswerList", {
-      path: { user_id: 99_999 },
-      query: PAGE,
-    });
-    expect(response.status).toBe(404);
+    for (const user_id of [99_999, 2_147_483_647]) {
+      const response = await client.call("getUserAnswerList", {
+        path: { user_id },
+        query: PAGE,
+      });
+      expect(response.status, String(user_id)).toBe(200);
+      expect(response.body).toEqual({ answer_list: [], total: 0 });
+    }
   });
 });

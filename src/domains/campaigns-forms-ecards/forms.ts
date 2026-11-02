@@ -15,8 +15,9 @@ import type {
   FormAnswerItemRecord,
   FormAnswerRecord,
   FormRecord,
+  UserRecord,
 } from "../../store/records";
-import { PAYMENT_STATUS } from "../../store/reference";
+import { currencyById, PAYMENT_STATUS } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
 import { mergePendingDuplicate } from "./contacts";
 import {
@@ -26,6 +27,7 @@ import {
   type SortKey,
   type SortValue,
 } from "./ordering";
+import { toQuestion } from "./form-questions";
 import { applyResponse, parseResponse } from "./form-responses";
 import { toTransaction } from "./transactions";
 
@@ -33,7 +35,16 @@ type Form = Row<FormRecord>;
 type Answer = Row<FormAnswerRecord>;
 type FormOrderBy = components["schemas"]["FormListOrder"];
 type FormOrder = OrderField<FormOrderBy>;
-export type AnswerStatus = HandlerInput<"getFormAnswerList">["query"]["status"];
+export type AnswerStatus = NonNullable<
+  HandlerInput<"getFormAnswerList">["query"]["status"]
+>;
+
+// `status` is optional. Without it production lists the rows of `status=answer`.
+const DEFAULT_ANSWER_STATUS: AnswerStatus = "answer";
+
+// Where an answer came from. 0 is the only value production has shown, and
+// every answer here comes from the public form.
+const ANSWER_SOURCE = 0;
 
 const APPROVAL_STATUS: Readonly<
   Record<FormAnswerRecord["approval_status"], AnswerStatus>
@@ -128,10 +139,10 @@ function toFormItem(store: OrgStore, view: FormView) {
     response_count: view.responses,
     create_date: form.create_date,
     created_by_id: form.created_by_id,
-    created_by__name: userName(store, form.created_by_id),
-    update_date: present(form.update_date),
-    updated_by_id: present(form.updated_by_id),
-    updated_by__name: userName(store, form.updated_by_id),
+    created_by__name: userName(store, form.created_by_id) ?? null,
+    update_date: form.update_date,
+    updated_by_id: form.updated_by_id,
+    updated_by__name: userName(store, form.updated_by_id) ?? null,
     archived_by_id: present(form.archived_by_id),
     archived_by__name: userName(store, form.archived_by_id),
     archive_date: present(form.archive_date),
@@ -171,6 +182,7 @@ function transactionOf(store: OrgStore, answer: Answer) {
 
 function toAnswerItem(store: OrgStore, answer: Answer, failed: boolean) {
   const payment = transactionOf(store, answer);
+  const currency = payment && currencyById(payment.currency_id);
   return {
     id: answer.id,
     first_name: answer.first_name,
@@ -178,8 +190,10 @@ function toAnswerItem(store: OrgStore, answer: Answer, failed: boolean) {
     email: answer.email,
     complete_date: answer.complete_date,
     user_id: present(answer.user_id),
-    transaction_id: present(answer.transaction_id),
-    transaction__amount: payment?.amount,
+    transaction_id: answer.transaction_id,
+    transaction__amount: payment?.amount ?? null,
+    transaction__currency__display: currency?.display ?? null,
+    transaction__currency__iso_code: currency?.iso_code ?? null,
     custom_form_id: answer.form_id,
     custom_form__title: store.forms.get(answer.form_id)?.title,
     ...(failed && payment
@@ -198,10 +212,11 @@ export const getFormAnswerList: Handler<"getFormAnswerList"> = (
 ) => {
   const range = parseDateRange(query.start_date, query.end_date);
   if ("error" in range) return { status: 400, body: { error: range.error } };
+  const status = query.status ?? DEFAULT_ANSWER_STATUS;
   const answers = store.formAnswers
     .list(
       (answer) =>
-        answerStatus(store, answer) === query.status &&
+        answerStatus(store, answer) === status &&
         inDateRange(answer.complete_date, range) &&
         matchesQuery(query.query, [
           answer.first_name,
@@ -215,7 +230,7 @@ export const getFormAnswerList: Handler<"getFormAnswerList"> = (
     status: 200,
     body: {
       answer_list: paginate(answers, query).map((answer) =>
-        toAnswerItem(store, answer, query.status === "failed"),
+        toAnswerItem(store, answer, status === "failed"),
       ),
       total: answers.length,
     },
@@ -231,45 +246,11 @@ function answerOfForm(
   return answer?.form_id === formId ? answer : undefined;
 }
 
-function toUdvQuestion(store: OrgStore, udvId: number | null) {
-  const udv = udvId === null ? undefined : store.userDefinedValues.get(udvId);
-  return (
-    udv && {
-      id: `C${udv.id}`,
-      udv_id: udv.id,
-      type: udv.type,
-      name: udv.name,
-      value: udv.value,
-      group: udv.group,
-      key_type: udv.key_type,
-      for: udv.for,
-      options: udv.options,
-      boolean_true_text: udv.boolean_true_text,
-      boolean_false_text: udv.boolean_false_text,
-      changable_by_users: udv.changable_by_users,
-      select_text: udv.select_text,
-      display_for: udv.display_for,
-    }
-  );
-}
-
 function toAnswerDetail(store: OrgStore, item: Row<FormAnswerItemRecord>) {
   const question = store.formQuestions.get(item.question_id);
   return {
     id: item.id,
-    question: question && {
-      id: question.id,
-      title: question.title,
-      slug: question.slug,
-      order: question.order,
-      question_type: question.question_type,
-      required: question.required,
-      information: question.information,
-      static_question: question.static_question,
-      udv_question: toUdvQuestion(store, question.udv_id),
-      custom_question: question.custom_question ?? undefined,
-      deleted: question.deleted,
-    },
+    question: question && toQuestion(store, question),
     answer: item.answer,
     db_answer: item.db_answer,
     selected_option_list: (question?.options ?? []).filter((option) =>
@@ -278,10 +259,22 @@ function toAnswerDetail(store: OrgStore, item: Row<FormAnswerItemRecord>) {
   };
 }
 
+function toPerson(user: Row<UserRecord>) {
+  return {
+    id: user.id,
+    name: fullName(user),
+    membership_no: user.membership_no,
+  };
+}
+
 function toAnswerDetails(store: OrgStore, answer: Answer) {
   const payment = transactionOf(store, answer);
   const user =
     answer.user_id === null ? undefined : store.users.get(answer.user_id);
+  const responder =
+    answer.responded_by_id === null
+      ? undefined
+      : store.users.get(answer.responded_by_id);
   const mail =
     answer.sent_mail_id === null
       ? undefined
@@ -290,13 +283,9 @@ function toAnswerDetails(store: OrgStore, answer: Answer) {
     store.formQuestions.get(item.question_id)?.order ?? 0;
   return {
     id: answer.id,
-    transaction: payment && toTransaction(store, payment),
+    transaction: payment ? toTransaction(store, payment) : null,
     complete_date: answer.complete_date,
-    user: user && {
-      id: user.id,
-      name: fullName(user),
-      membership_no: user.membership_no,
-    },
+    user: user && toPerson(user),
     email: answer.email,
     email_verification: answer.email_verification,
     first_name: answer.first_name,
@@ -308,9 +297,15 @@ function toAnswerDetails(store: OrgStore, answer: Answer) {
       .map((item) => toAnswerDetail(store, item)),
     sent_mail: mail && {
       id: mail.id,
-      message_id: mail.message_id,
+      message_id: String(mail.message_id),
       status: mail.status,
     },
+    city: answer.city,
+    country: answer.country,
+    ip_address: answer.ip_address,
+    respond_date: answer.respond_date,
+    responded_by: responder ? toPerson(responder) : null,
+    source: ANSWER_SOURCE,
   };
 }
 
@@ -345,7 +340,7 @@ export const getUserAnswerList: Handler<"getUserAnswerList"> = (
   { path, query },
   { store },
 ) => {
-  if (!store.users.get(path.user_id)) return notFound("User");
+  // An unknown contact has no answers. Production does not answer 404.
   const answers = store.formAnswers
     .list((answer) => answer.user_id === path.user_id)
     .sort(newestFirst((answer) => answer.complete_date));
@@ -355,8 +350,8 @@ export const getUserAnswerList: Handler<"getUserAnswerList"> = (
       answer_list: paginate(answers, query).map((answer) => ({
         id: answer.id,
         complete_date: answer.complete_date,
-        transaction_id: present(answer.transaction_id),
-        transaction__amount: transactionOf(store, answer)?.amount,
+        transaction_id: answer.transaction_id,
+        transaction__amount: transactionOf(store, answer)?.amount ?? null,
         custom_form_id: answer.form_id,
         custom_form__title: store.forms.get(answer.form_id)?.title,
       })),

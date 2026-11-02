@@ -224,7 +224,11 @@ function sentEmail(
 ): S["SentEmail"] | undefined {
   const mail = lookup(store.sentEmails, id);
   return (
-    mail && { id: mail.id, message_id: mail.message_id, status: mail.status }
+    mail && {
+      id: mail.id,
+      message_id: String(mail.message_id),
+      status: mail.status,
+    }
   );
 }
 
