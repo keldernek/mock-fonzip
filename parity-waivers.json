@@ -12,8 +12,11 @@
     },
     {
       "status": 403,
-      "operations": { "scope": "read" },
-      "reason": "Every API key holds the read scope, so a read operation is never refused for scope."
+      "operations": {
+        "scope": "read",
+        "except": ["generateLoginLinkForUser", "getEcardTransactionList"]
+      },
+      "reason": "Every API key holds the read scope, so a read operation is never refused for scope, and scope is the only reason these operations document for 403. The excepted operations also refuse for another reason: generateLoginLinkForUser refuses an administrator, and getEcardTransactionList refuses an order_by outside its list."
     },
     {
       "status": 400,

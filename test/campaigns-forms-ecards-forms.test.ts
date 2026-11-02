@@ -110,6 +110,19 @@ describe("form list", () => {
     expect(page.total).toBe(4);
   });
 
+  test("an unknown order_by falls back to order", async () => {
+    const client = createTestClient();
+    for (const order_by of ["bogus", "-order", "-bogus"]) {
+      const body = await client.ok("getFormList", {
+        query: { ...PAGE, order_by },
+      });
+      expect(
+        body.form_list?.map((form) => form.id),
+        order_by,
+      ).toEqual([701, 702, 703, 704]);
+    }
+  });
+
   test("orders by every order_by value, breaking ties by title", async () => {
     const client = createTestClient();
     const order = async (order_by: string) =>

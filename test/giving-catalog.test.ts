@@ -296,6 +296,19 @@ describe("getDonationPageList", () => {
     );
   });
 
+  test("an unknown order_by falls back to order", async () => {
+    const client = givingClient();
+    for (const orderBy of ["bogus", "-order", "-bogus"]) {
+      const body = await client.ok("getDonationPageList", {
+        query: { ...PAGE, order_by: orderBy },
+      });
+      expect(
+        body.page_list?.map((page) => page.id),
+        orderBy,
+      ).toEqual([31, 32, 33, 34]);
+    }
+  });
+
   test("lists pages that never received a donation last in both directions", async () => {
     const client = givingClient();
     const db = kelder(client);

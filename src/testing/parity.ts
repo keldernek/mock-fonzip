@@ -10,7 +10,11 @@ import type { CoverageSnapshot } from "./coverage";
 export type OperationSelector =
   | "all"
   | readonly string[]
-  | { readonly scope?: "read" | "write"; readonly requestInput?: boolean };
+  | {
+      readonly scope?: "read" | "write";
+      readonly requestInput?: boolean;
+      readonly except?: readonly string[];
+    };
 
 export interface StatusWaiver {
   readonly status: number;
@@ -61,9 +65,13 @@ function selector(node: Json | undefined): OperationSelector | undefined {
       node.scope === "read" || node.scope === "write" ? node.scope : undefined;
     const requestInput =
       typeof node.requestInput === "boolean" ? node.requestInput : undefined;
+    const except =
+      node.except === undefined ? undefined : selector(node.except);
+    if (except !== undefined && !Array.isArray(except)) return undefined;
     return {
       ...(scope ? { scope } : {}),
       ...(requestInput === undefined ? {} : { requestInput }),
+      ...(except === undefined ? {} : { except }),
     };
   }
   return undefined;
@@ -117,9 +125,12 @@ export function parseWaivers(
           `waivers.statuses[${index}]: a domain waiver must list its operations`,
         );
       }
-      if (Array.isArray(operations)) {
-        for (const id of operations) known(id, `waivers.statuses[${index}]`);
-      }
+      const named = Array.isArray(operations)
+        ? operations
+        : operations !== "all" && "except" in operations
+          ? (operations.except ?? [])
+          : [];
+      for (const id of named) known(id, `waivers.statuses[${index}]`);
       return {
         status: item.status,
         operations,
@@ -147,6 +158,9 @@ function selects(selection: OperationSelector, route: RouteEntry): boolean {
   if (selection === "all") return true;
   if (Array.isArray(selection)) return selection.includes(route.operationId);
   const rule = selection;
+  if ("except" in rule && rule.except?.includes(route.operationId)) {
+    return false;
+  }
   if ("scope" in rule && rule.scope !== undefined) {
     if (route.access !== "bearer" || route.scope !== rule.scope) return false;
   }

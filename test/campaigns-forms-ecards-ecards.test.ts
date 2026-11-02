@@ -446,6 +446,22 @@ describe("e-card transaction list", () => {
     });
   });
 
+  test("ignores unknown list values", async () => {
+    const client = createTestClient();
+    const fields = async (list: string[]) =>
+      (
+        await client.ok("getEcardTransactionList", {
+          query: { ...RANGE, ...PAGE, list },
+        })
+      ).sale_list ?? [];
+    const known = await fields(["ecard"]);
+    expect(known[0]?.certificate__title).toEqual(expect.any(String));
+    expect(await fields(["ecard", "bogus"])).toEqual(known);
+    expect(await fields(["bogus"]), "only the base set").toEqual(
+      known.map(({ certificate__title: _title, ...base }) => base),
+    );
+  });
+
   test("returns every other list value under its own name or its marketing channel", async () => {
     const client = createTestClient();
     const db = kelder(client);
@@ -762,6 +778,26 @@ describe("e-card transaction list", () => {
       },
     });
     expect(reversed.status).toBe(400);
+  });
+
+  test("refuses an order_by outside its list with 403", async () => {
+    const client = createTestClient();
+    for (const status of ["paid", "refund", "failed"]) {
+      for (const order_by of [
+        "bogus",
+        "-bogus",
+        "certificate__title",
+        "-transaction__currency__display",
+      ]) {
+        const response = await client.call("getEcardTransactionList", {
+          query: { ...RANGE, ...PAGE, status, order_by },
+        });
+        expect(response.status, `${status} ${order_by}`).toBe(403);
+        expect(response.body).toEqual({
+          error: `No Permission: order_by ${order_by} is not a sortable field`,
+        });
+      }
+    }
   });
 
   test("orders by every order_by value in both directions, tie-breaking by id", async () => {

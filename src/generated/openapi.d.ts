@@ -5218,6 +5218,14 @@ export interface components {
                 FUNDRAISING_CAMPAIGN?: boolean;
             };
         };
+        /** @enum {string} */
+        DonationPageListOrder: "order" | "title" | "-title" | "last_donation_date" | "-last_donation_date";
+        /** @enum {string} */
+        FormListOrder: "order" | "title" | "-title" | "response_count" | "-response_count" | "waiting_approval" | "-waiting_approval" | "last_answer_date" | "-last_answer_date";
+        /** @enum {string} */
+        EcardTransactionListOrder: "transaction__complete_date" | "-transaction__complete_date" | "transaction__amount" | "-transaction__amount" | "transaction__refund_date" | "-transaction__refund_date" | "id" | "-id" | "first_name" | "-first_name" | "last_name" | "-last_name" | "email" | "-email" | "phone" | "-phone" | "birthday" | "-birthday" | "city" | "-city" | "district" | "-district" | "address" | "-address" | "donor_type" | "-donor_type" | "language" | "-language" | "cargo_status" | "-cargo_status" | "cargo_number" | "-cargo_number" | "cargo_company" | "-cargo_company" | "has_cargo" | "-has_cargo" | "deliver_as_mail" | "-deliver_as_mail" | "deliver_as_cargo" | "-deliver_as_cargo" | "delivery_to" | "-delivery_to" | "delivery_to_name" | "-delivery_to_name" | "delivery_date" | "-delivery_date" | "delivery_time_mode" | "-delivery_time_mode" | "ecard_date" | "-ecard_date" | "recipient_count" | "-recipient_count" | "recipient_list" | "-recipient_list" | "custom_message" | "-custom_message" | "referring" | "-referring" | "third_name" | "-third_name" | "referring_name" | "-referring_name" | "referring_email" | "-referring_email" | "referring_phone" | "-referring_phone" | "bill_type" | "-bill_type" | "billing_name" | "-billing_name" | "tax_info" | "-tax_info" | "billing_address" | "-billing_address" | "billing_district" | "-billing_district" | "billing_city" | "-billing_city" | "news_via_phone" | "-news_via_phone" | "news_via_sms" | "-news_via_sms" | "news_via_email" | "-news_via_email" | "last_update_date" | "-last_update_date" | "certificate_id" | "-certificate_id" | "transaction_id" | "-transaction_id" | "user_id" | "-user_id" | "association_id" | "-association_id" | "added_by_id" | "-added_by_id" | "updated_by_id" | "-updated_by_id" | "sent_mail_id" | "-sent_mail_id" | "sent_mail_to_referring_id" | "-sent_mail_to_referring_id" | "marketing_channel_id" | "-marketing_channel_id" | "agreements" | "-agreements";
+        /** @enum {string} */
+        EcardTransactionListField: "ecard" | "amount" | "email_status" | "complete_date" | "payment_method" | "fonzip_id" | "transaction_id" | "provision_no" | "receipt_no" | "ip_address" | "payment_settings_id" | "payment_settings__name" | "bank_account_id" | "bank_account__name" | "added_by_id" | "card_number" | "delivery_date" | "news_via_phone" | "news_via_sms" | "news_via_email" | "recipient_list" | "bill_type" | "billing_name" | "tax_info" | "billing_address" | "billing_district" | "billing_city" | "address" | "city" | "district" | "referring" | "third_name" | "referring_name" | "referring_email" | "referring_phone" | "language" | "donor_type" | "delivery_to" | "delivery_to_name" | "custom_message" | "has_cargo" | "deliver_as_mail" | "deliver_as_cargo" | "ecard_date" | "category" | "marketing_channel__utm_source" | "marketing_channel__utm_medium" | "marketing_channel__utm_campaign" | "marketing_channel__utm_content";
     };
     responses: {
         /** @description Operation successful */
@@ -8986,7 +8994,7 @@ export interface operations {
                  *     `id`. `last_donation_date` lists pages that never received a donation last in
                  *     both directions.
                  */
-                order_by?: "order" | "title" | "-title" | "last_donation_date" | "-last_donation_date";
+                order_by?: string;
             };
             header?: never;
             path?: never;
@@ -10429,7 +10437,7 @@ export interface operations {
                  *     directions. `response_count` and `waiting_approval` sort by the numbers the
                  *     list returns for each form. Works together with `archived`.
                  */
-                order_by?: "order" | "title" | "-title" | "response_count" | "-response_count" | "waiting_approval" | "-waiting_approval" | "last_answer_date" | "-last_answer_date";
+                order_by?: string;
             };
             header?: never;
             path?: never;
@@ -10737,7 +10745,7 @@ export interface operations {
                  *     *(paid only)* `first_name` / `-first_name` additionally sorts by
                  *     `last_name` with the same direction.
                  */
-                order_by?: "transaction__complete_date" | "-transaction__complete_date" | "transaction__amount" | "-transaction__amount" | "transaction__refund_date" | "-transaction__refund_date" | "id" | "-id" | "first_name" | "-first_name" | "last_name" | "-last_name" | "email" | "-email" | "phone" | "-phone" | "birthday" | "-birthday" | "city" | "-city" | "district" | "-district" | "address" | "-address" | "donor_type" | "-donor_type" | "language" | "-language" | "cargo_status" | "-cargo_status" | "cargo_number" | "-cargo_number" | "cargo_company" | "-cargo_company" | "has_cargo" | "-has_cargo" | "deliver_as_mail" | "-deliver_as_mail" | "deliver_as_cargo" | "-deliver_as_cargo" | "delivery_to" | "-delivery_to" | "delivery_to_name" | "-delivery_to_name" | "delivery_date" | "-delivery_date" | "delivery_time_mode" | "-delivery_time_mode" | "ecard_date" | "-ecard_date" | "recipient_count" | "-recipient_count" | "recipient_list" | "-recipient_list" | "custom_message" | "-custom_message" | "referring" | "-referring" | "third_name" | "-third_name" | "referring_name" | "-referring_name" | "referring_email" | "-referring_email" | "referring_phone" | "-referring_phone" | "bill_type" | "-bill_type" | "billing_name" | "-billing_name" | "tax_info" | "-tax_info" | "billing_address" | "-billing_address" | "billing_district" | "-billing_district" | "billing_city" | "-billing_city" | "news_via_phone" | "-news_via_phone" | "news_via_sms" | "-news_via_sms" | "news_via_email" | "-news_via_email" | "last_update_date" | "-last_update_date" | "certificate_id" | "-certificate_id" | "transaction_id" | "-transaction_id" | "user_id" | "-user_id" | "association_id" | "-association_id" | "added_by_id" | "-added_by_id" | "updated_by_id" | "-updated_by_id" | "sent_mail_id" | "-sent_mail_id" | "sent_mail_to_referring_id" | "-sent_mail_to_referring_id" | "marketing_channel_id" | "-marketing_channel_id" | "agreements" | "-agreements";
+                order_by?: string;
                 /** @description *(paid only)* filter sales on e-Card id */
                 ecard_id?: number;
                 /** @description *(paid only)* payment settings id */
@@ -10841,7 +10849,7 @@ export interface operations {
                  *     returns `transaction__fonzip_id`). All remaining values are
                  *     returned under their own name. Unknown values are ignored.
                  */
-                list?: ("ecard" | "amount" | "email_status" | "complete_date" | "payment_method" | "fonzip_id" | "transaction_id" | "provision_no" | "receipt_no" | "ip_address" | "payment_settings_id" | "payment_settings__name" | "bank_account_id" | "bank_account__name" | "added_by_id" | "card_number" | "delivery_date" | "news_via_phone" | "news_via_sms" | "news_via_email" | "recipient_list" | "bill_type" | "billing_name" | "tax_info" | "billing_address" | "billing_district" | "billing_city" | "address" | "city" | "district" | "referring" | "third_name" | "referring_name" | "referring_email" | "referring_phone" | "language" | "donor_type" | "delivery_to" | "delivery_to_name" | "custom_message" | "has_cargo" | "deliver_as_mail" | "deliver_as_cargo" | "ecard_date" | "category" | "marketing_channel__utm_source" | "marketing_channel__utm_medium" | "marketing_channel__utm_campaign" | "marketing_channel__utm_content")[];
+                list?: string[];
             };
             header?: never;
             path?: never;

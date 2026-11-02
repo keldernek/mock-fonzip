@@ -7,6 +7,7 @@ import {
   paginate,
   parseDateRange,
 } from "../../api/listing";
+import type { components } from "../../generated/openapi";
 import { istanbulDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { fullName, present, userName } from "../../store/joins";
@@ -21,7 +22,6 @@ import { mergePendingDuplicate } from "./contacts";
 import {
   compareBy,
   dateValue,
-  orderKey,
   type OrderField,
   type SortKey,
   type SortValue,
@@ -31,8 +31,8 @@ import { toTransaction } from "./transactions";
 
 type Form = Row<FormRecord>;
 type Answer = Row<FormAnswerRecord>;
-type FormListQuery = HandlerInput<"getFormList">["query"];
-type FormOrder = OrderField<NonNullable<FormListQuery["order_by"]>>;
+type FormOrderBy = components["schemas"]["FormListOrder"];
+type FormOrder = OrderField<FormOrderBy>;
 export type AnswerStatus = HandlerInput<"getFormAnswerList">["query"]["status"];
 
 const APPROVAL_STATUS: Readonly<
@@ -85,13 +85,32 @@ const FORM_ORDER: Readonly<Record<FormOrder, (view: FormView) => SortValue>> = {
   last_answer_date: (view) => dateValue(view.lastAnswer),
 };
 
-function formOrdering(orderBy: string): SortKey<FormView>[] {
-  const primary = orderKey(orderBy, FORM_ORDER);
-  if (primary.length === 0) return orderKey("order", FORM_ORDER);
-  const field = orderBy.replace(/^-/, "");
+function orderingBy(
+  field: FormOrder,
+  descending = false,
+): readonly SortKey<FormView>[] {
+  const primary = { value: FORM_ORDER[field], descending };
   return field === "order" || field === "title"
-    ? primary
-    : [...primary, { value: FORM_ORDER.title }];
+    ? [primary]
+    : [primary, { value: FORM_ORDER.title }];
+}
+
+const FORM_ORDERINGS: Readonly<
+  Record<FormOrderBy, readonly SortKey<FormView>[]>
+> = {
+  order: orderingBy("order"),
+  title: orderingBy("title"),
+  "-title": orderingBy("title", true),
+  response_count: orderingBy("response_count"),
+  "-response_count": orderingBy("response_count", true),
+  waiting_approval: orderingBy("waiting_approval"),
+  "-waiting_approval": orderingBy("waiting_approval", true),
+  last_answer_date: orderingBy("last_answer_date"),
+  "-last_answer_date": orderingBy("last_answer_date", true),
+};
+
+function isFormOrderBy(value: string | undefined): value is FormOrderBy {
+  return value !== undefined && Object.hasOwn(FORM_ORDERINGS, value);
 }
 
 function toFormItem(store: OrgStore, view: FormView) {
@@ -128,7 +147,13 @@ export const getFormList: Handler<"getFormList"> = ({ query }, { store }) => {
         matchesQuery(query.query, [form.title]),
     )
     .map((form) => viewOf(store, form))
-    .sort(compareBy(formOrdering(query.order_by ?? "order")));
+    .sort(
+      compareBy(
+        FORM_ORDERINGS[
+          isFormOrderBy(query.order_by) ? query.order_by : "order"
+        ],
+      ),
+    );
   return {
     status: 200,
     body: {

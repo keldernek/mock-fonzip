@@ -1,11 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-import { toJson } from "../src/spec/json";
+import { toJson, type Json } from "../src/spec/json";
 import { specRuntime } from "../src/spec/runtime";
-import { loadWaivers, parseWaivers } from "../src/testing/parity";
+import {
+  computeParity,
+  loadWaivers,
+  parseWaivers,
+} from "../src/testing/parity";
 
-const { table } = specRuntime();
+const { spec, table } = specRuntime();
 
 describe("parity waivers", () => {
   test("the committed waivers parse, and each one carries a reason", () => {
@@ -53,6 +57,31 @@ describe("parity waivers", () => {
         table,
       ),
     ).toThrow("unknown operationId");
+  });
+
+  test("a rule selector leaves out the operations it excepts", () => {
+    const rule = (except: Json) =>
+      parseWaivers(
+        {
+          statuses: [
+            {
+              status: 403,
+              operations: { scope: "read", except },
+              reason: "a long enough reason",
+            },
+          ],
+          inputs: [],
+          properties: [],
+        },
+        table,
+      );
+    const statusOf = (operationId: string) =>
+      computeParity(spec, table, { operations: {} }, rule(["getFormList"]))
+        .find((row) => row.operationId === operationId)
+        ?.statuses.get(403);
+    expect(statusOf("getFormList")).toBe("missing");
+    expect(statusOf("getEcardList")).toBe("waived");
+    expect(() => rule(["getNothing"])).toThrow("unknown operationId");
   });
 
   test("merges the global file with every domain's file", () => {

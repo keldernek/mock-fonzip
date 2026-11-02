@@ -94,6 +94,77 @@ function acceptBareDates(spec: JsonObject): JsonObject {
   return { ...spec, paths: rewritten };
 }
 
+const OPEN_ENUM_PARAMETERS: Readonly<
+  Record<string, Readonly<Record<string, string>>>
+> = {
+  getDonationPageList: { order_by: "DonationPageListOrder" },
+  getFormList: { order_by: "FormListOrder" },
+  getEcardTransactionList: {
+    order_by: "EcardTransactionListOrder",
+    list: "EcardTransactionListField",
+  },
+};
+
+function withoutEnum(schema: JsonObject): {
+  readonly open: JsonObject;
+  readonly known: JsonObject;
+} {
+  const { enum: values, ...open } = schema;
+  if (Array.isArray(values)) {
+    return { open, known: { type: schema.type ?? "string", enum: values } };
+  }
+  if (isJsonObject(schema.items)) {
+    const items = withoutEnum(schema.items);
+    return { open: { ...schema, items: items.open }, known: items.known };
+  }
+  throw new Error("an open enum parameter has no enum");
+}
+
+function openProseEnums(spec: JsonObject): JsonObject {
+  const known = new Map<string, JsonObject>();
+  const rewritten = mapJson(spec, (node) => {
+    const names =
+      typeof node.operationId === "string"
+        ? OPEN_ENUM_PARAMETERS[node.operationId]
+        : undefined;
+    if (names === undefined || !Array.isArray(node.parameters)) return node;
+    return {
+      ...node,
+      parameters: node.parameters.map((parameter) => {
+        if (
+          !isJsonObject(parameter) ||
+          typeof parameter.name !== "string" ||
+          !isJsonObject(parameter.schema)
+        ) {
+          return parameter;
+        }
+        const name = names[parameter.name];
+        if (name === undefined) return parameter;
+        const { open, known: values } = withoutEnum(parameter.schema);
+        known.set(name, values);
+        return { ...parameter, schema: open };
+      }),
+    };
+  });
+  if (!isJsonObject(rewritten) || !isJsonObject(rewritten.components)) {
+    return spec;
+  }
+  const schemas = rewritten.components.schemas;
+  if (!isJsonObject(schemas)) return spec;
+  for (const name of known.keys()) {
+    if (schemas[name] !== undefined) {
+      throw new Error(`cannot hoist the ${name} enum: schema exists`);
+    }
+  }
+  return {
+    ...rewritten,
+    components: {
+      ...rewritten.components,
+      schemas: { ...schemas, ...Object.fromEntries(known) },
+    },
+  };
+}
+
 function nullableEnumAllowsNull(node: JsonObject): JsonObject {
   if (node.nullable !== true || !Array.isArray(node.enum)) return node;
   return node.enum.includes(null)
@@ -268,7 +339,9 @@ export function normalizeSpec(spec: Json): JsonObject {
   if (!isJsonObject(spec)) throw new Error("the spec is not a JSON object");
   const corrected = mapJson(
     placeholderKeyedMaps(
-      searchFilterGroups(acceptBareDates(hoistRequestBodySchemas(spec))),
+      searchFilterGroups(
+        openProseEnums(acceptBareDates(hoistRequestBodySchemas(spec))),
+      ),
     ),
     (node) =>
       enumPlaceholderAsPattern(

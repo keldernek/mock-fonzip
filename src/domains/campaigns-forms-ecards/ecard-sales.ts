@@ -1,4 +1,4 @@
-import { notFound } from "../../api/errors";
+import { errorBody, notFound } from "../../api/errors";
 import type { Handler, HandlerInput, ResponseBody } from "../../api/handler";
 import {
   inDateRange,
@@ -9,6 +9,7 @@ import {
   paginate,
   parseDateRange,
 } from "../../api/listing";
+import type { components } from "../../generated/openapi";
 import { istanbulDate } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { nonEmpty, present, userName } from "../../store/joins";
@@ -33,8 +34,9 @@ import {
 type Sale = Row<EcardTransactionRecord>;
 type ListQuery = HandlerInput<"getEcardTransactionList">["query"];
 type ListStatus = NonNullable<ListQuery["status"]>;
-type ListField = NonNullable<ListQuery["list"]>[number];
-type SaleOrder = OrderField<NonNullable<ListQuery["order_by"]>>;
+type ListField = components["schemas"]["EcardTransactionListField"];
+type SaleOrderBy = components["schemas"]["EcardTransactionListOrder"];
+type SaleOrder = OrderField<SaleOrderBy>;
 type CardCountry = NonNullable<ListQuery["card_country"]>;
 type CardType = NonNullable<ListQuery["card_type"]>;
 type SaleListItem = NonNullable<
@@ -208,7 +210,11 @@ const SALE_ORDER: Readonly<Record<SaleOrder, (view: SaleView) => SortValue>> = {
   agreements: () => null,
 };
 
-function saleOrdering(orderBy: string): SortKey<SaleView>[] {
+function isSaleOrderBy(value: string): value is SaleOrder | `-${SaleOrder}` {
+  return Object.hasOwn(SALE_ORDER, value.replace(/^-/, ""));
+}
+
+function saleOrdering(orderBy: SaleOrderBy): SortKey<SaleView>[] {
   const keys = orderKey(orderBy, SALE_ORDER);
   const [primary] = keys;
   if (primary && orderBy.replace(/^-/, "") === "first_name") {
@@ -418,6 +424,10 @@ const LIST_FIELDS = {
   }),
 } satisfies Record<ListField, FieldGroup>;
 
+function isListField(value: string): value is ListField {
+  return Object.hasOwn(LIST_FIELDS, value);
+}
+
 function refundFields(store: OrgStore, view: SaleView) {
   return {
     transaction__refund_date: present(view.transaction.refund_date),
@@ -473,9 +483,22 @@ export const getEcardTransactionList: Handler<"getEcardTransactionList"> = (
   { query },
   { store },
 ) => {
+  const status = query.status ?? "paid";
+  const orderBy =
+    query.order_by ??
+    (status === "refund"
+      ? "-transaction__refund_date"
+      : "-transaction__complete_date");
+  if (!isSaleOrderBy(orderBy)) {
+    return {
+      status: 403,
+      body: {
+        error: `${errorBody(403).error}: order_by ${orderBy} is not a sortable field`,
+      },
+    };
+  }
   const range = parseDateRange(query.start_date, query.end_date);
   if ("error" in range) return { status: 400, body: { error: range.error } };
-  const status = query.status ?? "paid";
   const rows = views(store, () => true)
     .filter((view) => {
       const at = dateFor(view, status);
@@ -494,16 +517,7 @@ export const getEcardTransactionList: Handler<"getEcardTransactionList"> = (
         (status !== "paid" || paidFiltersMatch(view, query))
       );
     })
-    .sort(
-      compareBy(
-        saleOrdering(
-          query.order_by ??
-            (status === "refund"
-              ? "-transaction__refund_date"
-              : "-transaction__complete_date"),
-        ),
-      ),
-    );
+    .sort(compareBy(saleOrdering(orderBy)));
   return {
     status: 200,
     body: {
@@ -512,7 +526,7 @@ export const getEcardTransactionList: Handler<"getEcardTransactionList"> = (
           store,
           view,
           status,
-          status === "paid" ? query.list : undefined,
+          status === "paid" ? query.list?.filter(isListField) : undefined,
         ),
       ),
       total: rows.length,

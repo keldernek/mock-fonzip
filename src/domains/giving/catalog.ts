@@ -1,6 +1,6 @@
 import type { Handler } from "../../api/handler";
 import { matchesQuery, paginate } from "../../api/listing";
-import type { operations } from "../../generated/openapi";
+import type { components } from "../../generated/openapi";
 import type { Row } from "../../store/collection";
 import { present, userName } from "../../store/joins";
 import type {
@@ -48,9 +48,7 @@ function audit(
   };
 }
 
-type PageOrder = NonNullable<
-  operations["getDonationPageList"]["parameters"]["query"]["order_by"]
->;
+type PageOrder = components["schemas"]["DonationPageListOrder"];
 
 interface DatedPage {
   readonly page: Row<DonationPageRecord>;
@@ -93,6 +91,10 @@ const PAGE_ORDERINGS: { readonly [K in PageOrder]: Compare } = {
   "-last_donation_date": chain(byLastDonation(-1), byTitle, byId),
 };
 
+function isPageOrder(value: string | undefined): value is PageOrder {
+  return value !== undefined && Object.hasOwn(PAGE_ORDERINGS, value);
+}
+
 export const getDonationPageList: Handler<"getDonationPageList"> = (
   { query },
   { store },
@@ -106,7 +108,9 @@ export const getDonationPageList: Handler<"getDonationPageList"> = (
         (donation) => donation.fundraising_page_id === page.id,
       ),
     }))
-    .sort(PAGE_ORDERINGS[query.order_by ?? "order"]);
+    .sort(
+      PAGE_ORDERINGS[isPageOrder(query.order_by) ? query.order_by : "order"],
+    );
   return {
     status: 200,
     body: {
