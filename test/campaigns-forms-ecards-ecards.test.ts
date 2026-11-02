@@ -6,7 +6,7 @@ import type {
   TransactionRecord,
 } from "../src/store/records";
 import { createTestClient, type TestClient } from "../src/testing/client";
-import { kelder, PAGE } from "./campaigns-forms-ecards-support";
+import { kelder, PAGE, simulate } from "./campaigns-forms-ecards-support";
 
 const RANGE = {
   start_date: "2025-01-01T00:00:00+03:00",
@@ -797,6 +797,55 @@ describe("e-card transaction list", () => {
           error: `No Permission: order_by ${order_by} is not a sortable field`,
         });
       }
+    }
+  });
+
+  test("breaks a first_name tie by last_name only in the paid list", async () => {
+    const client = createTestClient({
+      fetch: async () => new Response(null, { status: 204 }),
+    });
+    const sell = async (last_name: string, payment_status: number) => {
+      const result = await simulate(client, "ecard-sale", {
+        ecard_id: 951,
+        first_name: "Zeynep",
+        last_name,
+        email: `zeynep@siralama.example`,
+        payment_status,
+      });
+      const body = result.body;
+      const id =
+        typeof body === "object" && body !== null
+          ? Reflect.get(body, "sale_id")
+          : undefined;
+      if (typeof id !== "number") throw new Error(JSON.stringify(body));
+      return id;
+    };
+    const ordered = async (status: string, order_by: string) =>
+      (
+        await client.ok("getEcardTransactionList", {
+          query: { ...RANGE, ...PAGE, status, order_by, query: "siralama" },
+        })
+      ).sale_list?.map((sale) => sale.id);
+    const paidZorlu = await sell("Zorlu", 3);
+    const paidAkin = await sell("Akın", 3);
+    const failedZorlu = await sell("Zorlu", 5);
+    const failedAkin = await sell("Akın", 5);
+    expect(await ordered("paid", "first_name")).toEqual([paidAkin, paidZorlu]);
+    expect(await ordered("paid", "-first_name")).toEqual([paidZorlu, paidAkin]);
+    for (const saleId of [paidZorlu, paidAkin]) {
+      expect(
+        (await simulate(client, "ecard-refund", { sale_id: saleId })).status,
+      ).toBe(200);
+    }
+    for (const order_by of ["first_name", "-first_name"]) {
+      expect(await ordered("refund", order_by), `refund ${order_by}`).toEqual([
+        paidZorlu,
+        paidAkin,
+      ]);
+      expect(await ordered("failed", order_by), `failed ${order_by}`).toEqual([
+        failedZorlu,
+        failedAkin,
+      ]);
     }
   });
 

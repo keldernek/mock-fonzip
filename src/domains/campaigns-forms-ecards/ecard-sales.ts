@@ -215,10 +215,17 @@ function isSaleOrderBy(value: string): value is SaleOrder | `-${SaleOrder}` {
   return Object.hasOwn(SALE_ORDER, value.replace(/^-/, ""));
 }
 
-function saleOrdering(orderBy: SaleOrderBy): SortKey<SaleView>[] {
+function saleOrdering(
+  orderBy: SaleOrderBy,
+  status: ListStatus,
+): SortKey<SaleView>[] {
   const keys = orderKey(orderBy, SALE_ORDER);
   const [primary] = keys;
-  if (primary && orderBy.replace(/^-/, "") === "first_name") {
+  if (
+    primary &&
+    status === "paid" &&
+    orderBy.replace(/^-/, "") === "first_name"
+  ) {
     return [
       ...keys,
       { value: SALE_ORDER.last_name, descending: primary.descending },
@@ -518,7 +525,7 @@ export const getEcardTransactionList: Handler<"getEcardTransactionList"> = (
         (status !== "paid" || paidFiltersMatch(view, query))
       );
     })
-    .sort(compareBy(saleOrdering(orderBy)));
+    .sort(compareBy(saleOrdering(orderBy, status)));
   return {
     status: 200,
     body: {
