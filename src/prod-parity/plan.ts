@@ -327,11 +327,13 @@ export const STEPS: readonly ShapeStep[] = [
     build: (side) => ({
       input: { query: { status: "paid", ...windowQuery(side), ...PAGE } },
     }),
+    // Production lists the dues as payment_list, not the spec's
+    // subscription_list, and the corrected spec and the mock follow it.
     remember: (body, ids) => {
-      takeFirst(ids, body, "subscription_list", [
+      takeFirst(ids, body, "payment_list", [
         { name: "subscription", field: "id" },
       ]);
-      takeFirst(ids, body, "subscription_list", [
+      takeFirst(ids, body, "payment_list", [
         { name: "subscriptionUser", field: "user_id" },
       ]);
     },
