@@ -5,7 +5,7 @@ import type { paths } from "./generated/mock-control.js";
 export * from "./generated/mock-control.js";
 export type { paths as MockControlPaths };
 
-export const MOCK_ORIGIN = "http://localhost:8790";
+export const MOCK_ORIGIN = "http://localhost:4811";
 
 export interface MockControlOptions extends ClientOptions {
   /** The mock's origin. The control plane is served under `/__mock`. */

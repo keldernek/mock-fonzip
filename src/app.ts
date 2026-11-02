@@ -29,7 +29,7 @@ import {
   type WebhookFetch,
 } from "./webhooks/emitter";
 
-export const DEFAULT_PORT = 8790;
+export const DEFAULT_PORT = 4811;
 
 export interface MockOptions {
   readonly clock?: Clock;

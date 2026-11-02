@@ -11,7 +11,7 @@ import { orgStore, type OrgStore, type Records } from "../src/store/store";
 
 const OPTIONS: SeedOptions = {
   seed: DEFAULT_SEED,
-  selfOrigin: "http://localhost:8790",
+  selfOrigin: "http://localhost:4811",
   apiKeyIds: {
     kelder: ["kelder-read-write", "kelder-read-only"],
     ornek: ["ornek-read-write"],

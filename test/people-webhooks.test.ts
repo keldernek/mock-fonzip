@@ -19,12 +19,12 @@ describe("webhooks", () => {
         {
           id: 21,
           name: "Muhasebe Entegrasyonu",
-          url: "http://localhost:8790/__mock/webhooks/sink?receiver=muhasebe",
+          url: "http://localhost:4811/__mock/webhooks/sink?receiver=muhasebe",
         },
         {
           id: 22,
           name: "CRM Senkronizasyonu",
-          url: "http://localhost:8790/__mock/webhooks/sink?receiver=crm",
+          url: "http://localhost:4811/__mock/webhooks/sink?receiver=crm",
         },
       ],
     });
@@ -34,7 +34,7 @@ describe("webhooks", () => {
       webhook: {
         id: 21,
         name: "Muhasebe Entegrasyonu",
-        url: "http://localhost:8790/__mock/webhooks/sink?receiver=muhasebe",
+        url: "http://localhost:4811/__mock/webhooks/sink?receiver=muhasebe",
         authentication: true,
         auth_token: "kelder-muhasebe-token",
         events: {

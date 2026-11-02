@@ -15,16 +15,16 @@ bun install
 bun run dev
 ```
 
-The server listens on port 8790. Set `MOCK_FONZIP_PORT` to change the port. Use `bun run start` to run it without file watching. On boot, the server prints the API and control-plane URLs, the clock's starting time, and every credential.
+The server listens on port 4811. Set `MOCK_FONZIP_PORT` to change the port. Use `bun run start` to run it without file watching. On boot, the server prints the API and control-plane URLs, the clock's starting time, and every credential.
 
 Get a token, then call the API with it:
 
 ```sh
-token=$(curl -s -X POST http://localhost:8790/api/v2/token \
+token=$(curl -s -X POST http://localhost:4811/api/v2/token \
 	-d grant_type=client_credentials -d client_id=kelder-local -d client_secret=kelder-local-secret |
 	jq -r .access_token)
-curl -s -H "Authorization: Bearer $token" http://localhost:8790/api/v2/me
-curl -s -H "Authorization: Bearer $token" "http://localhost:8790/api/v2/tags?start_page=1&how_many=10"
+curl -s -H "Authorization: Bearer $token" http://localhost:4811/api/v2/me
+curl -s -H "Authorization: Bearer $token" "http://localhost:4811/api/v2/tags?start_page=1&how_many=10"
 ```
 
 ## Credentials

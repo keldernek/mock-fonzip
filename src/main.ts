@@ -1,7 +1,7 @@
-import { createMockFonzip } from "./app";
+import { createMockFonzip, DEFAULT_PORT } from "./app";
 import { runningClock } from "./core/clock";
 
-const port = Number(process.env.MOCK_FONZIP_PORT ?? 8790);
+const port = Number(process.env.MOCK_FONZIP_PORT ?? DEFAULT_PORT);
 const limit = Number(process.env.MOCK_FONZIP_RATE_LIMIT ?? 60);
 const windowMs = Number(process.env.MOCK_FONZIP_RATE_WINDOW_MS ?? 60_000);
 

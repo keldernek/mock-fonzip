@@ -7,7 +7,7 @@ info:
 
     The paths are relative to `/__mock` on the mock's origin. Fonzip itself has none of these routes.
 servers:
-  - url: http://localhost:8790/__mock
+  - url: http://localhost:4811/__mock
     description: A mock started with `bun run start`
 paths:
   /reset:

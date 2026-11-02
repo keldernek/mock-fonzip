@@ -46,7 +46,7 @@ const { data, error } = await fonzip.GET("/tags", {
 
 Auth wraps `fetch`, so middleware added with `fonzip.use()` sees the token request and the retry as one exchange.
 
-`baseUrl` defaults to `https://fonzip.com/api/v2`. Use `http://localhost:8790/api/v2` for the mock. Every other option goes to openapi-fetch's `createClient`, such as `fetch` or `headers`. The returned `FonzipClient` is an openapi-fetch client, so `fonzip.use()` adds middleware.
+`baseUrl` defaults to `https://fonzip.com/api/v2`. Use `http://localhost:4811/api/v2` for the mock. Every other option goes to openapi-fetch's `createClient`, such as `fetch` or `headers`. The returned `FonzipClient` is an openapi-fetch client, so `fonzip.use()` adds middleware.
 
 ## Named types
 
@@ -68,13 +68,13 @@ const { data } = await fonzip[method](path);
 ```ts
 import { createMockControl } from "@keldernek/fonzip-client/mock";
 
-const control = createMockControl({ baseUrl: "http://localhost:8790" });
+const control = createMockControl({ baseUrl: "http://localhost:4811" });
 await control.POST("/reset");
 await control.POST("/clock/advance", { body: { seconds: 3600 } });
 const { data } = await control.GET("/clock");
 ```
 
-`baseUrl` is the mock's origin and defaults to `http://localhost:8790`. The client adds `/__mock`. The control plane's schemas are exported by name from this entry point too, such as `Clock` or `WebhookDelivery`.
+`baseUrl` is the mock's origin and defaults to `http://localhost:4811`. The client adds `/__mock`. The control plane's schemas are exported by name from this entry point too, such as `Clock` or `WebhookDelivery`.
 
 ## Where the types come from
 
