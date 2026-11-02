@@ -119,7 +119,37 @@ export type WebhookRecord = Own<Omit<S["Webhook"], "events">> & {
   events: Own<Exclude<S["Webhook"]["events"], undefined>>;
 };
 
-export type TemplateRecord = Own<S["Template"]>;
+// Language code to field name (subject, message, btn_text) to text. Both levels
+// are open: the response schema is a free-form map, and the request body
+// still types its only key as the placeholder `language_code`.
+export type TemplateTranslations = {
+  [language: string]:
+    | { [field: string]: string | null | undefined }
+    | undefined;
+};
+
+// The detail response also carries badge_icon, design, heading, preheader and
+// references. Production sends them null or empty on every template, so the
+// projection sends constants and the record keeps none of them.
+type TemplateConstants =
+  | "badge_icon"
+  | "design"
+  | "heading"
+  | "preheader"
+  | "references";
+
+// The list rows add an audit trail. The fields are optional because other
+// areas insert templates (a form answer saved as a template, a cancelled
+// monthly donation) without stamping them. The handlers fill what is missing.
+export type TemplateRecord = Own<
+  Omit<S["Template"], TemplateConstants | "translations">
+> & {
+  translations: TemplateTranslations;
+  create_date?: string;
+  update_date?: string | null;
+  created_by_id?: number | null;
+  updated_by_id?: number | null;
+};
 
 export interface TemplateCategory {
   readonly id: number;

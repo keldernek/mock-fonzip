@@ -25,6 +25,8 @@ export const RELATIONS: readonly Relation[] = [
   relation("contactProfiles", "user_id", "users"),
   relation("contactRelations", "user_id", "users"),
   relation("contactRelations", "related_user_id", "users"),
+  relation("templates", "created_by_id", "users"),
+  relation("templates", "updated_by_id", "users"),
   relation("transactions", "payment_settings_id", "paymentSettings"),
   relation("transactions", "bank_account_id", "bankAccounts"),
   relation("transactions", "refunded_by_id", "users"),
