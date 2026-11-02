@@ -451,6 +451,30 @@ describe("getDebtDetails", () => {
 });
 
 describe("createDebt", () => {
+  test("notifies SUBSCRIPTION 3 for a recorded payment, and nothing for a bare debt", async () => {
+    const client = createTestClient({
+      fetch: async () => new Response(null, { status: 204 }),
+    });
+    const webhooks = client.mock.runtime.world().webhooks;
+    webhooks.clear();
+    await client.ok("createDebt", { body: { user_id: 1001, amount: 100 } });
+    expect(webhooks.deliveries(), "a debt is not a payment").toEqual([]);
+    const created = await client.ok("createDebt", {
+      body: {
+        user_id: 1001,
+        amount: 100,
+        add_payment: true,
+        payment_method: 1,
+        custom_amount: "custom",
+      },
+    });
+    const paymentId = created.subscription_id ?? 0;
+    expect(webhooks.deliveries().map((delivery) => delivery.body)).toEqual([
+      { id: paymentId, webhook_id: 21, operation: 2, status: 3 },
+      { id: paymentId, webhook_id: 22, operation: 2, status: 3 },
+    ]);
+  });
+
   test("creates an unpaid debt that the list, the detail and the statement show", async () => {
     const client = createTestClient();
     const before = await currentBalance(client, 1004);

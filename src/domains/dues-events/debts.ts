@@ -7,6 +7,7 @@ import { userName } from "../../store/joins";
 import type { UserRecord } from "../../store/records";
 import { TRY_CURRENCY_ID, currencyById } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
+import { OUTCOME_STATUS, WEBHOOK_OPERATIONS } from "../../webhooks/emitter";
 import { liveCategory } from "./debt-categories";
 import { hasTag, toMembershipDueDetails } from "./dues";
 import {
@@ -230,7 +231,7 @@ function paymentPlan(
 
 export const createDebt: Handler<"createDebt"> = (
   { body },
-  { store, clock, rng },
+  { store, clock, rng, webhooks },
 ) => {
   if (body.user_id === undefined) return invalid("user_id is required");
   const user = store.users.get(body.user_id);
@@ -332,6 +333,13 @@ export const createDebt: Handler<"createDebt"> = (
     period,
     billNo: body.bill_no ?? null,
   });
+  webhooks.emit(
+    {
+      operation: WEBHOOK_OPERATIONS.subscription,
+      status: OUTCOME_STATUS.successful,
+    },
+    recorded.payment.id,
+  );
   return {
     status: 200,
     body: {
