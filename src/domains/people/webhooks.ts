@@ -3,6 +3,7 @@ import type { Handler } from "../../api/handler";
 import type { components } from "../../generated/openapi";
 import type { Row } from "../../store/collection";
 import type { WebhookRecord } from "../../store/records";
+import { PAYMENT_STATUS } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
 import type { WebhookEvent } from "../../webhooks/emitter";
 
@@ -124,6 +125,20 @@ function latestId(rows: readonly { id: number }[]): number {
   return Math.max(0, ...rows.map((row) => row.id));
 }
 
+function latestSuccessfulId(
+  store: OrgStore,
+  rows: readonly { id: number; transaction_id: number | null }[],
+): number {
+  return latestId(
+    rows.filter(
+      (row) =>
+        row.transaction_id === null ||
+        store.transactions.get(row.transaction_id)?.payment_status ===
+          PAYMENT_STATUS.successful,
+    ),
+  );
+}
+
 const TEST_EVENTS: {
   readonly [K in EventKey]: {
     readonly event: WebhookEvent;
@@ -132,24 +147,28 @@ const TEST_EVENTS: {
 } = {
   DONATION: {
     event: { operation: 1, status: 3 },
-    latest: (store) => latestId(store.donations.list()),
+    latest: (store) => latestSuccessfulId(store, store.donations.list()),
   },
   SUBSCRIPTION: {
     event: { operation: 2, status: 3 },
     latest: (store) =>
-      latestId(store.subscriptions.list((row) => row.status === 2)),
+      latestSuccessfulId(
+        store,
+        store.subscriptions.list((row) => row.status === 2),
+      ),
   },
   TICKET: {
     event: { operation: 3, status: 3 },
-    latest: (store) => latestId(store.ticketSales.list()),
+    latest: (store) => latestSuccessfulId(store, store.ticketSales.list()),
   },
   FORM: {
     event: { operation: 4, status: 3 },
-    latest: (store) => latestId(store.formAnswers.list()),
+    latest: (store) => latestSuccessfulId(store, store.formAnswers.list()),
   },
   CERTIFICATE_SALE: {
     event: { operation: 5, status: 3 },
-    latest: (store) => latestId(store.ecardTransactions.list()),
+    latest: (store) =>
+      latestSuccessfulId(store, store.ecardTransactions.list()),
   },
   FUNDRAISING_CAMPAIGN: {
     event: { operation: 6, status: 0 },

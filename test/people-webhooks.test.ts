@@ -216,6 +216,83 @@ describe("webhooks", () => {
     });
   });
 
+  test("a test notification names the newest successful object, never a failed one", async () => {
+    const client = createTestClient({
+      fetch: async () => new Response(null, { status: 204 }),
+    });
+    const world = client.mock.runtime.world();
+    const simulate = async (path: string, input: Record<string, unknown>) => {
+      const response = await client.request(
+        `/__mock/simulations/${path}?org=kelder`,
+        { method: "POST", body: JSON.stringify(input) },
+      );
+      expect(response.status, path).toBe(200);
+    };
+    await simulate("giving/failed-donation", { user_id: 1001, amount: 75 });
+    await simulate("dues-events/membership-due-payment", {
+      user_id: 1004,
+      outcome: "failed",
+    });
+    await simulate("campaigns-forms-ecards/form-answer", {
+      form_id: 703,
+      first_name: "Ece",
+      email: "ece.kurt@eposta.example",
+      payment_status: 5,
+    });
+    const paymentOf = (transactionId: number | null) =>
+      transactionId === null
+        ? 3
+        : world.store.transactions.for("kelder").get(transactionId)
+            ?.payment_status;
+    const kinds = {
+      DONATION: world.store.donations.for("kelder").list(),
+      SUBSCRIPTION: world.store.subscriptions
+        .for("kelder")
+        .list((row) => row.status === 2),
+      TICKET: world.store.ticketSales.for("kelder").list(),
+      FORM: world.store.formAnswers.for("kelder").list(),
+      CERTIFICATE_SALE: world.store.ecardTransactions.for("kelder").list(),
+    };
+    for (const [kind, rows] of Object.entries(kinds)) {
+      const newestFirst = [...rows].sort((a, b) => b.id - a.id);
+      expect(
+        paymentOf(newestFirst[0]?.transaction_id ?? null),
+        `the newest ${kind} failed`,
+      ).toBe(5);
+      const successful = newestFirst.find(
+        (row) => paymentOf(row.transaction_id) === 3,
+      );
+      await client.ok("createWebhook", {
+        body: {
+          name: kind,
+          url: `https://hooks.example/${kind}`,
+          events: { ...EVENTS_OFF, [kind]: true },
+        },
+      });
+      const webhookId = Math.max(
+        ...world.store.webhooks
+          .for("kelder")
+          .list()
+          .map((row) => row.id),
+      );
+      world.webhooks.clear();
+      await client.ok("sendWebhookTestNotification", {
+        path: { webhook_id: webhookId },
+      });
+      expect(
+        world.webhooks.deliveries().map((delivery) => delivery.body),
+        kind,
+      ).toEqual([
+        {
+          id: successful?.id ?? -1,
+          webhook_id: webhookId,
+          operation: expect.any(Number),
+          status: 3,
+        },
+      ]);
+    }
+  });
+
   test("a campaign-only webhook gets a campaign-created test, and one with no events gets 400", async () => {
     const client = createTestClient({
       fetch: async () => new Response(null, { status: 204 }),
