@@ -16,7 +16,7 @@
     "dev": "bun --watch src/main.ts",
     "start": "bun src/main.ts",
     "test": "bun test",
-    "typecheck": "oxlint --type-aware --type-check src test scripts",
+    "typecheck": "oxlint --type-aware --type-check src test scripts client",
     "lint": "oxlint --type-aware",
     "lint:fix": "oxlint --type-aware --fix",
     "format": "oxfmt .",
@@ -25,7 +25,10 @@
     "generate": "bun scripts/generate.ts",
     "parity": "bun scripts/parity.ts",
     "parity:prod": "bun --env-file=.env.prod-parity scripts/prod-parity.ts",
-    "smoke": "bash scripts/smoke.sh . 8791"
+    "smoke": "bash scripts/smoke.sh . 8791",
+    "client:check": "tsc -p client/tsconfig.json --noEmit && oxlint --type-aware --type-check test/client.test.ts test/control-spec.test.ts && bun test ./test/client.test.ts ./test/control-spec.test.ts",
+    "client:build": "rm -rf client/dist && tsc -p client/tsconfig.json",
+    "client:pack": "bun run client:build && cd client && bun pm pack"
   },
   "dependencies": {
     "ajv": "^8.20.0",
