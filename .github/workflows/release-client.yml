@@ -11,6 +11,7 @@ permissions:
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
+  queue: max
 
 defaults:
   run:
@@ -55,7 +56,11 @@ jobs:
             echo "::error file=client/package.json::version must be MAJOR.MINOR.PATCH, not '$base'"
             exit 1
           fi
-          version="$base-main.$GITHUB_RUN_NUMBER"
+          label=main
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            label=dispatch
+          fi
+          version="$base-$label.$GITHUB_RUN_NUMBER"
           spec_sha256="$(sha256sum spec/fonzip-openapi.yaml | cut -d ' ' -f 1)"
           {
             echo "version=$version"
@@ -183,25 +188,17 @@ jobs:
             echo '```'
           } > "$RUNNER_TEMP/latest-notes.md"
           title="fonzip-client latest ($VERSION)"
-          state="$(gh release view "$LATEST_TAG" --json isDraft --jq 'if .isDraft then "draft" else "published" end' 2> /dev/null || echo missing)"
-          if [ "$state" = draft ]; then
+          if gh release view "$LATEST_TAG" > /dev/null 2>&1; then
             gh release delete "$LATEST_TAG" --yes
-            state=missing
           fi
-          if [ "$state" = published ]; then
-            gh release upload "$LATEST_TAG" "$RUNNER_TEMP/$LATEST_ASSET" --clobber
-            gh api --method PATCH "repos/$GH_REPO/git/refs/tags/$LATEST_TAG" -f sha="$GITHUB_SHA" -F force=true --silent
-            gh release edit "$LATEST_TAG" --title "$title" --notes-file "$RUNNER_TEMP/latest-notes.md"
-          else
-            if gh api "repos/$GH_REPO/git/ref/tags/$LATEST_TAG" > /dev/null 2>&1; then
-              gh api --method DELETE "repos/$GH_REPO/git/refs/tags/$LATEST_TAG"
-            fi
-            gh release create "$LATEST_TAG" "$RUNNER_TEMP/$LATEST_ASSET" \
-              --target "$GITHUB_SHA" \
-              --title "$title" \
-              --notes-file "$RUNNER_TEMP/latest-notes.md" \
-              --latest=false
+          if gh api "repos/$GH_REPO/git/ref/tags/$LATEST_TAG" > /dev/null 2>&1; then
+            gh api --method DELETE "repos/$GH_REPO/git/refs/tags/$LATEST_TAG"
           fi
+          gh release create "$LATEST_TAG" "$RUNNER_TEMP/$LATEST_ASSET" \
+            --target "$GITHUB_SHA" \
+            --title "$title" \
+            --notes-file "$RUNNER_TEMP/latest-notes.md" \
+            --latest=false
           echo "moved=true" >> "$GITHUB_OUTPUT"
       - name: Write the install lines to the summary
         env:
