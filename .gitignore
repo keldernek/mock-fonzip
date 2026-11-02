@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Test and coverage output
+coverage/
+
+# Environment variables
+.env
+.env.*
+
+# Logs
+*.log
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/

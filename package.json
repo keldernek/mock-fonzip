@@ -1,12 +1,22 @@
 {
-  "name": "@dernek/mock-fonzip",
+  "name": "mock-fonzip",
+  "version": "0.1.0",
   "private": true,
+  "description": "A local, in-memory mock of the Fonzip API v2, driven by its pinned OpenAPI spec",
   "type": "module",
+  "packageManager": "bun@1.4.4",
+  "engines": {
+    "bun": ">=1.4.4"
+  },
   "scripts": {
     "dev": "bun --watch src/main.ts",
     "start": "bun src/main.ts",
     "test": "bun test",
     "typecheck": "oxlint --type-aware --type-check src test scripts",
+    "lint": "oxlint --type-aware",
+    "lint:fix": "oxlint --type-aware --fix",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
     "sync-spec": "bun scripts/sync-spec.ts",
     "generate": "bun scripts/generate.ts",
     "parity": "bun scripts/parity.ts",
@@ -19,7 +29,11 @@
     "yaml": "^2.9.1"
   },
   "devDependencies": {
+    "@types/bun": "1",
     "openapi-typescript": "^7.13.0",
+    "oxfmt": "0.73.0",
+    "oxlint": "1.88.0",
+    "oxlint-tsgolint": "7.0.2004",
     "typescript": "^5.9.3"
   }
 }

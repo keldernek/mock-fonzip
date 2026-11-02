@@ -1,18 +1,21 @@
 # Mock Fonzip API
 
-`@dernek/mock-fonzip` is a local, in-memory copy of the [Fonzip API v2](https://fonzip.com/api/v2/docs). It serves every documented route under `/api/v2`, so a client switches from Fonzip to the mock by changing only the origin. The contract is the pinned OpenAPI spec in `spec/fonzip-openapi.yaml`. `PARITY.md` lists every place where that spec is silent or contradicts itself, and what the mock does there.
+A local, in-memory copy of the [Fonzip API v2](https://fonzip.com/api/v2/docs). It serves every documented route under `/api/v2`, so a client switches from Fonzip to the mock by changing only the origin. The contract is the pinned OpenAPI spec in `spec/fonzip-openapi.yaml`. `PARITY.md` lists every place where that spec is silent or contradicts itself, and what the mock does there.
 
 The data is a synthetic Turkish association, `kelder`, generated from a fixed seed. Every boot produces the same data. State lives in memory until the process stops or `POST /__mock/reset` reseeds it.
 
+This project is not affiliated with or endorsed by Fonzip. It is a test double for developing and testing Fonzip API clients without touching a real organisation's data.
+
 ## Run the mock
 
-From the repository root:
+The mock needs [Bun](https://bun.sh) 1.4.4 or later.
 
 ```sh
-bun run dev:mock-fonzip
+bun install
+bun run dev
 ```
 
-The server listens on port 8790. Set `MOCK_FONZIP_PORT` to change the port. Use `bun run --cwd apps/mock-fonzip start` to run it without file watching. On boot, the server prints the API and control-plane URLs, the clock's starting time, and every credential.
+The server listens on port 8790. Set `MOCK_FONZIP_PORT` to change the port. Use `bun run start` to run it without file watching. On boot, the server prints the API and control-plane URLs, the clock's starting time, and every credential.
 
 Get a token, then call the API with it:
 
@@ -60,21 +63,21 @@ The control plane lives under `/__mock`, outside the API. It takes and returns J
 ## Check parity with the spec
 
 ```sh
-bun run --cwd apps/mock-fonzip parity
-bun run --cwd apps/mock-fonzip parity --domain giving
+bun run parity
+bun run parity --domain giving
 ```
 
 `parity` runs the test suite and records every exchange the tests make. It then prints four matrices: operations that return a real 200, the documented statuses each operation produced, documented inputs no test sent, and documented 200 properties no response carried. Each row names the domain that owns the operation. The command exits non-zero while any gap is not waived. Waivers live in `parity-waivers.json` and in each domain's `src/domains/<domain>/parity-waivers.json`. Each waiver needs a reason.
 
 Every response a test receives is validated against the operation's documented schema for that status. The validation is strict: it rejects properties the spec does not document and statuses the operation does not list.
 
-`bun run --cwd apps/mock-fonzip smoke` boots the real server on port 8791 and checks it over HTTP with `curl` and `jq`. It covers tokens, auth and plan errors, scopes, a wrong method, a missing parameter, a list from each domain, a donation and a simulated ticket sale with their webhook deliveries, and the rate limit. It exits non-zero on any failed check.
+`bun run smoke` boots the real server on port 8791 and checks it over HTTP with `curl` and `jq`. It covers tokens, auth and plan errors, scopes, a wrong method, a missing parameter, a list from each domain, a donation and a simulated ticket sale with their webhook deliveries, and the rate limit. It exits non-zero on any failed check.
 
 ## Update the spec
 
-1. To download the published spec into `spec/fonzip-openapi.yaml`, run `bun run --cwd apps/mock-fonzip sync-spec`.
-2. To regenerate `src/generated/openapi.d.ts`, run `bun run --cwd apps/mock-fonzip generate`.
-3. Run `bun run --cwd apps/mock-fonzip test`. `test/spec.test.ts` fails when the committed types are stale.
+1. To download the published spec into `spec/fonzip-openapi.yaml`, run `bun run sync-spec`.
+2. To regenerate `src/generated/openapi.d.ts`, run `bun run generate`.
+3. Run `bun run test`. `test/spec.test.ts` fails when the committed types are stale.
 
 ## Add an operation
 
