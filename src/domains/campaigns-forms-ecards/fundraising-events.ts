@@ -33,7 +33,7 @@ function parseEvent(
       TRY_CURRENCY_ID)
     : TRY_CURRENCY_ID;
   if (!knownCurrency(currencyId)) {
-    return failed(badRequest("unknown target_currency_id"));
+    return failed(notFound("Currency"));
   }
   return parsed({
     title,

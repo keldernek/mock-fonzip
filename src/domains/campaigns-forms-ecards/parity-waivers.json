@@ -14,11 +14,6 @@
     },
     {
       "status": 404,
-      "operations": ["createFundraisingEvent"],
-      "reason": "components.schemas.FundraisingEvent names no object of the association. id is the event being created, and target_currency_id points at the static currency table, so an unknown currency is an invalid value and gets 400."
-    },
-    {
-      "status": 404,
       "operations": [
         "getFundraisingCampaignList",
         "getEcardList",

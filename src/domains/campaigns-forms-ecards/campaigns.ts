@@ -318,7 +318,7 @@ function newCampaign(
   const currencyId = body.target_currency_id ?? TRY_CURRENCY_ID;
   const currencies = body.currencies ?? [currencyId];
   if (![currencyId, ...currencies].every(knownCurrency)) {
-    return failed(badRequest("unknown currency"));
+    return failed(notFound("Currency"));
   }
   if (!store.users.get(body.user_id)) return failed(notFound("User"));
   const references = referencesOf(store, body);

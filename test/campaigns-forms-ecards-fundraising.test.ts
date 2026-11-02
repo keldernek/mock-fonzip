@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { createTestClient, type TestClient } from "../src/testing/client";
+import type { ServedOperationId } from "../src/operations";
+import {
+  createTestClient,
+  type CallInput,
+  type TestClient,
+} from "../src/testing/client";
 import {
   dateOf,
   expectOrdered,
@@ -366,13 +371,11 @@ describe("creating a fundraising campaign", () => {
     expect(two.campaign?.activation_date).toBeUndefined();
   });
 
-  test("refuses a campaign with no owner, no title, an unknown currency or a deleted status (400)", async () => {
+  test("refuses a campaign with no owner, no title or a deleted status (400)", async () => {
     const client = createTestClient();
     const cases = [
       { title: "Sahipsiz" },
       { user_id: 1100 },
-      { user_id: 1100, title: "Döviz", target_currency_id: 99 },
-      { user_id: 1100, title: "Döviz", currencies: [1, 42] },
       { user_id: 1100, title: "Silinmiş", status: 4 },
       { user_id: 1100, title: "Tarih", event_date: "yarın" },
     ];
@@ -766,7 +769,6 @@ describe("fundraising events", () => {
     const cases = [
       { title: "  " },
       { title: "Hedefli", has_target: true, target: 10 },
-      { title: "Döviz", has_target: true, target_currency_id: 77 },
       { title: "Resim", image: "kamp.jpg" },
       { title: "x".repeat(61) },
     ];
@@ -984,7 +986,6 @@ describe("fundraising teams", () => {
         campaign: { title: "Hedef", has_target: true, target_currency_id: 1 },
       },
       { ...base, campaign: { title: "Hedef", has_target: true, target: 10 } },
-      { ...base, currency_id: 9, campaign: { title: "Döviz" } },
       { ...base, title: " ", campaign: { title: "Boş" } },
       { ...base, campaign: { title: " " } },
     ];
@@ -1042,7 +1043,7 @@ describe("fundraising teams", () => {
     );
   });
 
-  test("refuses team updates with two defaults or an unknown currency (400), and foreign campaigns or owners (404)", async () => {
+  test("refuses team updates with two defaults (400), and foreign campaigns or owners (404)", async () => {
     const client = createTestClient();
     const base = {
       user_id: 1006,
@@ -1062,11 +1063,6 @@ describe("fundraising teams", () => {
       },
     });
     expect(twoDefaults.status).toBe(400);
-    const currency = await client.call("updateFundraisingTeam", {
-      path: { team_id: 871 },
-      body: { ...base, currency_id: 99 },
-    });
-    expect(currency.status).toBe(400);
     const foreign = await client.call("updateFundraisingTeam", {
       path: { team_id: 871 },
       body: { ...base, campaign_list: [{ id: 8703, default: true }] },
@@ -1209,7 +1205,6 @@ describe("fundraising team campaigns", () => {
     const bad = [
       { title: "Hedef", has_target: true, target_currency_id: 1 },
       { title: "Hedef", has_target: true, target: 10 },
-      { title: "Döviz", has_target: true, target: 10, target_currency_id: 50 },
       { title: " " },
     ];
     for (const body of bad) {
@@ -1245,6 +1240,82 @@ describe("fundraising team campaigns", () => {
         body: { title: "x" },
       });
       expect(noTeam.status, `${operationId} on an unknown team`).toBe(404);
+    }
+  });
+});
+
+describe("unknown currencies", () => {
+  test("every write that names a currency answers 404 for an unknown one", async () => {
+    const client = createTestClient();
+    const team = { user_id: 1120, title: "Takım", details: "" };
+    const target = { has_target: true, target: 10 };
+    const cases: readonly (readonly [ServedOperationId, CallInput])[] = [
+      [
+        "createFundraisingCampaign",
+        { body: { user_id: 1100, title: "Döviz", target_currency_id: 99 } },
+      ],
+      [
+        "createFundraisingCampaign",
+        { body: { user_id: 1100, title: "Döviz", currencies: [1, 42] } },
+      ],
+      [
+        "createFundraisingEvent",
+        { body: { title: "Döviz", ...target, target_currency_id: 77 } },
+      ],
+      [
+        "updateFundraisingEvent",
+        {
+          path: { event_id: SCHOLARSHIP_EVENT },
+          body: { title: "Döviz", ...target, target_currency_id: 77 },
+        },
+      ],
+      [
+        "createFundraisingTeam",
+        { body: { ...team, currency_id: 9, campaign: { title: "Döviz" } } },
+      ],
+      [
+        "createFundraisingTeam",
+        {
+          body: {
+            ...team,
+            campaign: { title: "Döviz", ...target, target_currency_id: 50 },
+          },
+        },
+      ],
+      [
+        "updateFundraisingTeam",
+        {
+          path: { team_id: 871 },
+          body: {
+            user_id: 1006,
+            title: "1995",
+            details: "",
+            currency_id: 99,
+            campaign_list: [],
+          },
+        },
+      ],
+      [
+        "createFundraisingTeamCampaign",
+        {
+          path: { team_id: 871 },
+          body: { title: "Döviz", ...target, target_currency_id: 50 },
+        },
+      ],
+      [
+        "updateFundraisingTeamCampaign",
+        {
+          path: { team_id: 871, campaign_id: 8701 },
+          body: { title: "Döviz", ...target, target_currency_id: 50 },
+        },
+      ],
+    ];
+    for (const [operationId, input] of cases) {
+      const response = await client.call(operationId, input);
+      expect(
+        { status: response.status, body: response.body },
+        `${operationId} ${JSON.stringify(input.body)}`,
+      ).toEqual({ status: 404, body: { error: "Currency not found" } });
     }
   });
 });

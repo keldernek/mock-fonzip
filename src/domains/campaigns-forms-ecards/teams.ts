@@ -180,7 +180,7 @@ function parseTeamCampaign(
     ? (body.target_currency_id ?? current?.target_currency_id ?? teamCurrencyId)
     : teamCurrencyId;
   if (!knownCurrency(currencyId)) {
-    return failed(badRequest("unknown target_currency_id"));
+    return failed(notFound("Currency"));
   }
   return parsed({
     title,
@@ -218,7 +218,7 @@ export const createFundraisingTeam: Handler<"createFundraisingTeam"> = (
   const title = body.title.trim();
   if (title === "") return badRequest("title is required");
   const currencyId = body.currency_id ?? TRY_CURRENCY_ID;
-  if (!knownCurrency(currencyId)) return badRequest("unknown currency_id");
+  if (!knownCurrency(currencyId)) return notFound("Currency");
   if (!store.users.get(body.user_id)) return notFound("User");
   const campaign = parseTeamCampaign(
     { ...body.campaign, default: true },
@@ -251,9 +251,7 @@ export const updateFundraisingTeam: Handler<"updateFundraisingTeam"> = (
   if (!team) return notFound("Fundraising team");
   const title = body.title.trim();
   if (title === "") return badRequest("title is required");
-  if (!knownCurrency(body.currency_id)) {
-    return badRequest("unknown currency_id");
-  }
+  if (!knownCurrency(body.currency_id)) return notFound("Currency");
   if (!store.users.get(body.user_id)) return notFound("User");
   const listed = body.campaign_list.flatMap((item) =>
     item.id === undefined ? [] : [{ id: item.id, default: item.default }],
