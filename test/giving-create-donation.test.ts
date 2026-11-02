@@ -302,7 +302,7 @@ describe("createDonation", () => {
   });
 
   test.each([
-    ["member_id", { member_id: 9 }, "User not found"],
+    ["member_id", { member_id: 9 }, "Kullanıcı bulunamadı"],
     ["category_id", { category_id: 9 }, "Donation category not found"],
     [
       "fundraising_page_id",
@@ -316,12 +316,12 @@ describe("createDonation", () => {
       "Fundraising campaign not found",
     ],
     ["bank_account_id", { bank_account_id: 9 }, "Bank account not found"],
-    ["thanks_mail_id", { thanks_mail_id: 9 }, "Template not found"],
-    ["thanks_sms_id", { thanks_sms_id: 9 }, "Template not found"],
+    ["thanks_mail_id", { thanks_mail_id: 9 }, "Şablon bulunamadı."],
+    ["thanks_sms_id", { thanks_sms_id: 9 }, "Şablon bulunamadı."],
     [
       "referring_thanks_mail_id",
       { referring_thanks_mail_id: 9 },
-      "Template not found",
+      "Şablon bulunamadı.",
     ],
     ["ecard_id", { ecard_id: 9 }, "E-card not found"],
     ["referring_ecard_id", { referring_ecard_id: 9 }, "E-card not found"],

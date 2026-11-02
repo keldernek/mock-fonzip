@@ -214,7 +214,7 @@ describe("template lifecycle", () => {
       path: { template_id: templateId },
     });
     expect(gone.status).toBe(404);
-    expect(gone.body).toEqual({ error: "Template not found" });
+    expect(gone.body).toEqual({ error: "Şablon bulunamadı." });
     expect((await titles(shared, {})).total).toBe(6);
   });
 

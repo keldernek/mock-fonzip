@@ -21,6 +21,7 @@ import type { RequestValidator, Validators } from "../spec/validation";
 import { orgStore, type Store } from "../store/store";
 import type { WebhookEmitter } from "../webhooks/emitter";
 import { errorBody, json } from "./errors";
+import { productionValidationMessage } from "./production-messages";
 import type { HandlerContext, HandlerInput, HandlerResult } from "./handler";
 import type { RateLimiter } from "./rate-limit";
 
@@ -123,12 +124,19 @@ function bearerToken(c: Context): string | null {
 }
 
 function validatedInput<K extends BearerOperationId>(
-  _operationId: K,
+  operationId: K,
   validator: RequestValidator,
   raw: RawRequest,
-): { ok: true; input: HandlerInput<K> } | { ok: false; message: string } {
+): { ok: true; input: HandlerInput<K> } | { ok: false; error: string } {
   const failure = validator.validate(raw);
-  if (failure) return { ok: false, message: failure.message };
+  if (failure) {
+    return {
+      ok: false,
+      error:
+        productionValidationMessage(operationId, failure) ??
+        `${errorBody(400).error}: ${failure.message}`,
+    };
+  }
   // The validator checked raw against operation K's parameter and body schemas.
   const input = raw as unknown as HandlerInput<K>;
   return { ok: true, input };
@@ -235,7 +243,7 @@ export function mountApi(app: Hono, deps: PipelineDeps): void {
     if (!validated.ok) {
       return {
         status: 400,
-        body: { error: `${errorBody(400).error}: ${validated.message}` },
+        body: { error: validated.error },
         handled: false,
       };
     }

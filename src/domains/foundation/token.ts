@@ -11,7 +11,7 @@ const GRANT_TYPE_ERROR = {
 
 const INVALID_CLIENT = {
   status: 401,
-  body: { error: "invalid_client", error_description: "Unauthorized Access" },
+  body: { error: "invalid_client", error_description: "Unauthorized access" },
 } as const;
 
 export const getAccessToken: TokenHandler = (input, ctx) => {

@@ -113,7 +113,7 @@ describe("getUsersMonthlyDonationList", () => {
     });
     expect(response).toMatchObject({
       status: 404,
-      body: { error: "User not found" },
+      body: { error: "Kullanıcı bulunamadı" },
     });
   });
 });
@@ -307,7 +307,7 @@ describe("createMonthlyDonationUpdateRequest and respondMonthlyDonationAmountCha
         { user_id: 9, donation_id: 50_023 },
         { type: "cancel", value: "x" },
         404,
-        "User not found",
+        "Kullanıcı bulunamadı",
       ],
       [
         { user_id: 1054, donation_id: 50_023 },
@@ -535,7 +535,7 @@ describe("cancelMonthlyDonation", () => {
           template_id: 9,
         },
         404,
-        "Template not found",
+        "Şablon bulunamadı.",
       ],
       [
         50_029,
@@ -782,7 +782,7 @@ describe("sendCardUpdateRequestForMonthlyDonation", () => {
         { user_id: 9, donation_id: 50_056 },
         { mode: "email" },
         404,
-        "User not found",
+        "Kullanıcı bulunamadı",
       ],
       [
         { user_id: 1054, donation_id: 50_056 },

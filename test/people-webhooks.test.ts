@@ -123,7 +123,7 @@ describe("webhooks", () => {
       path: { webhook_id: webhookId },
     });
     expect(gone.status).toBe(404);
-    expect(gone.body).toEqual({ error: "Webhook not found" });
+    expect(gone.body).toEqual({ error: "Web tetiklemesi bulunamadı." });
     expect(
       (await client.ok("listWebhooks")).webhook_list?.map((hook) => hook.id),
     ).toEqual([21, 22]);

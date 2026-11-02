@@ -2155,7 +2155,7 @@ export interface components {
             display_name_translations?: Record<string, unknown>;
             details?: string;
             details_translations?: Record<string, unknown>;
-            phone?: string;
+            phone?: string | null;
             email?: string;
             url?: string;
             facebook_url?: string;

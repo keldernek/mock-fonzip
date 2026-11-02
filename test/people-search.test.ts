@@ -427,7 +427,7 @@ describe("invalid filters", () => {
       shared,
       one(leaf("debt_category", "eq", 99)),
       404,
-      "Debt category not found",
+      "Borç kategorisi bulunamadı.",
     );
     const deleted = await search(shared, one(leaf("debt_category", "eq", 505)));
     expect(deleted.total, "nobody holds a debt in the retired category").toBe(

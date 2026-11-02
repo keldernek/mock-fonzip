@@ -442,7 +442,7 @@ describe("getDebtDetails", () => {
       path: { debt_id: 20005 },
     });
     expect(payment.status).toBe(404);
-    expect(payment.body).toEqual({ error: "Debt not found" });
+    expect(payment.body).toEqual({ error: "Borç bulunamadı." });
     const unknown = await client.call("getDebtDetails", {
       path: { debt_id: 7 },
     });
@@ -699,7 +699,7 @@ describe("createDebt", () => {
     const before = db.subscriptions.count();
     const cases = [
       [{ amount: 10 }, 400, "user_id is required"],
-      [{ user_id: 99, amount: 10 }, 404, "User not found"],
+      [{ user_id: 99, amount: 10 }, 404, "Kullanıcı bulunamadı"],
       [{ user_id: 1004 }, 400, "amount must be above 0"],
       [{ user_id: 1004, amount: 0 }, 400, "amount must be above 0"],
       [
@@ -720,12 +720,12 @@ describe("createDebt", () => {
       [
         { user_id: 1004, amount: 10, debt_category_id: 999 },
         404,
-        "Debt category not found",
+        "Borç kategorisi bulunamadı.",
       ],
       [
         { user_id: 1004, amount: 10, debt_category_id: 505 },
         404,
-        "Debt category not found",
+        "Borç kategorisi bulunamadı.",
       ],
       [
         {
@@ -796,7 +796,7 @@ describe("createDebt", () => {
       [
         { user_id: 1004, amount: 10, send_mail: true, thanks_mail_id: 9 },
         404,
-        "Template not found",
+        "Şablon bulunamadı.",
       ],
     ] as const;
     for (const [body, status, error] of cases) {

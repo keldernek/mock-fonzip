@@ -196,7 +196,7 @@ describe("createUser and getUserDetails", () => {
       path: { user_id: 99 },
     });
     expect(missing.status).toBe(404);
-    expect(missing.body).toEqual({ error: "User not found" });
+    expect(missing.body).toEqual({ error: "Kullanıcı bulunamadı" });
   });
 });
 
@@ -559,7 +559,7 @@ describe("user tags", () => {
       const user = await shared.call(operation, {
         path: { user_id: 99, tag_id: 101 },
       });
-      expect(user.body).toEqual({ error: "User not found" });
+      expect(user.body).toEqual({ error: "Kullanıcı bulunamadı" });
       const tag = await shared.call(operation, {
         path: { user_id: 1010, tag_id: 99 },
       });

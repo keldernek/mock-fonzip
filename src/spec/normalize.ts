@@ -1,4 +1,5 @@
 import { isJsonObject, mapJson, type Json, type JsonObject } from "./json";
+import { applyProductionCorrections } from "./production";
 
 const REQUEST_BODY_REF = /^#\/components\/requestBodies\/([^/]+)$/;
 
@@ -335,6 +336,11 @@ function hoistRequestBodySchemas(spec: JsonObject): JsonObject {
   };
 }
 
+function objectOf(node: Json): JsonObject {
+  if (!isJsonObject(node)) throw new Error("normalization lost the root");
+  return node;
+}
+
 export function normalizeSpec(spec: Json): JsonObject {
   if (!isJsonObject(spec)) throw new Error("the spec is not a JSON object");
   const corrected = mapJson(
@@ -348,7 +354,9 @@ export function normalizeSpec(spec: Json): JsonObject {
         dropDependentDefault(correctDuesListingEnum(node)),
       ),
   );
-  const normalized = mapJson(corrected, (node, key) =>
+  // Production corrections run before the generic passes, so a property they
+  // make nullable still gains null in its enum.
+  const normalized = mapJson(applyProductionCorrections(objectOf(corrected)), (node, key) =>
     key === "requestBody"
       ? node
       : nullableEnumAllowsNull(

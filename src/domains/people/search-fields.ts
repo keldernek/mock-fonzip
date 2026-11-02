@@ -1,3 +1,4 @@
+import { notFoundMessage } from "../../api/errors";
 import type { components } from "../../generated/openapi";
 import type { Row } from "../../store/collection";
 import { fullName } from "../../store/joins";
@@ -41,7 +42,7 @@ function objects(
       }
       return exists(store, id)
         ? { ok: true, id: String(id) }
-        : { ok: false, status: 404, error: `${what} not found` };
+        : { ok: false, status: 404, error: notFoundMessage(what) };
     },
   };
 }

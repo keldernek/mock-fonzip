@@ -65,7 +65,8 @@ export const ORGANISATIONS: Readonly<Record<OrgSlug, Organisation>> = {
       details_translations: {
         en: "Brings Kabataş Erkek Lisesi alumni together and runs scholarship and solidarity programmes.",
       },
-      phone: "+902122270101",
+      // Production leaves the association phone empty and answers null.
+      phone: null,
       email: "info@kelder.example",
       url: "https://kelder.example",
       facebook_url: "https://facebook.com/kelder.example",

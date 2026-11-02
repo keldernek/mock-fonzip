@@ -584,7 +584,7 @@ describe("getUsersMembershipDueList", () => {
       query: PAGE,
     });
     expect(missing.status).toBe(404);
-    expect(missing.body).toEqual({ error: "User not found" });
+    expect(missing.body).toEqual({ error: "Kullanıcı bulunamadı" });
     const badListing = await client.call("getUsersMembershipDueList", {
       path: { user_id: 1015 },
       query: { ...PAGE, listing: "x" },

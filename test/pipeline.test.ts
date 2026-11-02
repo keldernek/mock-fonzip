@@ -64,7 +64,7 @@ describe("the token endpoint", () => {
           client_secret: "nope",
         }),
         401,
-        { error: "invalid_client", error_description: "Unauthorized Access" },
+        { error: "invalid_client", error_description: "Unauthorized access" },
       ],
       [
         "unknown client",
@@ -74,13 +74,13 @@ describe("the token endpoint", () => {
           client_secret: "x",
         }),
         401,
-        { error: "invalid_client", error_description: "Unauthorized Access" },
+        { error: "invalid_client", error_description: "Unauthorized access" },
       ],
       [
         "missing client_secret",
         form({ grant_type: "client_credentials", client_id: clientId }),
         401,
-        { error: "invalid_client", error_description: "Unauthorized Access" },
+        { error: "invalid_client", error_description: "Unauthorized access" },
       ],
       [
         "unsupported grant_type",
@@ -187,7 +187,7 @@ describe("the bearer pipeline, for every operation", () => {
         token: null,
       });
       expect(response.status, `${route.operationId} without a token`).toBe(401);
-      expect(response.body).toEqual({ error: "Unauthorized Access" });
+      expect(response.body).toEqual({ error: "Unauthorized access" });
     }
   });
 

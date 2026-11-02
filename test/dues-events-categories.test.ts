@@ -190,7 +190,7 @@ describe("getDebtCategoryUsage", () => {
         path: { category_id: id },
       });
       expect(response.status, `category ${id}`).toBe(404);
-      expect(response.body).toEqual({ error: "Debt category not found" });
+      expect(response.body).toEqual({ error: "Borç kategorisi bulunamadı." });
     }
   });
 });
