@@ -104,13 +104,13 @@ describe("createUser and getUserDetails", () => {
       corporate_type: false,
       apply_date: "2026-09-01",
       allow_comm_via_phone: false,
-      allow_comm_via_phone_date: "2026-09-15T10:00:00+03:00",
+      allow_comm_via_phone_date: "2026-09-15T07:00:00.000Z",
       allow_comm_via_sms: true,
-      allow_comm_via_sms_date: "2026-09-15T10:00:00+03:00",
+      allow_comm_via_sms_date: "2026-09-15T07:00:00.000Z",
       allow_comm_via_email: true,
-      allow_comm_via_email_date: "2026-09-16T10:00:00+03:00",
+      allow_comm_via_email_date: "2026-09-16T07:00:00.000Z",
       join_date: "2026-09-15",
-      last_update_date: "2026-11-01T09:00:00+03:00",
+      last_update_date: "2026-11-01T06:00:00.000Z",
       total_financial: 0,
       // A select field holds its chosen option. A yes or no field holds the
       // "yes" or "no" option, and a multiple select joins its texts.
@@ -187,7 +187,7 @@ describe("createUser and getUserDetails", () => {
     ] as const) {
       expect(user[field], field).toBeNull();
     }
-    expect(user.last_update_date).toBe("2026-11-01T09:00:00+03:00");
+    expect(user.last_update_date).toBe("2026-11-01T06:00:00.000Z");
     const listed = await search(
       shared,
       { condition: "and", attributes: [leaf("id", "eq", userId)] },
@@ -262,7 +262,7 @@ describe("updateUser", () => {
     });
     expect(timeline.timeline?.[0]).toMatchObject({
       event_type: 1,
-      event_time: "2026-11-01T09:00:00+03:00",
+      event_time: "2026-11-01T06:00:00.000Z",
       details: "Profil güncellendi: city_text",
     });
     const recent = await matchingIds(shared, {

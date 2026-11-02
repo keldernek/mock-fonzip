@@ -36,8 +36,9 @@ export function day(offset: number): string {
   return new Date(ANCHOR_UTC + offset * DAY_MS).toISOString().slice(0, 10);
 }
 
+// Noon in Istanbul on `date`, written the way the store keeps date-times.
 export function noon(date: string): string {
-  return `${date}T12:00:00+03:00`;
+  return new Date(`${date}T12:00:00+03:00`).toISOString();
 }
 
 function first<T>(rows: readonly T[], what: string): T {

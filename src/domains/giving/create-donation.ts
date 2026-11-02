@@ -1,7 +1,7 @@
 import { notFound } from "../../api/errors";
 import type { Handler, HandlerInput } from "../../api/handler";
 import type { Rng } from "../../core/rng";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import { fullName, present } from "../../store/joins";
 import type { CurrencyRecord, PaymentMethod } from "../../store/records";
 import { CURRENCIES } from "../../store/reference";
@@ -165,7 +165,7 @@ export const createDonation: Handler<"createDonation"> = ({ body }, ctx) => {
       completeDate:
         body.complete_date === undefined
           ? at
-          : istanbulDateTime(new Date(body.complete_date)),
+          : apiDateTime(new Date(body.complete_date)),
       status: 3,
       method: payment.method,
       paymentSettingsId: null,

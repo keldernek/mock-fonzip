@@ -4,7 +4,7 @@ import {
   type SimulationInput,
   type SimulationResult,
 } from "../../control/simulation";
-import { addDays, istanbulDate, istanbulDateTime } from "../../seed/dates";
+import { addDays, istanbulDate, apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import type { FormRecord, UserRecord } from "../../store/records";
 import { PAYMENT_STATUS, TRY_CURRENCY_ID } from "../../store/reference";
@@ -105,7 +105,7 @@ function personOf(input: SimulationInput): Parsed<Person> {
 }
 
 function newContact(ctx: SimulationContext, person: Person): Row<UserRecord> {
-  const now = istanbulDateTime(ctx.clock.now());
+  const now = apiDateTime(ctx.clock.now());
   return ctx.store.users.insert(
     newUser({
       first_name: person.first_name,
@@ -219,7 +219,7 @@ function submitForm(
     last_name: person.value.last_name,
     email: person.value.email,
     email_verification: false,
-    complete_date: istanbulDateTime(ctx.clock.now()),
+    complete_date: apiDateTime(ctx.clock.now()),
     transaction_id: transaction?.id ?? null,
     approval_status: form.requires_approval ? 0 : 1,
     sent_mail_id: null,
@@ -418,7 +418,7 @@ function sellEcard(
     deliver_as_cargo: ecard.has_cargo,
     ecard_date: istanbulDate(now),
     updated_by_id: null,
-    last_update_date: istanbulDateTime(now),
+    last_update_date: apiDateTime(now),
     transaction_id: transaction.id,
     marketing_channel_id: channelId,
   });
@@ -454,7 +454,7 @@ function refundEcard(
     refund(
       store,
       transaction,
-      istanbulDateTime(ctx.clock.now()),
+      apiDateTime(ctx.clock.now()),
       input.string("reason") ?? "Bağışçının talebi üzerine iade edildi",
       refundedBy,
     );

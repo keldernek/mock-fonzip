@@ -117,11 +117,11 @@ describe("form list", () => {
       active: true,
       order: 1,
       listing: true,
-      last_answer_date: "2026-06-18T09:00:00+03:00",
+      last_answer_date: "2026-06-18T06:00:00.000Z",
       application_limit: 200,
       waiting_approval: 5,
       response_count: 14,
-      create_date: "2025-09-27T09:00:00+03:00",
+      create_date: "2025-09-27T06:00:00.000Z",
       created_by_id: 1001,
       created_by__name: expect.any(String),
       update_date: null,
@@ -131,7 +131,7 @@ describe("form list", () => {
     expect(list.form_list?.[1]).toMatchObject({
       id: VOLUNTEER_FORM,
       application_limit: null,
-      update_date: "2025-12-16T09:00:00+03:00",
+      update_date: "2025-12-16T06:00:00.000Z",
       updated_by_id: 1002,
       updated_by__name: expect.any(String),
     });
@@ -181,7 +181,7 @@ describe("form list", () => {
         active: false,
         archived_by_id: 1001,
         archived_by__name: expect.any(String),
-        archive_date: "2026-08-23T09:00:00+03:00",
+        archive_date: "2026-08-23T06:00:00.000Z",
       }),
     ]);
     expect(archived.total).toBe(1);
@@ -294,7 +294,7 @@ describe("form answer list", () => {
         first_name: expect.any(String),
         last_name: expect.any(String),
         email: expect.stringContaining("@"),
-        complete_date: "2026-07-27T09:00:00+03:00",
+        complete_date: "2026-07-27T06:00:00.000Z",
         user_id: 1086,
         transaction_id: expect.any(Number),
         transaction__amount: 450,
@@ -419,7 +419,7 @@ describe("form answer details", () => {
     const details = await answer(client, YEARBOOK_FORM, 71025);
     expect(details).toMatchObject({
       id: 71025,
-      complete_date: "2026-10-12T09:00:00+03:00",
+      complete_date: "2026-10-12T06:00:00.000Z",
       user: { id: 1077, name: expect.any(String), membership_no: 77 },
       email_verification: true,
       approval_status: 1,
@@ -507,7 +507,7 @@ describe("form answer details", () => {
       city: expect.any(String),
       country: expect.any(String),
       ip_address: expect.stringMatching(/^\d{1,3}(\.\d{1,3}){3}$/),
-      respond_date: "2026-10-24T09:00:00+03:00",
+      respond_date: "2026-10-24T06:00:00.000Z",
       responded_by: {
         id: expect.any(Number),
         name: expect.any(String),
@@ -858,7 +858,7 @@ describe("responding to a form answer", () => {
       status: 0,
     });
     expect(details?.respond_date, "answered now").toBe(
-      "2026-11-01T09:00:00+03:00",
+      "2026-11-01T06:00:00.000Z",
     );
     expect(
       details?.responded_by,
@@ -900,7 +900,7 @@ describe("responding to a form answer", () => {
     const details = await answer(client, YEARBOOK_FORM, 71025);
     expect(details?.transaction).toMatchObject({
       payment_status: 4,
-      refund_date: "2026-11-01T09:00:00+03:00",
+      refund_date: "2026-11-01T06:00:00.000Z",
       refund_reason: expect.any(String),
     });
     expect(
@@ -1152,7 +1152,7 @@ describe("a contact's form answers", () => {
       answer_list: [
         {
           id: 71025,
-          complete_date: "2026-10-12T09:00:00+03:00",
+          complete_date: "2026-10-12T06:00:00.000Z",
           transaction_id: expect.any(Number),
           transaction__amount: 450,
           custom_form_id: YEARBOOK_FORM,

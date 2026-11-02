@@ -1,4 +1,5 @@
 import type { components } from "../../generated/openapi";
+import { istanbulMidnight } from "../../seed/dates";
 import type { OrgCollection, Row } from "../../store/collection";
 import {
   nonEmpty,
@@ -36,7 +37,7 @@ export function lookup<R extends { id: number }>(
 }
 
 function startOfDay(date: string | null): string | undefined {
-  return date === null ? undefined : `${date}T00:00:00+03:00`;
+  return date === null ? undefined : istanbulMidnight(date);
 }
 
 export function donationResult(

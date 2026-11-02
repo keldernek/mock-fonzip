@@ -13,12 +13,7 @@ import {
   weightedStatus,
   type SeedContext,
 } from "./context";
-import {
-  addDays,
-  daysBeforeAnchor,
-  istanbulDate,
-  istanbulDateTime,
-} from "./dates";
+import { addDays, daysBeforeAnchor, istanbulDate, apiDateTime } from "./dates";
 import type { SystemRefs } from "./system";
 
 export const DONATION_COUNT = 300;
@@ -39,10 +34,10 @@ export function seedGivingCatalog(
   const { db } = ctx;
   const [admin, secondAdmin = admin] = ctx.adminIds;
   const audit = (daysAgo: number, updated: boolean) => ({
-    create_date: istanbulDateTime(daysBeforeAnchor(daysAgo)),
+    create_date: apiDateTime(daysBeforeAnchor(daysAgo)),
     created_by_id: admin,
     update_date: updated
-      ? istanbulDateTime(daysBeforeAnchor(Math.floor(daysAgo / 2)))
+      ? apiDateTime(daysBeforeAnchor(Math.floor(daysAgo / 2)))
       : null,
     updated_by_id: updated ? secondAdmin : null,
   });
@@ -248,12 +243,12 @@ export function seedDonations(
       referring_email: referring ? "selin.aydin@eposta.example" : "",
       referring_phone: referring ? "+905321112233" : "",
       updated_by_id: manual ? rng.pick(ctx.adminIds) : null,
-      last_update_date: istanbulDateTime(plan.at),
+      last_update_date: apiDateTime(plan.at),
       recurring_cancel_reason:
         cancelled && monthlyParent ? "Bütçe nedeniyle iptal" : null,
       recurring_cancel_date:
         cancelled && monthlyParent ? istanbulDate(addDays(plan.at, 120)) : null,
-      recurring_start_date: monthlyParent ? istanbulDateTime(plan.at) : null,
+      recurring_start_date: monthlyParent ? apiDateTime(plan.at) : null,
       cancelled_by_id: cancelled && monthlyParent ? ctx.adminIds[0] : null,
       recurring_limit: monthlyParent ? rng.pick([0, 12, 24]) : null,
       recurring_withdrawal: plan.monthly !== null && !monthlyParent,
@@ -384,9 +379,9 @@ export function seedDonations(
       request_type: type,
       status,
       value,
-      create_date: istanbulDateTime(daysBeforeAnchor(10 - index * 2)),
+      create_date: apiDateTime(daysBeforeAnchor(10 - index * 2)),
       response_date:
-        status === 0 ? null : istanbulDateTime(daysBeforeAnchor(9 - index * 2)),
+        status === 0 ? null : apiDateTime(daysBeforeAnchor(9 - index * 2)),
     });
   }
 }

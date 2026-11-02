@@ -38,6 +38,17 @@ function forbidUndocumentedProperties(schema: JsonObject): JsonObject {
   );
 }
 
+// Production writes every date-time in UTC with milliseconds, exactly what
+// `Date.prototype.toISOString()` returns. A request may carry any valid
+// date-time, so only the response validator holds the API to this form.
+const API_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+
+function isApiDateTime(text: string): boolean {
+  if (!API_DATE_TIME.test(text)) return false;
+  const at = Date.parse(text);
+  return !Number.isNaN(at) && new Date(at).toISOString() === text;
+}
+
 function createAjv(
   spec: JsonObject,
   options: { coerce: boolean; strict: boolean },
@@ -49,6 +60,9 @@ function createAjv(
     useDefaults: options.coerce,
   });
   addFormats(ajv);
+  if (options.strict) {
+    ajv.addFormat("date-time", { type: "string", validate: isApiDateTime });
+  }
   const raw = objectOf(spec.components ?? {});
   const components = options.strict ? forbidUndocumentedProperties(raw) : raw;
   ajv.addSchema({ $id: SPEC_ID, components: pointAtSpec(components) }, SPEC_ID);

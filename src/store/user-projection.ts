@@ -1,3 +1,4 @@
+import { istanbulDayOf } from "../seed/dates";
 import type { Row } from "./collection";
 import type { UserDefinedValueRecord, UserRecord } from "./records";
 import type { OrgStore } from "./store";
@@ -7,10 +8,11 @@ export function textOrNull(text: string): string | null {
   return text === "" ? null : text;
 }
 
-// The store keeps `apply_date` and `join_date` as date-times in Istanbul
-// time. Production sends the calendar day.
+// The store keeps `apply_date` and `join_date` as date-times (UTC). Production
+// sends the calendar day in Istanbul, which is not the UTC day between 21:00Z
+// and midnight.
 export function dayOf(dateTime: string): string | undefined {
-  return dateTime === "" ? undefined : dateTime.slice(0, 10);
+  return dateTime === "" ? undefined : istanbulDayOf(dateTime);
 }
 
 // When the contact's profile last changed. A contact without a profile

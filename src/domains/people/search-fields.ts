@@ -1,5 +1,6 @@
 import { notFoundMessage } from "../../api/errors";
 import type { components } from "../../generated/openapi";
+import { istanbulDayOf } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { fullName } from "../../store/joins";
 import type {
@@ -1078,7 +1079,7 @@ export const SEARCH_FIELDS: { readonly [P in SearchParameter]: Field } = {
     read: (user, facts) =>
       new Set(
         duesPayments(user, facts).map((row) =>
-          (row.period ?? row.operation_date).slice(0, 4),
+          istanbulDayOf(row.period ?? row.operation_date).slice(0, 4),
         ),
       ).size,
   },

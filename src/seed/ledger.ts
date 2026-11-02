@@ -2,7 +2,7 @@ import type { Row } from "../store/collection";
 import type { TimelineRecord, UserRecord } from "../store/records";
 import { currencyById } from "../store/reference";
 import type { SeedContext } from "./context";
-import { daysBeforeAnchor, istanbulDateTime } from "./dates";
+import { apiDateTime, daysBeforeAnchor, istanbulDayOf } from "./dates";
 import { iban } from "./identity";
 import { BANKS } from "./names";
 import type { SystemRefs } from "./system";
@@ -94,7 +94,7 @@ export function seedBankTransactions(
       type: 2,
       userId: payment.user_id,
       sender: userName(payment.user_id),
-      description: `${(payment.period ?? payment.operation_date).slice(0, 4)} AIDAT`,
+      description: `${istanbulDayOf(payment.period ?? payment.operation_date).slice(0, 4)} AIDAT`,
       subscriptionId: payment.id,
     });
   }
@@ -123,7 +123,7 @@ export function seedBankTransactions(
           ? system.usdBankAccountId
           : rng.pick(system.tryBankAccountIds),
       amount: index === 3 ? 250 : rng.pick([300, 500, 1000, 1500, 2000]),
-      at: istanbulDateTime(daysBeforeAnchor(rng.int(0, 20), rng.int(0, 900))),
+      at: apiDateTime(daysBeforeAnchor(rng.int(0, 20), rng.int(0, 900))),
       status: waiting ? 8 : 9,
       type: null,
       userId: null,
@@ -173,7 +173,7 @@ export function seedTimeline(
     entry(
       user.id,
       7,
-      istanbulDateTime(at),
+      apiDateTime(at),
       "Telefonla görüşüldü, burs programı hakkında bilgi verildi.",
       {
         issuer_id: ctx.adminIds[index % ctx.adminIds.length] ?? ctx.adminIds[0],
@@ -185,7 +185,7 @@ export function seedTimeline(
             ? {
                 id: 9000 + index,
                 note: "Geri arama yapılacak",
-                date: istanbulDateTime(daysBeforeAnchor(-rng.int(1, 14))),
+                date: apiDateTime(daysBeforeAnchor(-rng.int(1, 14))),
                 completed: index % 2 === 0,
               }
             : null,
@@ -195,7 +195,7 @@ export function seedTimeline(
       const outcome = rng.pick([0, 1, 2, 3, 4] as const);
       const paid = outcome !== 0 && outcome !== 2;
       return {
-        at: istanbulDateTime(daysBeforeAnchor(rng.int(1, 300))),
+        at: apiDateTime(daysBeforeAnchor(rng.int(1, 300))),
         lead_type: rng.pick([0, 1, 2, 3, 4, 5, 10] as const),
         outcome,
         amount: paid ? rng.pick([100, 250, 500]) : null,
@@ -239,18 +239,12 @@ export function seedTimeline(
   // timeline id moves.
   const newest = users.at(-1);
   if (newest) {
-    entry(
-      newest.id,
-      27,
-      istanbulDateTime(daysBeforeAnchor(9)),
-      "Temas noktası",
-      {
-        lead_type: 4,
-        outcome: 0,
-        sequence_no: 1,
-        is_first_touch: true,
-      },
-    );
+    entry(newest.id, 27, apiDateTime(daysBeforeAnchor(9)), "Temas noktası", {
+      lead_type: 4,
+      outcome: 0,
+      sequence_no: 1,
+      is_first_touch: true,
+    });
   }
 }
 

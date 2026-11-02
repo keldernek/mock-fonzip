@@ -7,16 +7,31 @@ function pad(value: number, width = 2): string {
   return String(value).padStart(width, "0");
 }
 
-export function istanbulDateTime(date: Date): string {
-  const local = new Date(date.getTime() + ISTANBUL_OFFSET_MS);
-  return (
-    `${local.getUTCFullYear()}-${pad(local.getUTCMonth() + 1)}-${pad(local.getUTCDate())}` +
-    `T${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}:${pad(local.getUTCSeconds())}+03:00`
-  );
+// Every `format: date-time` the API emits: UTC with milliseconds, such as
+// `2026-11-01T06:00:00.000Z`, the way production writes them (see PARITY.md).
+export function apiDateTime(date: Date): string {
+  return date.toISOString();
 }
 
+// Every `format: date` the API emits: the calendar day in Istanbul, which is
+// UTC+3 all year. Never slice an `apiDateTime` for this: between 21:00Z and
+// midnight the UTC day is the day before the Istanbul one.
 export function istanbulDate(date: Date): string {
-  return istanbulDateTime(date).slice(0, 10);
+  return new Date(date.getTime() + ISTANBUL_OFFSET_MS)
+    .toISOString()
+    .slice(0, 10);
+}
+
+// The Istanbul calendar day of a stored value: a date passes through, and a
+// date-time (in any offset) gives the day it falls on in Istanbul.
+export function istanbulDayOf(text: string): string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : istanbulDate(new Date(text));
+}
+
+// The instant a calendar day begins in Istanbul, as a date-time. Istanbul
+// midnight is 21:00:00.000Z on the day before.
+export function istanbulMidnight(day: string): string {
+  return new Date(`${day}T00:00:00+03:00`).toISOString();
 }
 
 export function daysBeforeAnchor(days: number, minutes = 0): Date {

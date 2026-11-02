@@ -1,12 +1,7 @@
 import type { Row } from "../store/collection";
 import type { EcardRecord, UserRecord } from "../store/records";
 import type { SeedContext } from "./context";
-import {
-  addDays,
-  daysBeforeAnchor,
-  istanbulDate,
-  istanbulDateTime,
-} from "./dates";
+import { addDays, daysBeforeAnchor, istanbulDate, apiDateTime } from "./dates";
 import { slugify } from "./identity";
 import type { SystemRefs } from "./system";
 
@@ -44,10 +39,10 @@ export function seedEcards(ctx: SeedContext, system: SystemRefs): EcardRefs {
     db.ecardCategories.insert({
       name,
       order: String(order),
-      create_date: istanbulDateTime(daysBeforeAnchor(daysAgo)),
+      create_date: apiDateTime(daysBeforeAnchor(daysAgo)),
       created_by_id: admin,
       update_date:
-        order === 1 ? istanbulDateTime(daysBeforeAnchor(daysAgo - 30)) : null,
+        order === 1 ? apiDateTime(daysBeforeAnchor(daysAgo - 30)) : null,
       updated_by_id: order === 1 ? admin : null,
     }).id;
   const categories = [
@@ -119,7 +114,7 @@ export function seedEcards(ctx: SeedContext, system: SystemRefs): EcardRefs {
     custom_message_font_bold: false,
     custom_message_font_italic: false,
     custom_message_text_align: 0,
-    last_update_date: istanbulDateTime(daysBeforeAnchor(60)),
+    last_update_date: apiDateTime(daysBeforeAnchor(60)),
     thanks_mail_id: system.templateIds.donationThanks,
     referring_thanks_mail_id: system.templateIds.campaignThanks,
     thanks_sms_id: system.templateIds.smsThanks,
@@ -230,7 +225,7 @@ export function seedCampaigns(
       details: `${title} burs fonu için birlikte bağış topluyor.`,
       slug: slugify(title),
       currency_id: 1,
-      create_date: istanbulDateTime(daysBeforeAnchor(200 - index * 30)),
+      create_date: apiDateTime(daysBeforeAnchor(200 - index * 30)),
       status: index === 2 ? 0 : 1,
       update_title: index === 1 ? `${title} 2026` : null,
       update_details:
@@ -272,15 +267,11 @@ export function seedCampaigns(
     const title = `${owner.first_name} ${owner.last_name} - ${["Burs Fonu", "Maraton Koşusu", "Doğum Günü Kampanyası", "Anma Kampanyası", "Kütüphane Desteği"][index % 5]}`;
     return db.fundraisingCampaigns.insert({
       user_id: owner.id,
-      create_date: istanbulDateTime(created),
+      create_date: apiDateTime(created),
       activation_date:
-        status === 0 || status === 2
-          ? null
-          : istanbulDateTime(addDays(created, 1)),
+        status === 0 || status === 2 ? null : apiDateTime(addDays(created, 1)),
       finish_date:
-        status === 3 || status === 7
-          ? istanbulDateTime(addDays(created, 90))
-          : null,
+        status === 3 || status === 7 ? apiDateTime(addDays(created, 90)) : null,
       title: title.trim(),
       update_title: index === 3 ? `${title.trim()} 2026` : null,
       update_image:

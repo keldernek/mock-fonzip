@@ -12,6 +12,14 @@ export const EVER = {
 
 export type Query = Readonly<Record<string, QueryValue>>;
 
+// The calendar day an instant falls on in Istanbul, which is UTC+3 all year.
+// Slicing the UTC date-time gives the previous day from 21:00Z to midnight.
+export function istanbulDay(dateTime: string | undefined): string | undefined {
+  return dateTime === undefined
+    ? undefined
+    : new Date(Date.parse(dateTime) + 3 * 3_600_000).toISOString().slice(0, 10);
+}
+
 export function kelder(client: TestClient): OrgStore {
   return orgStore(client.mock.runtime.world().store, "kelder");
 }

@@ -1,4 +1,4 @@
-import { istanbulDateTime, daysBeforeAnchor } from "./dates";
+import { apiDateTime, daysBeforeAnchor } from "./dates";
 import type { SeedContext } from "./context";
 import { iban } from "./identity";
 
@@ -60,12 +60,10 @@ export function seedSystem(
       details,
       currency_id: currencyId,
       business_account: true,
-      create_date: istanbulDateTime(daysBeforeAnchor(daysAgo)),
+      create_date: apiDateTime(daysBeforeAnchor(daysAgo)),
       created_by_id: admin,
       update_date:
-        daysAgo > 400
-          ? istanbulDateTime(daysBeforeAnchor(daysAgo - 200))
-          : null,
+        daysAgo > 400 ? apiDateTime(daysBeforeAnchor(daysAgo - 200)) : null,
       updated_by_id: daysAgo > 400 ? secondAdmin : null,
     });
   const main = bankAccount(
@@ -102,7 +100,7 @@ export function seedSystem(
       utm_medium: medium,
       utm_campaign: campaign,
       utm_content: content,
-      create_date: istanbulDateTime(daysBeforeAnchor(daysAgo)),
+      create_date: apiDateTime(daysBeforeAnchor(daysAgo)),
     }).id;
   const channels = [
     channel("google", "cpc", "burs-2026", "arama-metni", 240),
@@ -172,11 +170,11 @@ export function seedSystem(
       btn_operation_detail: spec.button?.detail ?? null,
       category_id: spec.categoryId,
       translations: spec.translations,
-      create_date: istanbulDateTime(daysBeforeAnchor(spec.createdDaysAgo)),
+      create_date: apiDateTime(daysBeforeAnchor(spec.createdDaysAgo)),
       update_date:
         spec.updated === null
           ? null
-          : istanbulDateTime(daysBeforeAnchor(spec.updated.daysAgo)),
+          : apiDateTime(daysBeforeAnchor(spec.updated.daysAgo)),
       created_by_id: spec.createdBy,
       updated_by_id: spec.updated?.by ?? null,
     }).id;

@@ -13,7 +13,7 @@ export const CURRENCIES: readonly CurrencyRecord[] = [
     iyzi_code: "TRY",
     iso_code: "TRY",
     value: 1,
-    last_update_date: "2026-11-01T08:00:00+03:00",
+    last_update_date: "2026-11-01T05:00:00.000Z",
   },
   {
     id: 2,
@@ -23,7 +23,7 @@ export const CURRENCIES: readonly CurrencyRecord[] = [
     iyzi_code: "USD",
     iso_code: "USD",
     value: 41.92,
-    last_update_date: "2026-11-01T08:00:00+03:00",
+    last_update_date: "2026-11-01T05:00:00.000Z",
   },
   {
     id: 3,
@@ -33,7 +33,7 @@ export const CURRENCIES: readonly CurrencyRecord[] = [
     iyzi_code: "EUR",
     iso_code: "EUR",
     value: 48.65,
-    last_update_date: "2026-11-01T08:00:00+03:00",
+    last_update_date: "2026-11-01T05:00:00.000Z",
   },
   {
     id: 4,
@@ -43,7 +43,7 @@ export const CURRENCIES: readonly CurrencyRecord[] = [
     iyzi_code: "GBP",
     iso_code: "GBP",
     value: 55.4,
-    last_update_date: "2026-11-01T08:00:00+03:00",
+    last_update_date: "2026-11-01T05:00:00.000Z",
   },
 ];
 

@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
-import { istanbulDateTime } from "../src/seed/dates";
+import { apiDateTime } from "../src/seed/dates";
 import { fullName } from "../src/store/joins";
 import type { TestClient } from "../src/testing/client";
 import { campaign, client, donation, kelder, person } from "./people-fixtures";
 
 const PAGE = { start_page: 1, how_many: 100 };
-const ISTANBUL_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+03:00$/;
+const UTC_MILLIS = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 const EMAIL_TEMPLATE = {
   category_id: 2,
@@ -112,8 +112,8 @@ describe("listTemplates", () => {
       category_id: 1,
       category__name: "Bağış",
       type_sms: false,
-      create_date: "2025-09-27T09:00:00+03:00",
-      update_date: "2026-08-03T09:00:00+03:00",
+      create_date: "2025-09-27T06:00:00.000Z",
+      update_date: "2026-08-03T06:00:00.000Z",
       created_by_id: creator.id,
       created_by__name: creator.name,
       updated_by_id: updater.id,
@@ -140,7 +140,7 @@ describe("listTemplates", () => {
       category_id: null,
       category__name: null,
       type_sms: true,
-      create_date: "2026-10-27T09:00:00+03:00",
+      create_date: "2026-10-27T06:00:00.000Z",
       update_date: null,
       created_by_id: null,
       created_by__name: null,
@@ -217,9 +217,7 @@ describe("listTemplates", () => {
       "update_date",
     ).toEqual(both);
     for (const item of rows ?? []) {
-      expect(item.create_date, `template ${item.id}`).toMatch(
-        ISTANBUL_DATE_TIME,
-      );
+      expect(item.create_date, `template ${item.id}`).toMatch(UTC_MILLIS);
       expect(item.created_by__name === null, `creator of ${item.id}`).toBe(
         item.created_by_id === null,
       );
@@ -593,11 +591,11 @@ describe("template lifecycle", () => {
 });
 
 describe("the audit trail", () => {
-  test("stamps create_date at creation and update_date at each update, in Istanbul time", async () => {
+  test("stamps create_date at creation and update_date at each update, in UTC with milliseconds", async () => {
     const shared = client();
     const clock = shared.mock.runtime.clock;
-    const created = istanbulDateTime(clock.now());
-    expect(created).toMatch(ISTANBUL_DATE_TIME);
+    const created = apiDateTime(clock.now());
+    expect(created).toMatch(UTC_MILLIS);
     const templateId = await createTemplate(shared, { ...EMAIL_TEMPLATE });
     expect(await row(shared, templateId)).toMatchObject({
       create_date: created,
@@ -609,7 +607,7 @@ describe("the audit trail", () => {
     });
     // Less than the token's hour, so the cached token stays valid.
     clock.advance(45 * 60_000 + 1234);
-    const updated = istanbulDateTime(clock.now());
+    const updated = apiDateTime(clock.now());
     await shared.ok("updateTemplate", {
       path: { template_id: templateId },
       body: { title: "Aidat Teşekkürü" },
@@ -636,7 +634,7 @@ describe("the audit trail", () => {
     expect(after.created_by__name).toBe(before.created_by__name);
     expect(after.updated_by_id).toBe(before.updated_by_id);
     expect(after.update_date).toBe(
-      istanbulDateTime(shared.mock.runtime.clock.now()),
+      apiDateTime(shared.mock.runtime.clock.now()),
     );
     expect(after.update_date).not.toBe(before.update_date);
   });
@@ -671,7 +669,7 @@ describe("the audit trail", () => {
       category_id: 4,
       category__name: "Genel",
       type_sms: false,
-      create_date: istanbulDateTime(shared.mock.runtime.clock.now()),
+      create_date: apiDateTime(shared.mock.runtime.clock.now()),
       update_date: null,
       created_by_id: null,
       created_by__name: null,
@@ -726,7 +724,7 @@ describe("what a request can set", () => {
     });
     expect(await detail(shared, templateId)).toMatchObject(ALWAYS_NULL);
     expect(await row(shared, templateId)).toMatchObject({
-      create_date: istanbulDateTime(shared.mock.runtime.clock.now()),
+      create_date: apiDateTime(shared.mock.runtime.clock.now()),
       update_date: null,
       created_by_id: null,
       updated_by_id: null,

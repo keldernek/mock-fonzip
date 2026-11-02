@@ -103,7 +103,7 @@ describe("donation categories", () => {
         id: categoryId,
         name: "Su Kuyusu",
         active: true,
-        create_date: "2026-11-01T09:00:00+03:00",
+        create_date: "2026-11-01T06:00:00.000Z",
       },
     });
     client.mock.runtime.clock.advance(60_000);
@@ -122,7 +122,7 @@ describe("donation categories", () => {
       id: categoryId,
       name: "Su Kuyusu Projesi",
       active: false,
-      update_date: "2026-11-01T09:01:00+03:00",
+      update_date: "2026-11-01T06:01:00.000Z",
     });
     await client.ok("updateDonationCategoryStatus", {
       path: { category_id: categoryId },

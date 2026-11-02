@@ -1,7 +1,7 @@
 import type { OrgSlug } from "../auth/tenancy";
 import type { Clock } from "../core/clock";
 import type { components } from "../generated/openapi";
-import { istanbulDateTime } from "../seed/dates";
+import { apiDateTime } from "../seed/dates";
 import type { WebhookRecord } from "../store/records";
 import type { Store } from "../store/store";
 
@@ -99,7 +99,7 @@ export function createWebhookEmitter(
     if (webhook.authentication) headers["X-FZ-Auth-Token"] = webhook.auth_token;
     const delivery: Delivery = {
       id: nextId,
-      at: istanbulDateTime(clock.now()),
+      at: apiDateTime(clock.now()),
       org,
       url: webhook.url,
       headers,

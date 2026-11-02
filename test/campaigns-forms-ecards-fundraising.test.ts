@@ -66,8 +66,8 @@ describe("fundraising campaign list", () => {
       user_id: 1011,
       user__first_name: expect.any(String),
       user__last_name: expect.any(String),
-      create_date: "2026-02-14T09:00:00+03:00",
-      activation_date: "2026-02-15T09:00:00+03:00",
+      create_date: "2026-02-14T06:00:00.000Z",
+      activation_date: "2026-02-15T06:00:00.000Z",
       title: expect.stringContaining("Burs Fonu"),
       url: expect.stringMatching(/^https:\/\/kelder\.example\/kampanya\//),
       status: 1,
@@ -81,7 +81,7 @@ describe("fundraising campaign list", () => {
     expect(
       finalized?.finish_date,
       "a finalized campaign has a finish date",
-    ).toBe("2026-09-24T09:00:00+03:00");
+    ).toBe("2026-09-24T06:00:00.000Z");
   });
 
   test("pages through campaigns in id order", async () => {
@@ -314,8 +314,8 @@ describe("creating a fundraising campaign", () => {
       title: "Mezuniyet Hediyesi",
       url: "https://kelder.example/kampanya/mezuniyet-hediyesi",
       status: 1,
-      activation_date: "2026-11-01T09:00:00+03:00",
-      create_date: "2026-11-01T09:00:00+03:00",
+      activation_date: "2026-11-01T06:00:00.000Z",
+      create_date: "2026-11-01T06:00:00.000Z",
       donation_total: 0,
       featured: false,
       target: 20_000,
@@ -550,7 +550,7 @@ describe("campaign status actions", () => {
     });
     expect(finalized.campaign).toMatchObject({
       status: 3,
-      finish_date: "2026-11-01T09:00:00+03:00",
+      finish_date: "2026-11-01T06:00:00.000Z",
       featured: false,
     });
     await client.ok("updateFundraisingCampaignStatus", {
@@ -816,7 +816,7 @@ describe("fundraising teams", () => {
       currency_id: 1,
       currency__value: 1,
       currency__display: "TRY",
-      create_date: "2026-05-15T09:00:00+03:00",
+      create_date: "2026-05-15T06:00:00.000Z",
       status: 1,
       donation_sum: successfulTotal(client, 802),
       donation_count: 8,

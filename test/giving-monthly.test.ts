@@ -382,7 +382,7 @@ describe("cancelMonthlyDonation", () => {
     expect(
       db.monthlyDonationRequests.get(7001),
       "the seeded cancel request is answered",
-    ).toMatchObject({ status: 1, response_date: "2026-11-01T09:00:00+03:00" });
+    ).toMatchObject({ status: 1, response_date: "2026-11-01T06:00:00.000Z" });
     const again = await client.call("cancelMonthlyDonation", {
       path: { donation_id: 50_001 },
       body: { action: "cancel", reason: "tekrar" },
@@ -627,7 +627,7 @@ describe("changeMonthlyDonationValues", () => {
         amount,
         payment_status: 3,
         payment_method: 0,
-        complete_date: "2026-11-01T09:00:00+03:00",
+        complete_date: "2026-11-01T06:00:00.000Z",
         fonzip_framework: true,
       },
     });

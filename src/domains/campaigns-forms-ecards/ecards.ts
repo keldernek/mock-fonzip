@@ -1,7 +1,7 @@
 import { notFound } from "../../api/errors";
 import type { Handler } from "../../api/handler";
 import { matchesQuery, paginate } from "../../api/listing";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { present, userName } from "../../store/joins";
 import type { EcardCategoryRecord, EcardRecord } from "../../store/records";
@@ -64,7 +64,7 @@ export const createEcardCategory: Handler<"createEcardCategory"> = (
   const category = store.ecardCategories.insert({
     name,
     order: String(last + 1),
-    create_date: istanbulDateTime(clock.now()),
+    create_date: apiDateTime(clock.now()),
     created_by_id: null,
     update_date: null,
     updated_by_id: null,
@@ -83,7 +83,7 @@ export const updateEcardCategory: Handler<"updateEcardCategory"> = (
   if (name === null) return badRequest("name is required");
   store.ecardCategories.update(path.category_id, {
     name,
-    update_date: istanbulDateTime(clock.now()),
+    update_date: apiDateTime(clock.now()),
     updated_by_id: null,
   });
   return { status: 200, body: { result: "ok" } };

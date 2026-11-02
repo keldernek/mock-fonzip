@@ -114,7 +114,7 @@ describe("createDonation", () => {
       user: { id: 1054 },
       transaction: {
         amount: 1250.5,
-        complete_date: "2026-10-30T10:30:00+03:00",
+        complete_date: "2026-10-30T07:30:00.000Z",
         currency: { iso_code: "TRY" },
         payment_status: 3,
         payment_method: 2,
@@ -177,7 +177,7 @@ describe("createDonation", () => {
           id: created.donation_id,
           d_type: 0,
           transaction__payment_method: 1,
-          transaction__complete_date: "2026-11-01T09:00:00+03:00",
+          transaction__complete_date: "2026-11-01T06:00:00.000Z",
           transaction__amount: 750,
           transaction__currency__display: "TRY",
           transaction__payment_status: 3,

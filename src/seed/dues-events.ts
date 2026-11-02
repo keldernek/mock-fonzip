@@ -3,12 +3,7 @@ import type { Row } from "../store/collection";
 import type { SubscriptionRecord, UserRecord } from "../store/records";
 import { TRANSACTION_TYPE } from "../store/transactions";
 import { createTransaction, type SeedContext } from "./context";
-import {
-  addDays,
-  daysBeforeAnchor,
-  istanbulDate,
-  istanbulDateTime,
-} from "./dates";
+import { addDays, daysBeforeAnchor, istanbulDate, apiDateTime } from "./dates";
 import type { SystemRefs } from "./system";
 
 export function seedDues(
@@ -21,10 +16,10 @@ export function seedDues(
   const category = (name: string, daysAgo: number, deleted = false) =>
     db.debtCategories.insert({
       name,
-      create_date: istanbulDateTime(daysBeforeAnchor(daysAgo)),
+      create_date: apiDateTime(daysBeforeAnchor(daysAgo)),
       created_by_id: admin,
       update_date: deleted
-        ? istanbulDateTime(daysBeforeAnchor(daysAgo - 100))
+        ? apiDateTime(daysBeforeAnchor(daysAgo - 100))
         : null,
       updated_by_id: deleted ? secondAdmin : null,
       deleted,
@@ -69,7 +64,7 @@ export function seedDues(
       status,
       details: null,
       remove_note: null,
-      operation_date: istanbulDateTime(at),
+      operation_date: apiDateTime(at),
       period,
       balance,
       first_name: user.first_name,
@@ -89,7 +84,7 @@ export function seedDues(
       order_id: null,
       added_by_id: admin,
       updated_by_id: null,
-      create_date: istanbulDateTime(at),
+      create_date: apiDateTime(at),
       last_update_date: null,
       debt_category_id: null,
       transaction_id: null,
@@ -114,15 +109,14 @@ export function seedDues(
         ),
         debt_category_id: categoryId,
         details: categoryId === null ? null : `${year} yılı aidatı`,
-        due_date:
-          categoryId === null ? null : istanbulDateTime(addDays(at, 30)),
+        due_date: categoryId === null ? null : apiDateTime(addDays(at, 30)),
         order_id: `BRC-${user.id}-${categoryId ?? 0}-${year}`,
         remove_note:
           outcome === "removed" ? "Onursal üye, aidattan muaf" : null,
         assignment_status: outcome === "paid" ? 2 : 0,
         updated_by_id: outcome === "removed" ? secondAdmin : null,
         last_update_date:
-          outcome === "removed" ? istanbulDateTime(addDays(at, 40)) : null,
+          outcome === "removed" ? apiDateTime(addDays(at, 40)) : null,
       });
       if (outcome !== "paid") return;
       const paidAt = addDays(at, rng.int(1, 60));
@@ -166,7 +160,7 @@ export function seedDues(
         order_id: orderId,
         added_by_id: card ? null : admin,
         updated_by_id: checked ? secondAdmin : null,
-        last_update_date: checked ? istanbulDateTime(addDays(paidAt, 1)) : null,
+        last_update_date: checked ? apiDateTime(addDays(paidAt, 1)) : null,
         transaction_id: transaction.id,
         debt_category_id: null,
       });
@@ -313,18 +307,17 @@ export function seedEvents(
     const event = db.events.insert({
       url: `https://kelder.example/etkinlik/${order + 1}-${slug}`,
       name: plan.name,
-      start_date: istanbulDateTime(start),
-      end_date: istanbulDateTime(new Date(start.getTime() + 4 * 3_600_000)),
+      start_date: apiDateTime(start),
+      end_date: apiDateTime(new Date(start.getTime() + 4 * 3_600_000)),
       all_day: false,
       active: plan.active,
       timezone: "Europe/Istanbul",
-      create_date: istanbulDateTime(created),
+      create_date: apiDateTime(created),
       created_by_id: admin,
-      update_date:
-        order % 2 === 0 ? istanbulDateTime(addDays(created, 10)) : null,
+      update_date: order % 2 === 0 ? apiDateTime(addDays(created, 10)) : null,
       updated_by_id: order % 2 === 0 ? secondAdmin : null,
       archived_by_id: plan.archived ? admin : null,
-      archive_date: plan.archived ? istanbulDateTime(addDays(start, 30)) : null,
+      archive_date: plan.archived ? apiDateTime(addDays(start, 30)) : null,
       venue: order === 4 ? 1 : 0,
       address:
         order === 4
@@ -353,9 +346,9 @@ export function seedEvents(
         details: price === 0 ? "Kayıt zorunludur." : "Akşam yemeği dahildir.",
         post_sale_message: "Biletiniz e-posta adresinize gönderildi.",
         sales_start_on_date: true,
-        sales_start: istanbulDateTime(created),
+        sales_start: apiDateTime(created),
         sales_end_on_date: true,
-        sales_end: istanbulDateTime(start),
+        sales_end: apiDateTime(start),
         max_per_person: price === 0 ? 1 : 4,
         order: ticketOrder + 1,
         tag_control: ticketOrder === 1 ? 1 : 0,

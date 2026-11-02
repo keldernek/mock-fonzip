@@ -4,7 +4,7 @@ import { createStore, orgStore, type Store } from "../store/store";
 import { newUser } from "../store/users";
 import { seedCampaigns, seedEcards } from "./campaigns";
 import type { SeedContext } from "./context";
-import { daysBeforeAnchor, istanbulDateTime } from "./dates";
+import { daysBeforeAnchor, apiDateTime } from "./dates";
 import { seedDebtTransactions, seedDues, seedEvents } from "./dues-events";
 import { seedEcardTransactions, seedForms } from "./forms-ecards";
 import {
@@ -75,7 +75,7 @@ function seedKelder(store: Store, options: SeedOptions): void {
 function seedOrnek(store: Store, options: SeedOptions): void {
   const db = orgStore(store, "ornek");
   const rng = createRng(options.seed + 7);
-  const created = istanbulDateTime(daysBeforeAnchor(400));
+  const created = apiDateTime(daysBeforeAnchor(400));
   const people = [
     ["Hatice", "Güler"],
     ["Recep", "Altun"],

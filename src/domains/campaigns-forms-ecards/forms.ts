@@ -8,7 +8,7 @@ import {
   parseDateRange,
 } from "../../api/listing";
 import type { components } from "../../generated/openapi";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { fullName, present, userName } from "../../store/joins";
 import type {
@@ -326,7 +326,7 @@ export const respondFormAnswer: Handler<"respondFormAnswer"> = (
   if (!answer) return notFound("Form answer");
   const response = parseResponse(ctx.store, body);
   if (!response.ok) return response.failure;
-  applyResponse(ctx, answer, response.value, istanbulDateTime(ctx.clock.now()));
+  applyResponse(ctx, answer, response.value, apiDateTime(ctx.clock.now()));
   return {
     status: 200,
     body: {

@@ -85,10 +85,10 @@ describe("e-card categories", () => {
         id: BIRTHDAY,
         name: "Doğum Günü",
         order: "1",
-        create_date: "2025-06-19T09:00:00+03:00",
+        create_date: "2025-06-19T06:00:00.000Z",
         created_by_id: 1001,
         created_by__name: expect.any(String),
-        update_date: "2025-07-19T09:00:00+03:00",
+        update_date: "2025-07-19T06:00:00.000Z",
         updated_by_id: 1001,
         updated_by__name: expect.any(String),
       },
@@ -135,7 +135,7 @@ describe("e-card categories", () => {
       id: 905,
       name: "Yeni Yıl",
       order: "5",
-      create_date: "2026-11-01T09:00:00+03:00",
+      create_date: "2026-11-01T06:00:00.000Z",
     });
     await client.ok("updateEcardCategory", {
       path: { category_id: GRADUATION },
@@ -147,7 +147,7 @@ describe("e-card categories", () => {
     expect(updated.category_list).toMatchObject({
       id: GRADUATION,
       name: "Mezuniyet ve Diploma",
-      update_date: "2026-11-01T09:00:00+03:00",
+      update_date: "2026-11-01T06:00:00.000Z",
       created_by_id: 1001,
     });
     expect(

@@ -3,7 +3,7 @@ import type { Context, Hono } from "hono";
 import { json } from "../api/errors";
 import { isOrgSlug, ORG_SLUGS, type Plan } from "../auth/tenancy";
 import type { MockRuntime } from "../app";
-import { istanbulDateTime } from "../seed/dates";
+import { apiDateTime } from "../seed/dates";
 import { SIMULATIONS } from "../simulations";
 import { DOMAINS } from "../operations";
 import { orgStore } from "../store/store";
@@ -103,7 +103,7 @@ export function mountControl(app: Hono, runtime: MockRuntime): void {
       body = text;
     }
     runtime.world().received.push({
-      at: istanbulDateTime(runtime.clock.now()),
+      at: apiDateTime(runtime.clock.now()),
       receiver: c.req.query("receiver") ?? null,
       auth_token: c.req.header("x-fz-auth-token") ?? null,
       body,

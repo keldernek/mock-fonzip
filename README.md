@@ -69,7 +69,7 @@ bun run parity --domain giving
 
 `parity` runs the test suite and records every exchange the tests make. It then prints four matrices: operations that return a real 200, the documented statuses each operation produced, documented inputs no test sent, and documented 200 properties no response carried. Each row names the domain that owns the operation. The command exits non-zero while any gap is not waived. Waivers live in `parity-waivers.json` and in each domain's `src/domains/<domain>/parity-waivers.json`. Each waiver needs a reason.
 
-Every response a test receives is validated against the operation's documented schema for that status. The validation is strict: it rejects properties the spec does not document and statuses the operation does not list.
+Every response a test receives is validated against the operation's documented schema for that status. The validation is strict: it rejects properties the spec does not document and statuses the operation does not list. It also requires every `date-time` to be UTC with milliseconds, such as `2026-03-04T05:06:07.123Z`, the way production writes it. Requests may carry any offset.
 
 `bun run smoke` boots the real server on port 8791 and checks it over HTTP with `curl` and `jq`. It covers tokens, auth and plan errors, scopes, a wrong method, a missing parameter, a list from each domain, a donation and a simulated ticket sale with their webhook deliveries, and the rate limit. It exits non-zero on any failed check.
 

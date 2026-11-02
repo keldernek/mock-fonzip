@@ -107,7 +107,7 @@ describe("createDebtCategory", () => {
     );
     expect(listed).toMatchObject({
       name: "Bağış Gecesi",
-      create_date: "2026-11-01T09:00:00+03:00",
+      create_date: "2026-11-01T06:00:00.000Z",
       created_by_id: null,
       created_by__name: null,
       debt_count: 0,
@@ -211,7 +211,7 @@ describe("updateDebtCategory", () => {
       (await categories(client)).find((row) => row.id === 503),
     ).toMatchObject({
       name: "Üyelik Giriş Ücreti",
-      update_date: "2026-11-01T09:01:00+03:00",
+      update_date: "2026-11-01T06:01:00.000Z",
       updated_by_id: null,
       updated_by__name: null,
     });

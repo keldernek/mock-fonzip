@@ -195,7 +195,7 @@ describe("membership-due-refund simulation", () => {
     });
     expect(detail.subscription?.transaction).toMatchObject({
       payment_status: 4,
-      refund_date: "2026-11-01T09:00:00+03:00",
+      refund_date: "2026-11-01T06:00:00.000Z",
       refund_reason: "Üyenin talebi üzerine iade edildi",
     });
     const refund = await client.ok("getMembershipDueDetails", {
@@ -613,7 +613,7 @@ describe("ticket-refund simulation", () => {
     });
     expect(detail.ticket_sale?.transaction).toMatchObject({
       payment_status: 4,
-      refund_date: "2026-11-01T09:00:00+03:00",
+      refund_date: "2026-11-01T06:00:00.000Z",
       refund_reason: "Katılımcının talebi üzerine iade edildi",
     });
     const bought = await client.ok("getUserBoughtTicketList", {

@@ -1,6 +1,6 @@
 import { notFound } from "../../api/errors";
 import type { Handler, HandlerInput } from "../../api/handler";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import type { TicketRecord } from "../../store/records";
 import type { OrgStore } from "../../store/store";
@@ -20,7 +20,7 @@ function saleDate(
   fallback: string | null,
 ): string | null {
   if (!onDate) return null;
-  return value === undefined ? fallback : istanbulDateTime(new Date(value));
+  return value === undefined ? fallback : apiDateTime(new Date(value));
 }
 
 function ticketFields(
