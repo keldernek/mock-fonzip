@@ -1955,7 +1955,7 @@ export interface components {
             /** @description Template Title */
             title?: string;
             /** @description Subject */
-            subject?: string;
+            subject?: string | null;
             /** @description Template content */
             message?: string;
             /** @description True if mail includes the logo of association */
@@ -1976,7 +1976,7 @@ export interface components {
             /** @description whether a button is added or not */
             has_button?: boolean;
             /** @description button text */
-            btn_text?: string;
+            btn_text?: string | null;
             /** @description button color in HEX format, such as */
             btn_color?: string;
             /** @description button text in HEX format, such as */
@@ -1987,19 +1987,25 @@ export interface components {
              */
             btn_operation?: 1 | 2;
             /** @description button action detail */
-            btn_operation_detail?: ("login" | "cc" | "donation" | "dues" | "member_card") | string;
+            btn_operation_detail?: ("login" | "cc" | "donation" | "dues" | "member_card") | string | null;
             /** @description Template category id */
-            category_id?: number;
-            /** @description Template category name */
-            category__name?: string;
-            /** @description translations of template */
+            category_id?: number | null;
+            /** @description Translations of the template, by language code. Each language maps a field name (subject, message, btn_text) to its text, or to null */
             translations?: {
-                language_code?: {
-                    subject?: string;
-                    message?: string;
-                    btn_text?: string;
+                [key: string]: {
+                    [key: string]: string | null;
                 };
             };
+            /** @description Badge icon. Production sent null on every template, so the type of a value is a guess */
+            badge_icon?: string | null;
+            /** @description Editor design of the template. Production sent null on every template, so an object or a string is a guess */
+            design?: Record<string, unknown> | string | null;
+            /** @description Heading. Production sent null on every template, so the type of a value is a guess */
+            heading?: string | null;
+            /** @description Preheader. Production sent null on every template, so the type of a value is a guess */
+            preheader?: string | null;
+            /** @description What refers to the template. Production sent an empty object on every template */
+            references?: Record<string, unknown>;
         };
         WebhookList: {
             /** @description Webhook Id */
@@ -2018,15 +2024,33 @@ export interface components {
             /** @description Template Name */
             title?: string;
             /** @description Subject */
-            subject?: string;
+            subject?: string | null;
             /** @description Template content */
             message?: string;
             /** @description Template category id */
-            category_id?: number;
+            category_id?: number | null;
             /** @description Template category name */
-            category__name?: string;
+            category__name?: string | null;
             /** @description True if template is for sms, False if template is for email */
             type_sms?: boolean;
+            /**
+             * Format: date-time
+             * @description Template creation time, in UTC with milliseconds
+             */
+            create_date?: string;
+            /**
+             * Format: date-time
+             * @description Last update time, in UTC with milliseconds. Null until the template is updated
+             */
+            update_date?: string | null;
+            /** @description Name of the user who created the template */
+            created_by__name?: string | null;
+            /** @description Id of the user who created the template */
+            created_by_id?: number | null;
+            /** @description Name of the user who last updated the template */
+            updated_by__name?: string | null;
+            /** @description Id of the user who last updated the template */
+            updated_by_id?: number | null;
         };
         WebhookNotification: {
             /** @description Object id */
@@ -6516,6 +6540,8 @@ export interface components {
                     /** @description total number of templates */
                     total?: number;
                     template_list?: components["schemas"]["TemplateList"][];
+                    /** @description ok */
+                    result?: string;
                 };
             };
         };

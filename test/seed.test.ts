@@ -74,14 +74,20 @@ describe("the seeded world", () => {
     }
   });
 
-  test("points templates at known categories", () => {
+  test("points templates at known categories, or at none", () => {
     for (const template of kelder.templates.list()) {
       expect(
-        TEMPLATE_CATEGORIES.some(
-          (category) => category.id === template.category_id,
-        ),
+        template.category_id === null ||
+          TEMPLATE_CATEGORIES.some(
+            (category) => category.id === template.category_id,
+          ),
+        `template ${template.id}`,
       ).toBe(true);
     }
+    expect(
+      kelder.templates.count((template) => template.category_id === null),
+      "some templates have no category, like production's",
+    ).toBeGreaterThan(0);
   });
 
   test("gives every person a checksum-valid TC kimlik number", () => {

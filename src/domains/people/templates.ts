@@ -1,18 +1,24 @@
 import { notFound } from "../../api/errors";
-import { nonEmpty } from "../../store/joins";
+import { userName } from "../../store/joins";
 import type { Handler, HandlerInput } from "../../api/handler";
 import { matchesQuery, paginate } from "../../api/listing";
 import type { components } from "../../generated/openapi";
 import type { Row } from "../../store/collection";
-import type { TemplateRecord } from "../../store/records";
+import type { TemplateRecord, TemplateTranslations } from "../../store/records";
 import { TEMPLATE_CATEGORIES } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
 
 type TemplateBody = NonNullable<
   components["requestBodies"]["Template"]["content"]["application/json"]
 >;
+type TemplateDetail = components["schemas"]["Template"];
+type TemplateListItem = components["schemas"]["TemplateList"];
 type Template = Row<TemplateRecord>;
-type Draft = Omit<TemplateRecord, "id">;
+// What a request can set. The audit trail is stamped by the handlers.
+type Content = Omit<
+  TemplateRecord,
+  "id" | "create_date" | "update_date" | "created_by_id" | "updated_by_id"
+>;
 
 const DEFAULT_CATEGORY_ID = 4;
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -24,28 +30,76 @@ const BUTTON_KEYWORDS: readonly string[] = [
   "member_card",
 ];
 
-function categoryName(categoryId: number): string | undefined {
-  return TEMPLATE_CATEGORIES.find((category) => category.id === categoryId)
-    ?.name;
+function categoryName(categoryId: number | null): string | null {
+  return (
+    TEMPLATE_CATEGORIES.find((category) => category.id === categoryId)?.name ??
+    null
+  );
 }
 
-function toListItem(row: Template) {
+// Production sends null where a template has no subject or button text. The
+// areas that save a template write "" instead.
+function blankAsNull(text: string | null): string | null {
+  return text === null || text === "" ? null : text;
+}
+
+// `Object.fromEntries` keeps a language called `__proto__` as an own key.
+function translationsOf(
+  translations: TemplateTranslations,
+): NonNullable<TemplateDetail["translations"]> {
+  return Object.fromEntries(
+    Object.entries(translations).flatMap(([language, fields]) =>
+      fields === undefined
+        ? []
+        : [
+            [
+              language,
+              Object.fromEntries(
+                Object.entries(fields).map(([field, text]) => [
+                  field,
+                  text ?? null,
+                ]),
+              ),
+            ],
+          ],
+    ),
+  );
+}
+
+// Production's list rows say who created and last updated a template. An
+// area that inserts a template without stamping it leaves the dates blank,
+// and the template then reads as created now.
+function toListItem(
+  row: Template,
+  store: OrgStore,
+  fallbackCreateDate: string,
+): TemplateListItem {
+  const createdBy = row.created_by_id ?? null;
+  const updatedBy = row.updated_by_id ?? null;
   return {
     id: row.id,
     title: row.title,
-    subject: nonEmpty(row.subject),
+    subject: blankAsNull(row.subject),
     message: row.message,
     category_id: row.category_id,
     category__name: categoryName(row.category_id),
     type_sms: row.type_sms,
+    create_date: row.create_date ?? fallbackCreateDate,
+    update_date: row.update_date ?? null,
+    created_by__name: userName(store, createdBy) ?? null,
+    created_by_id: createdBy,
+    updated_by__name: userName(store, updatedBy) ?? null,
+    updated_by_id: updatedBy,
   };
 }
 
-function toTemplate(row: Template) {
+// Production sent badge_icon, design, heading and preheader as null, and
+// references as an empty object, on every template it has.
+function toTemplate(row: Template): TemplateDetail {
   return {
     id: row.id,
     title: row.title,
-    subject: nonEmpty(row.subject),
+    subject: blankAsNull(row.subject),
     message: row.message,
     has_association_logo: row.has_association_logo,
     type_sms: row.type_sms,
@@ -54,20 +108,24 @@ function toTemplate(row: Template) {
     footer_text_color: row.footer_text_color,
     footer_icon_color: row.footer_icon_color,
     has_button: row.has_button,
-    btn_text: nonEmpty(row.btn_text),
+    btn_text: blankAsNull(row.btn_text),
     btn_color: row.btn_color,
     btn_text_color: row.btn_text_color,
     btn_operation: row.btn_operation,
     btn_operation_detail: row.btn_operation_detail,
     category_id: row.category_id,
-    category__name: categoryName(row.category_id),
-    translations: row.translations,
+    translations: translationsOf(row.translations),
+    badge_icon: null,
+    design: null,
+    heading: null,
+    preheader: null,
+    references: {},
   };
 }
 
-const BLANK: Draft = {
+const BLANK: Content = {
   title: "",
-  subject: "",
+  subject: null,
   message: "",
   has_association_logo: true,
   type_sms: false,
@@ -76,16 +134,16 @@ const BLANK: Draft = {
   footer_text_color: "#5b5b5b",
   footer_icon_color: 2,
   has_button: false,
-  btn_text: "",
+  btn_text: null,
   btn_color: "#1f2933",
   btn_text_color: "#ffffff",
   btn_operation: 2,
-  btn_operation_detail: "login",
+  btn_operation_detail: null,
   category_id: DEFAULT_CATEGORY_ID,
   translations: {},
 };
 
-function merge(base: Draft, body: TemplateBody): Draft {
+function merge(base: Content, body: TemplateBody): Content {
   return {
     title: body.title ?? base.title,
     subject: body.subject ?? base.subject,
@@ -110,10 +168,10 @@ function merge(base: Draft, body: TemplateBody): Draft {
 }
 
 type Checked =
-  | { readonly ok: true; readonly draft: Draft }
+  | { readonly ok: true; readonly draft: Content }
   | { readonly ok: false; readonly status: 400 | 404; readonly error: string };
 
-function check(draft: Draft): Checked {
+function check(draft: Content): Checked {
   const problem = (error: string): Checked => ({
     ok: false,
     status: 400,
@@ -121,10 +179,10 @@ function check(draft: Draft): Checked {
   });
   if (draft.title.trim() === "") return problem("title cannot be empty");
   if (draft.message.trim() === "") return problem("message cannot be empty");
-  if (!draft.type_sms && draft.subject.trim() === "") {
+  if (!draft.type_sms && (draft.subject ?? "").trim() === "") {
     return problem("an email template needs a subject");
   }
-  if (categoryName(draft.category_id) === undefined) {
+  if (draft.category_id !== null && categoryName(draft.category_id) === null) {
     return { ok: false, status: 404, error: "Template category not found" };
   }
   const colors = [
@@ -137,9 +195,12 @@ function check(draft: Draft): Checked {
   const badColor = colors.find((field) => !HEX.test(draft[field]));
   if (badColor) return problem(`${badColor} is not a #RRGGBB color`);
   if (draft.has_button) {
-    if (draft.btn_text.trim() === "") return problem("a button needs btn_text");
-    const keyword = BUTTON_KEYWORDS.includes(draft.btn_operation_detail);
-    if (draft.btn_operation === 1 && keyword) {
+    if ((draft.btn_text ?? "").trim() === "") {
+      return problem("a button needs btn_text");
+    }
+    const detail = draft.btn_operation_detail;
+    const keyword = detail !== null && BUTTON_KEYWORDS.includes(detail);
+    if (draft.btn_operation === 1 && (detail === null || keyword)) {
       return problem("btn_operation 1 opens a URL in btn_operation_detail");
     }
     if (draft.btn_operation === 2 && !keyword) {
@@ -162,9 +223,15 @@ const ORDER: Readonly<
   "-create_date": (a, b) => b.id - a.id,
 };
 
+// Production writes its template dates in UTC with milliseconds, unlike the
+// +03:00 date-times of the rest of the API.
+function stamp(clock: { now(): Date }): string {
+  return clock.now().toISOString();
+}
+
 export const listTemplates: Handler<"listTemplates"> = (
   { query },
-  { store },
+  { store, clock },
 ) => {
   const matching = store.templates
     .list(
@@ -176,11 +243,15 @@ export const listTemplates: Handler<"listTemplates"> = (
           row.category_id === query.category_id),
     )
     .sort(ORDER[query.order_by ?? "-create_date"]);
+  const now = stamp(clock);
   return {
     status: 200,
     body: {
+      result: "ok",
       total: matching.length,
-      template_list: paginate(matching, query).map(toListItem),
+      template_list: paginate(matching, query).map((row) =>
+        toListItem(row, store, now),
+      ),
     },
   };
 };
@@ -196,7 +267,7 @@ export const getTemplateDetails: Handler<"getTemplateDetails"> = (
 
 export const createTemplate: Handler<"createTemplate"> = (
   { body },
-  { store },
+  { store, clock },
 ) => {
   if (body === undefined) {
     return {
@@ -208,13 +279,20 @@ export const createTemplate: Handler<"createTemplate"> = (
   if (!checked.ok) {
     return { status: checked.status, body: { error: checked.error } };
   }
-  const row = store.templates.insert(checked.draft);
+  // An API key is no user, so nobody is named as the creator.
+  const row = store.templates.insert({
+    ...checked.draft,
+    create_date: stamp(clock),
+    update_date: null,
+    created_by_id: null,
+    updated_by_id: null,
+  });
   return { status: 200, body: { result: "ok", template_id: row.id } };
 };
 
 export const updateTemplate: Handler<"updateTemplate"> = (
   { path, body },
-  { store },
+  { store, clock },
 ) => {
   const row = store.templates.get(path.template_id);
   if (!row) return notFound("Template");
@@ -229,7 +307,10 @@ export const updateTemplate: Handler<"updateTemplate"> = (
   if (!checked.ok) {
     return { status: checked.status, body: { error: checked.error } };
   }
-  store.templates.update(row.id, checked.draft);
+  store.templates.update(row.id, {
+    ...checked.draft,
+    update_date: stamp(clock),
+  });
   return { status: 200, body: { result: "ok" } };
 };
 
