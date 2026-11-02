@@ -15,10 +15,15 @@ import {
   type PaymentStatus,
 } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
+import {
+  conversationId,
+  originOf,
+  TRANSACTION_TYPE,
+} from "../../store/transactions";
 
 export type GivingContext = Pick<
   HandlerContext,
-  "store" | "rng" | "clock" | "webhooks"
+  "org" | "store" | "rng" | "clock" | "webhooks"
 >;
 
 export type PaymentError = (typeof PAYMENT_ERRORS)[number];
@@ -72,18 +77,20 @@ function roundMoney(value: number): number {
 }
 
 function recordPayment(
-  { store, rng }: GivingContext,
+  { org, store, rng }: GivingContext,
   draft: PaymentDraft,
 ): Row<TransactionRecord> {
   const charged = draft.card !== null && draft.status !== 5;
   return store.transactions.insert({
-    conversation_id: rng.int(10_000_000, 99_999_999),
+    conversation_id: conversationId(rng.int(10_000_000, 99_999_999)),
+    association_id: org.info.id,
     complete_date: draft.completeDate,
     amount: draft.amount,
     currency_id: draft.currencyId,
     installment_count: 1,
     installment_amount: draft.amount,
     ip_address: draft.ipAddress,
+    ...originOf(draft.ipAddress),
     payment_status: draft.status,
     payment_status_display: PAYMENT_STATUS_DISPLAY[draft.status],
     error_code: draft.error?.code ?? null,
@@ -106,6 +113,9 @@ function recordPayment(
     fonzip_framework: draft.card !== null,
     bin_number: draft.card?.bin ?? null,
     last_four: draft.card?.lastFour ?? null,
+    cardholder_name: null,
+    tds: draft.card !== null,
+    transaction_type: TRANSACTION_TYPE.donation,
   });
 }
 

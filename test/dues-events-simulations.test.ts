@@ -67,7 +67,7 @@ describe("membership-due-payment simulation", () => {
     const paid = await client.ok("getMembershipDuesList", {
       query: { ...PAGE, ...TODAY, status: "paid" },
     });
-    expect(ids(paid.subscription_list ?? [])).toEqual([paymentId]);
+    expect(ids(paid.payment_list ?? [])).toEqual([paymentId]);
     for (const debt of open) {
       const settled = await client.ok("getDebtDetails", {
         path: { debt_id: debt.id },
@@ -97,7 +97,7 @@ describe("membership-due-payment simulation", () => {
     const failed = await client.ok("getMembershipDuesList", {
       query: { ...PAGE, ...EVER, status: "failed" },
     });
-    expect(failed.subscription_list).toEqual([
+    expect(failed.payment_list).toEqual([
       expect.objectContaining({
         id: paymentId,
         transaction__payment_status: 5,
@@ -119,7 +119,7 @@ describe("membership-due-payment simulation", () => {
       error_code: expect.any(String),
       error_text: expect.any(String),
     });
-    expect(detail.subscription?.transaction).not.toHaveProperty("auth_code");
+    expect(detail.subscription?.transaction?.auth_code).toBeNull();
     expect(notifications(client).map((body) => body.status)).toEqual([5, 5]);
   });
 
@@ -185,11 +185,11 @@ describe("membership-due-refund simulation", () => {
     const refunds = await client.ok("getMembershipDuesList", {
       query: { ...PAGE, ...EVER, status: "refund" },
     });
-    expect(ids(refunds.subscription_list ?? [])).toContain(refundId);
+    expect(ids(refunds.payment_list ?? [])).toContain(refundId);
     const paid = await client.ok("getMembershipDuesList", {
       query: { ...EVER, status: "paid", start_page: 1, how_many: 100 },
     });
-    expect(ids(paid.subscription_list ?? [])).not.toContain(payment?.id);
+    expect(ids(paid.payment_list ?? [])).not.toContain(payment?.id);
     const detail = await client.ok("getMembershipDueDetails", {
       path: { subscription_id: payment?.id ?? 0 },
     });

@@ -83,12 +83,15 @@ export function matchesDate(
   }
 }
 
+// A payment can have no period. It matches no period filter.
 export function inPeriod(
-  period: string,
+  period: string | null,
   year: number | undefined,
   month: number | undefined,
 ): boolean {
+  if (year === undefined && month === undefined) return true;
   return (
+    period !== null &&
     (year === undefined || Number(period.slice(0, 4)) === year) &&
     (month === undefined || Number(period.slice(5, 7)) === month)
   );

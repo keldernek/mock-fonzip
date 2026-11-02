@@ -353,6 +353,9 @@ export type SubscriptionRecord = WithNull<
   | "order_id"
   | "card_info"
   | "bill_no"
+  // Only a payment can have no period. The debts list types its period as a
+  // plain string, which would otherwise narrow the whole intersection.
+  | "period"
 > & {
   transaction_id: number | null;
 };

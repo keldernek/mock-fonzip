@@ -11,6 +11,11 @@
         "getTicketSaleList"
       ],
       "reason": "The operation names no object in its path or body, so there is nothing that can be missing. Ids in its query (tag_id, event_id, payment_settings_id, debt_category_id) are filters: paths./debts.get documents for debt_category_id that another organisation's id matches nothing, so an unknown id narrows the list to nothing rather than answering 404."
+    },
+    {
+      "status": 404,
+      "operations": ["getUsersMembershipDueList"],
+      "reason": "Production answers 200 with {\"subscription_list\": [], \"total\": 0} for a user it does not know (parity:prod probe P7b), so the documented 404 cannot occur. The mock follows production. A user of another organisation is just as unknown and gets the same empty list."
     }
   ],
   "inputs": [],
@@ -18,12 +23,12 @@
     {
       "operationId": "getDebtDetails",
       "path": "subscription.transaction.payment_settings",
-      "reason": "The debt's own transaction holds the amount owed (components.requestBodies.UpdateDebt: its amount is the debt amount). No documented input sets a payment system or a bank account on it: UpdateDebt.transaction has only amount, transaction_id and payment_method, and CreateDebt.bank_account_id is the bank account the payment was made to, which the separate payment record carries. Card payments cannot be taken through the API at all."
+      "reason": "The debt's own transaction holds the amount owed (components.requestBodies.UpdateDebt: its amount is the debt amount). No documented input sets a payment system or a bank account on it: UpdateDebt.transaction has only amount, transaction_id and payment_method, and CreateDebt.bank_account_id is the bank account the payment was made to, which the separate payment record carries. Production sends both as null on a debt (parity:prod probe P15), so the mock does too and the object's own properties never appear."
     },
     {
       "operationId": "getDebtDetails",
       "path": "subscription.transaction.bank_account",
-      "reason": "The debt's own transaction holds the amount owed (components.requestBodies.UpdateDebt: its amount is the debt amount). No documented input sets a payment system or a bank account on it: UpdateDebt.transaction has only amount, transaction_id and payment_method, and CreateDebt.bank_account_id is the bank account the payment was made to, which the separate payment record carries. Card payments cannot be taken through the API at all."
+      "reason": "The debt's own transaction holds the amount owed (components.requestBodies.UpdateDebt: its amount is the debt amount). No documented input sets a payment system or a bank account on it: UpdateDebt.transaction has only amount, transaction_id and payment_method, and CreateDebt.bank_account_id is the bank account the payment was made to, which the separate payment record carries. Production sends both as null on a debt (parity:prod probe P15), so the mock does too and the object's own properties never appear."
     },
     {
       "operationId": "getUserBoughtTicketList",

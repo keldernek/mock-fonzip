@@ -91,13 +91,14 @@ describe("the seeded world", () => {
     ).toBeGreaterThan(0);
   });
 
-  test("gives every person a checksum-valid TC kimlik number, except where the newest page leaves it empty", () => {
+  test("gives every person a checksum-valid TC kimlik number, except the newest page's sparse profiles and the members the dues seed leaves without one", () => {
     const newestPage = new Set(
       kelder.users
         .list()
         .slice(-NEWEST_PAGE)
         .map((user) => user.id),
     );
+    const without: number[] = [];
     for (const user of [
       ...kelder.users.list(),
       ...orgStore(store, "ornek").users.list(),
@@ -108,13 +109,10 @@ describe("the seeded world", () => {
         );
         continue;
       }
-      // The newest page leaves some TC kimlik numbers empty, as production's
-      // first page does. No one else does.
+      // Production's contacts can lack a TC kimlik number. The newest page
+      // leaves some empty, as production's first page does.
       if (user.tckno === "") {
-        expect(
-          newestPage.has(user.id),
-          `user ${user.id} lacks a TC kimlik`,
-        ).toBe(true);
+        if (!newestPage.has(user.id)) without.push(user.id);
         continue;
       }
       expect(
@@ -122,6 +120,9 @@ describe("the seeded world", () => {
         `user ${user.id} tckno ${user.tckno}`,
       ).toBe(true);
     }
+    // Outside the newest page, the dues seed leaves every 30th member without
+    // one, and the member behind the newest debt is among them.
+    expect(without).toEqual([1004, 1034, 1064, 1094]);
     expect(isValidTcKimlikNo("10000000146"), "a known-valid number").toBe(true);
     expect(isValidTcKimlikNo("10000000147"), "a wrong last digit").toBe(false);
   });

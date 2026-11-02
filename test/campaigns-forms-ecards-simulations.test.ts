@@ -93,8 +93,8 @@ describe("a form answered on the public site", () => {
     });
     expect(
       answer?.transaction?.bin_number,
-      "no card on a wire transfer",
-    ).toBeUndefined();
+      "no card on a wire transfer, and production answers null",
+    ).toBeNull();
     expect(answer?.form_answer_list?.[0]).toMatchObject({
       question: { title: "Telefon" },
       answer: "+905550001122",

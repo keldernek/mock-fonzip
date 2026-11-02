@@ -9,6 +9,7 @@ import type { Row } from "../../store/collection";
 import type { FormRecord, UserRecord } from "../../store/records";
 import { PAYMENT_STATUS, TRY_CURRENCY_ID } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
+import { TRANSACTION_TYPE } from "../../store/transactions";
 import { newUser } from "../../store/users";
 import { OUTCOME_STATUS, WEBHOOK_OPERATIONS } from "../../webhooks/emitter";
 import { LOCAL_CREDIT_BIN } from "./ecard-sales";
@@ -203,7 +204,14 @@ function submitForm(
   const transaction =
     form.price === null || payment === null
       ? null
-      : recordPayment(ctx, form.price, TRY_CURRENCY_ID, payment.value, outcome);
+      : recordPayment(
+          ctx,
+          form.price,
+          TRY_CURRENCY_ID,
+          payment.value,
+          outcome,
+          TRANSACTION_TYPE.form,
+        );
   const answer = store.formAnswers.insert({
     form_id: form.id,
     user_id: contact.userId,
@@ -327,6 +335,7 @@ function sellEcard(
     TRY_CURRENCY_ID,
     payment.value,
     outcome,
+    TRANSACTION_TYPE.ecard,
   );
   const succeeded = outcome === PAYMENT_STATUS.successful;
   const mail = succeeded

@@ -1,5 +1,10 @@
 import type { Row } from "../../store/collection";
-import { fullName, nonEmpty, present, userName } from "../../store/joins";
+import {
+  fullName,
+  nonEmpty,
+  present,
+  transactionDetail,
+} from "../../store/joins";
 import type {
   DebtCategoryRecord,
   EventRecord,
@@ -7,7 +12,7 @@ import type {
   TransactionRecord,
   UserRecord,
 } from "../../store/records";
-import { currencyById, type PaymentStatus } from "../../store/reference";
+import { type PaymentStatus } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
 import {
   dayOf,
@@ -16,58 +21,7 @@ import {
 } from "../../store/user-projection";
 
 export function toTransaction(store: OrgStore, tx: Row<TransactionRecord>) {
-  const settings =
-    tx.payment_settings_id === null
-      ? undefined
-      : store.paymentSettings.get(tx.payment_settings_id);
-  const account =
-    tx.bank_account_id === null
-      ? undefined
-      : store.bankAccounts.get(tx.bank_account_id);
-  return {
-    id: tx.id,
-    conversation_id: tx.conversation_id,
-    complete_date: tx.complete_date,
-    amount: tx.amount,
-    currency: currencyById(tx.currency_id),
-    installment_count: tx.installment_count,
-    installment_amount: tx.installment_amount,
-    ip_address: tx.ip_address,
-    payment_status: tx.payment_status,
-    payment_status_display: tx.payment_status_display,
-    error_code: present(tx.error_code),
-    error_text: present(tx.error_text),
-    refund_date: present(tx.refund_date),
-    fonzip_id: tx.fonzip_id,
-    fonzip_id_hashed: tx.fonzip_id_hashed,
-    transaction_id: tx.transaction_id,
-    provision_no: present(tx.provision_no),
-    receipt_no: tx.receipt_no,
-    auth_code: present(tx.auth_code),
-    reference_id: tx.reference_id,
-    order_id: tx.order_id,
-    payment_settings_id: present(tx.payment_settings_id),
-    payment_settings: settings && {
-      id: settings.id,
-      name: settings.name,
-      provider_no: settings.provider_no,
-      status: settings.status,
-      business_account: settings.business_account,
-    },
-    bank_account_id: present(tx.bank_account_id),
-    bank_account: account && {
-      id: account.id,
-      name: account.name,
-      currency_id: account.currency_id,
-    },
-    payment_method: tx.payment_method,
-    refunded_by_id: present(tx.refunded_by_id),
-    refunded_by__name: userName(store, tx.refunded_by_id),
-    refund_reason: present(tx.refund_reason),
-    fonzip_framework: tx.fonzip_framework,
-    bin_number: present(tx.bin_number),
-    last_four: present(tx.last_four),
-  };
+  return transactionDetail(store, tx);
 }
 
 const PAYMENT_STATUSES: readonly PaymentStatus[] = [0, 1, 2, 3, 4, 5, 6];

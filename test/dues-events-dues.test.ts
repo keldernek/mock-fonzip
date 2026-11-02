@@ -24,7 +24,7 @@ function duesList(client: TestClient, query: Query) {
         how_many: 100,
       },
     });
-    return { rows: body.subscription_list, total: body.total };
+    return { rows: body.payment_list, total: body.total };
   });
 }
 
@@ -113,10 +113,32 @@ describe("getMembershipDuesList", () => {
       query: { ...PAGE, status: "paid" },
     });
     expect(missing.status, "the date range is required").toBe(400);
+  });
+
+  test("lists the paid payments when status is left out", async () => {
+    const client = createTestClient();
+    const paid = await client.ok("getMembershipDuesList", {
+      query: { ...PAGE, ...EVER, status: "paid" },
+    });
     const noStatus = await client.call("getMembershipDuesList", {
       query: { ...PAGE, ...EVER },
     });
-    expect(noStatus.status, "status is required").toBe(400);
+    expect(noStatus.status, "status is optional").toBe(200);
+    expect(noStatus.body, "production answers exactly the paid rows").toEqual(
+      paid,
+    );
+    expect(
+      paid.payment_list?.length,
+      "there are paid rows to compare",
+    ).toBeGreaterThan(0);
+    expect(Object.keys(paid).sort(), "the list is payment_list").toEqual([
+      "payment_list",
+      "total",
+    ]);
+    const unknown = await client.call("getMembershipDuesList", {
+      query: { ...PAGE, ...EVER, status: "other" },
+    });
+    expect(unknown.status, "an unknown status is still refused").toBe(400);
   });
 
   test("filters by period, amount and card details", async () => {
@@ -307,7 +329,7 @@ describe("getMembershipDuesList", () => {
     const page = await client.ok("getMembershipDuesList", {
       query: { ...EVER, status: "paid", start_page: 3, how_many: 7 },
     });
-    expect(ids(page.subscription_list ?? [])).toEqual(ids(all.slice(14, 21)));
+    expect(ids(page.payment_list ?? [])).toEqual(ids(all.slice(14, 21)));
     expect(page.total).toBe(all.length);
   });
 });
@@ -560,12 +582,24 @@ describe("getUsersMembershipDueList", () => {
     const payment = all.find((row) => row.status === 2);
     expect(payment).toMatchObject({
       transaction__currency__iso_code: "TRY",
-      transaction__fonzip_id: expect.any(String),
+      transaction__converted: false,
+      transaction__conversion_rate: null,
+      transaction__converted_amount: null,
+      transaction__converted_currency__display: null,
+      remove_note: null,
+      due_date: null,
     });
-    expect(payment?.due_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(
+      payment,
+      "production never sends the fonzip id here",
+    ).not.toHaveProperty("transaction__fonzip_id");
+    const dated = all.find((row) => row.due_date !== null);
+    expect(dated?.due_date, "a due date is a plain date").toMatch(
+      /^\d{4}-\d{2}-\d{2}$/,
+    );
   });
 
-  test("pages the statement and answers 404 for an unknown user", async () => {
+  test("pages the statement and answers 200 with an empty list for an unknown user", async () => {
     const client = createTestClient();
     const page = await client.ok("getUsersMembershipDueList", {
       path: { user_id: 1015 },
@@ -583,8 +617,22 @@ describe("getUsersMembershipDueList", () => {
       path: { user_id: 99 },
       query: PAGE,
     });
-    expect(missing.status).toBe(404);
-    expect(missing.body).toEqual({ error: "Kullanıcı bulunamadı" });
+    expect(
+      missing.status,
+      "production does not know the user, and says 200",
+    ).toBe(200);
+    expect(missing.body).toEqual({ subscription_list: [], total: 0 });
+    client.mock.runtime.tenancy.setPlan("ornek", "active");
+    const token = await client.token(client.mock.runtime.credentials.lapsed);
+    const cross = await client.call("getUsersMembershipDueList", {
+      token,
+      path: { user_id: 1015 },
+      query: PAGE,
+    });
+    expect(cross.body, "another organisation's user has no rows here").toEqual({
+      subscription_list: [],
+      total: 0,
+    });
     const badListing = await client.call("getUsersMembershipDueList", {
       path: { user_id: 1015 },
       query: { ...PAGE, listing: "x" },

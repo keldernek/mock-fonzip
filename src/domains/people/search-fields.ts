@@ -154,8 +154,8 @@ function completedAt(facts: Facts, transactionId: number | null): string[] {
 }
 
 function paymentMethod(facts: Facts, transactionId: number | null): Id[] {
-  const transaction = facts.transaction(transactionId);
-  return transaction ? [transaction.payment_method] : [];
+  const method = facts.transaction(transactionId)?.payment_method;
+  return method === undefined || method === null ? [] : [method];
 }
 
 function currencyOf(facts: Facts, transactionId: number | null): Id[] {
@@ -1071,13 +1071,16 @@ export const SEARCH_FIELDS: { readonly [P in SearchParameter]: Field } = {
   membership_due_details: {
     kind: "texts",
     read: (user, facts) =>
-      facts.subscriptions(user.id).map((row) => row.details),
+      facts.subscriptions(user.id).flatMap((row) => row.details ?? []),
   },
   active_membership_duration: {
     kind: "total",
     read: (user, facts) =>
-      new Set(duesPayments(user, facts).map((row) => row.period.slice(0, 4)))
-        .size,
+      new Set(
+        duesPayments(user, facts).map((row) =>
+          (row.period ?? row.operation_date).slice(0, 4),
+        ),
+      ).size,
   },
 
   registered_event: {

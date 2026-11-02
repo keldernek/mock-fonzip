@@ -1,6 +1,7 @@
 import { SEED_ANCHOR } from "../core/clock";
 import type { Row } from "../store/collection";
 import type { UdvValue, UserRecord } from "../store/records";
+import { TRANSACTION_TYPE } from "../store/transactions";
 import type { EcardRefs } from "./campaigns";
 import { createTransaction, type SeedContext } from "./context";
 import {
@@ -252,6 +253,7 @@ export function seedForms(
             method: 0,
             paymentSettingsId: system.cardSettingsIds[0],
             bankAccountId: null,
+            type: TRANSACTION_TYPE.form,
           })
         : null;
       // Every fourth answer draws a mail id, as it always has, so the RNG
@@ -409,6 +411,7 @@ export function seedEcardTransactions(
       method: wire ? 2 : 0,
       paymentSettingsId: wire ? null : system.cardSettingsIds[0],
       bankAccountId: wire ? system.tryBankAccountIds[0] : null,
+      type: TRANSACTION_TYPE.ecard,
     });
     const cargo = ecards.cargoEcardIds.includes(ecardId);
     const scheduled = index % 5 === 2;

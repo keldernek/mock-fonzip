@@ -699,8 +699,8 @@ describe("form answer details", () => {
     });
     expect(
       failed?.transaction?.auth_code,
-      "a failed card has no auth code",
-    ).toBeUndefined();
+      "a failed card has no auth code, and production answers null",
+    ).toBeNull();
     expect(failed?.user, "an anonymous answer has no contact").toBeUndefined();
     const free = await answer(client, VOLUNTEER_FORM, 71016);
     expect(free?.transaction, "a free form has no payment").toBeNull();
@@ -905,8 +905,8 @@ describe("responding to a form answer", () => {
     });
     expect(
       details?.transaction?.refunded_by_id,
-      "refunded through the API",
-    ).toBeUndefined();
+      "refunded through the API, and production answers null",
+    ).toBeNull();
     expect(await answerIds(client, "refund")).toEqual([71025, 71028]);
     expect(notifications(client)).toEqual([
       { id: 71025, webhook_id: 22, operation: 4, status: 4 },
