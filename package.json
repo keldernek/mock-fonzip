@@ -2,6 +2,7 @@
   "name": "mock-fonzip",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "A local, in-memory mock of the Fonzip API v2, driven by its pinned OpenAPI spec",
   "type": "module",
   "packageManager": "bun@1.4.4",

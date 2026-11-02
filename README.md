@@ -90,3 +90,7 @@ Operations are split among five domains in `src/operations.ts`. Each domain owns
 5. Add simulations to `src/domains/<domain>/simulations.ts`. `src/domains/foundation/simulations.ts` shows the shape.
 6. Write tests in `test/<domain>.test.ts` with `createTestClient()` from `src/testing/client.ts`. `client.ok("operationId", {path, query, body})` asserts a 200 and returns the body typed from the spec. `client.call` returns any status. Both validate every response strictly.
 7. Run `bun run parity --domain <domain>` until it reports no unwaived gaps. If the mock cannot close a gap, add a waiver with a reason to `src/domains/<domain>/parity-waivers.json`, and add the spec location to `src/domains/<domain>/GAPS.md`.
+
+## License
+
+The code is released under the [MIT License](LICENSE). `spec/fonzip-openapi.yaml` is Fonzip's published API description, pinned so the mock can be checked against it, and `src/generated/openapi.d.ts` is generated from it. The MIT License does not cover that document.
