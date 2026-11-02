@@ -1,7 +1,7 @@
 import { notFound } from "../../api/errors";
 import type { Handler } from "../../api/handler";
+import { unmatchBankTransfers } from "../../store/bank-transfers";
 import { PAYMENT_STATUS_DISPLAY } from "../../store/reference";
-import type { OrgStore } from "../../store/store";
 import { listDonations } from "./donation-list";
 import { debitDonor, transactionOf } from "./payments";
 import { donationDetail, viewOf } from "./rows";
@@ -40,19 +40,6 @@ export const getMicroDonationDetails: Handler<"getMicroDonationDetails"> = (
   };
 };
 
-function releaseBankTransfers(store: OrgStore, donationId: number): void {
-  for (const transfer of store.bankTransactions.list(
-    (row) => row.matched_donation_id === donationId,
-  )) {
-    store.bankTransactions.update(transfer.id, {
-      payment_status: 8,
-      transaction_type: null,
-      matched_user_id: null,
-      matched_donation_id: null,
-    });
-  }
-}
-
 export const deleteDonation: Handler<"deleteDonation"> = (
   { path },
   { store },
@@ -78,7 +65,7 @@ export const deleteDonation: Handler<"deleteDonation"> = (
     payment_status: 6,
     payment_status_display: PAYMENT_STATUS_DISPLAY[6],
   });
-  releaseBankTransfers(store, donation.id);
+  unmatchBankTransfers(store, "matched_donation_id", donation.id);
   store.donations.remove(donation.id);
   return { status: 200, body: { result: "ok" } };
 };

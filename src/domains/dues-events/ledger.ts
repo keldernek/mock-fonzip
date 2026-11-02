@@ -1,5 +1,6 @@
 import type { Rng } from "../../core/rng";
 import { istanbulDateTime } from "../../seed/dates";
+import { unmatchBankTransfers } from "../../store/bank-transfers";
 import type { Row } from "../../store/collection";
 import type {
   PaymentMethod,
@@ -209,19 +210,6 @@ export function refundTransaction(
   });
 }
 
-function unmatchBankTransfers(store: OrgStore, subscriptionId: number): void {
-  for (const transfer of store.bankTransactions.list(
-    (row) => row.matched_subscription_id === subscriptionId,
-  )) {
-    store.bankTransactions.update(transfer.id, {
-      payment_status: 8,
-      transaction_type: null,
-      matched_user_id: null,
-      matched_subscription_id: null,
-    });
-  }
-}
-
 export function removeRecord(store: OrgStore, row: Subscription): void {
   store.subscriptions.remove(row.id);
   const tx =
@@ -238,7 +226,7 @@ export function removeRecord(store: OrgStore, row: Subscription): void {
     if (tx.payment_status === 3)
       adjustTotalFinancial(store, row.user_id, tx, -1);
   }
-  unmatchBankTransfers(store, row.id);
+  unmatchBankTransfers(store, "matched_subscription_id", row.id);
   rebalance(store, row.user_id);
 }
 

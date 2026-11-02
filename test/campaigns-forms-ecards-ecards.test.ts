@@ -1052,6 +1052,33 @@ describe("deleting an e-card transaction", () => {
       ).status,
     ).toBe(404);
   });
+
+  test("returns the sale's bank transfer to the unmatched transfers", async () => {
+    const client = createTestClient();
+    const transfers = async (query: Query = {}) =>
+      (
+        await client.ok("getBankAccountTransactionList", {
+          path: { account_id: 81 },
+          query: { ...RANGE, ...PAGE, ...query },
+        })
+      ).transaction_list?.find((row) => row.id === 30091);
+    expect(await transfers()).toMatchObject({
+      payment_status: 3,
+      transaction_type: 4,
+      matched_certificate_sale_id: 95005,
+    });
+    await client.ok("deleteEcardTransaction", { path: { sale_id: 95005 } });
+    const unmatched = {
+      payment_status: 8,
+      transaction_type: null,
+      matched_user_id: null,
+      matched_donation_id: null,
+      matched_subscription_id: null,
+      matched_certificate_sale_id: null,
+    };
+    expect(await transfers()).toMatchObject(unmatched);
+    expect(await transfers({ payment_status: 8 })).toMatchObject(unmatched);
+  });
 });
 
 describe("a contact's e-card transactions", () => {

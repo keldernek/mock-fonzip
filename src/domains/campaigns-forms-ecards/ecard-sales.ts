@@ -11,6 +11,7 @@ import {
 } from "../../api/listing";
 import type { components } from "../../generated/openapi";
 import { istanbulDate } from "../../seed/dates";
+import { unmatchBankTransfers } from "../../store/bank-transfers";
 import type { Row } from "../../store/collection";
 import { nonEmpty, present, userName } from "../../store/joins";
 import type {
@@ -610,13 +611,7 @@ export const deleteEcardTransaction: Handler<"deleteEcardTransaction"> = (
   const sale = store.ecardTransactions.remove(path.sale_id);
   if (!sale) return notFound("E-card transaction");
   store.transactions.remove(sale.transaction_id);
-  for (const transfer of store.bankTransactions.list(
-    (row) => row.matched_certificate_sale_id === sale.id,
-  )) {
-    store.bankTransactions.update(transfer.id, {
-      matched_certificate_sale_id: null,
-    });
-  }
+  unmatchBankTransfers(store, "matched_certificate_sale_id", sale.id);
   return { status: 200, body: { result: "ok" } };
 };
 
