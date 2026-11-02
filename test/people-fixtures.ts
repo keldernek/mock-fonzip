@@ -426,6 +426,45 @@ export interface SearchOptions {
   readonly values?: readonly string[];
 }
 
+// Every column `UserSearchValues` names, besides user_defined_values__<key>.
+export const ALL_USER_COLUMNS = [
+  "id",
+  "corporate_type",
+  "first_name",
+  "last_name",
+  "nationality_text",
+  "country_text",
+  "city_text",
+  "district_text",
+  "address",
+  "birthday",
+  "total_financial",
+  "work_address",
+  "work_phone",
+  "work_country_text",
+  "work_city_text",
+  "work_district_text",
+  "email",
+  "tags_as_text",
+  "last_update_date",
+  "last_login_date",
+  "phone",
+  "profile_pic",
+  "membership_no",
+  "tckno",
+  "apply_date",
+  "join_date",
+  "allow_comm_via_email",
+  "allow_comm_via_phone",
+  "allow_comm_via_sms",
+  "allow_comm_via_email_date",
+  "allow_comm_via_phone_date",
+  "allow_comm_via_sms_date",
+] as const;
+
+// Production refuses a search without values_list.
+const DEFAULT_VALUES: readonly string[] = ["id"];
+
 export async function search(
   test: TestClient,
   filter: Group,
@@ -439,7 +478,7 @@ export async function search(
         order_by: options.orderBy ?? "id",
         filter,
       },
-      ...(options.values ? { values_list: options.values } : {}),
+      values_list: options.values ?? DEFAULT_VALUES,
     },
   });
 }
@@ -482,6 +521,7 @@ export async function expectStatus(
   const response = await test.call("getUserList", {
     body: {
       search: { start_page: 1, how_many: 10, order_by: "id", filter },
+      values_list: DEFAULT_VALUES,
     },
   });
   expect(response.status, JSON.stringify(filter)).toBe(status);

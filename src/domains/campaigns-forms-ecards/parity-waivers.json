@@ -43,6 +43,11 @@
       "operationId": "getFundraisingTeamsCampaigns",
       "path": "team_campaign_list[].target_currency__display",
       "reason": "components.responses.FundraisingTeamCampaignListResponse item target_currency__display is a currency display typed number. PARITY.md lists this contradiction."
+    },
+    {
+      "operationId": "getFormAnswerDetails",
+      "path": "answer.form_answer_list[].question.udv_question.validation",
+      "reason": "udv_question still references UserDefinedValues, whose validation is {} for the seeded Meslek and Şube questions. limit, limit_value, max and max_value only appear on a text field with a length limit or a numeric field with a cap, and no seeded form asks for one. Added by the people area, which owns UserDefinedValues; drop it if udv_question stops referencing that schema."
     }
   ]
 }

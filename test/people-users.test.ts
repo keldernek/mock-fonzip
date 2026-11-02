@@ -13,6 +13,7 @@ import {
   matchingIds,
   note,
   person,
+  search,
   ticketSale,
 } from "./people-fixtures";
 
@@ -101,20 +102,23 @@ describe("createUser and getUserDetails", () => {
       membership_no: 4242,
       admin: false,
       corporate_type: false,
-      apply_date: "2026-09-01T10:00:00+03:00",
+      apply_date: "2026-09-01",
       allow_comm_via_phone: false,
       allow_comm_via_phone_date: "2026-09-15T10:00:00+03:00",
       allow_comm_via_sms: true,
       allow_comm_via_sms_date: "2026-09-15T10:00:00+03:00",
       allow_comm_via_email: true,
       allow_comm_via_email_date: "2026-09-16T10:00:00+03:00",
-      join_date: "2026-09-15T10:00:00+03:00",
+      join_date: "2026-09-15",
+      last_update_date: "2026-11-01T09:00:00+03:00",
       total_financial: 0,
+      // A select field holds its chosen option. A yes or no field holds the
+      // "yes" or "no" option, and a multiple select joins its texts.
       user_defined_values: {
         mezuniyet_yili: 2006,
-        sube: "Fen",
-        ilgi_alanlari: ["Burs", "Kariyer"],
-        burs_gonullusu: true,
+        sube: { id: 3, order: 2, text: "Fen" },
+        ilgi_alanlari: "Burs, Kariyer",
+        burs_gonullusu: { id: 1, order: 0, text: "Evet" },
       },
     });
     const tags = await shared.ok("getUsersTagsList", {
@@ -132,7 +136,7 @@ describe("createUser and getUserDetails", () => {
         permission_value: "deniz.yalcin@kisi.example",
       },
     });
-    expect(permission.permission_list?.id).toBe(userId);
+    expect(permission.permission_list?.[0]?.id).toBe(userId);
   });
 
   test("defaults the dates to now and assigns the next membership number on auto", async () => {
@@ -147,13 +151,57 @@ describe("createUser and getUserDetails", () => {
       first_name: "Bora",
       corporate_type: true,
       membership_no: 151,
-      apply_date: "2026-11-01T09:00:00+03:00",
-      join_date: "2026-11-01T09:00:00+03:00",
+      apply_date: "2026-11-01",
+      join_date: "2026-11-01",
       user_defined_values: {},
     });
     expect(user.allow_comm_via_email, "no permission given").toBeUndefined();
     const plain = await createUser(shared, { first_name: "Numarasız" });
     expect((await details(shared, plain)).membership_no).toBeUndefined();
+  });
+
+  test("answers null for every text the user lacks, as production does", async () => {
+    const shared = client();
+    const userId = await createUser(shared, {
+      first_name: "Seyrek",
+      email: "seyrek@kisi.example",
+    });
+    const user = await details(shared, userId);
+    for (const field of [
+      "address",
+      "birthday",
+      "tckno",
+      "nationality_text",
+      "home_phone_first",
+      "post_code",
+      "district_text",
+      "city_text",
+      "country_text",
+      "work_phone",
+      "work_address",
+      "work_post_code",
+      "work_district_text",
+      "work_city_text",
+      "work_country_text",
+      "email_second",
+    ] as const) {
+      expect(user[field], field).toBeNull();
+    }
+    expect(user.last_update_date).toBe("2026-11-01T09:00:00+03:00");
+    const listed = await search(
+      shared,
+      { condition: "and", attributes: [leaf("id", "eq", userId)] },
+      { values: ["address", "birthday", "tckno", "work_phone", "city_text"] },
+    );
+    expect(listed.user_list).toEqual([
+      {
+        address: null,
+        birthday: null,
+        tckno: null,
+        work_phone: null,
+        city_text: null,
+      },
+    ]);
   });
 
   test("answers 400 for invalid fields and 404 for an unknown tag", async () => {
@@ -246,16 +294,16 @@ describe("updateUser", () => {
       email: "sukru.can@kisi.example",
       private: true,
       corporate_type: false,
-      join_date: "2020-01-01T03:00:00+03:00",
+      join_date: "2020-01-01",
     });
-    expect(user.tckno, "an empty value clears the field").toBeUndefined();
+    expect(user.tckno, "an empty value clears the field").toBeNull();
     const permission = await shared.ok("getCommunicationPermissions", {
       path: {
         permission_type: "email",
         permission_value: "sukru.can@kisi.example",
       },
     });
-    expect(permission.permission_list?.id).toBe(1010);
+    expect(permission.permission_list?.[0]?.id).toBe(1010);
   });
 
   test("a udv update validates the value against the field's key_type", async () => {
@@ -269,7 +317,7 @@ describe("updateUser", () => {
       body: { type: "udv", data: { udv_id: 16, value: "Eczacılık okudu." } },
     });
     expect((await details(shared, 1010)).user_defined_values).toMatchObject({
-      ilgi_alanlari: ["Spor", "Kültür"],
+      ilgi_alanlari: "Spor, Kültür",
       ozgecmis_notu: "Eczacılık okudu.",
     });
     const wrong = await shared.call("updateUser", {
@@ -285,6 +333,43 @@ describe("updateUser", () => {
       body: { type: "udv", data: { udv_id: 99, value: "x" } },
     });
     expect(unknown.status).toBe(404);
+  });
+
+  test("a number field takes a whole number, which details return as an integer", async () => {
+    const shared = client();
+    const field = kelder(shared).userDefinedValues.insert({
+      key: "C99",
+      type: "custom",
+      name: "Çocuk Sayısı",
+      value: "cocuk_sayisi",
+      group: "USER.GROUP.DEFINED_FIELDS",
+      key_type: 2,
+      for: "numeric",
+      options: [],
+      boolean_true_text: null,
+      boolean_false_text: null,
+      select_text: null,
+      validation: {},
+      display_for: "ngo",
+    });
+    const set = (value: unknown) =>
+      shared.call("updateUser", {
+        path: { user_id: 1010 },
+        body: { type: "udv", data: { udv_id: field.id, value } },
+      });
+    expect((await set("3")).status, "a numeric text is a number").toBe(200);
+    expect((await details(shared, 1010)).user_defined_values).toMatchObject({
+      cocuk_sayisi: 3,
+    });
+    const fraction = await set(2.5);
+    expect(fraction.status).toBe(400);
+    expect(fraction.body).toEqual({
+      error: `Invalid values: cocuk_sayisi (Çocuk Sayısı) takes a whole number`,
+    });
+    expect((await set(null)).status, "null clears the value").toBe(200);
+    expect(
+      (await details(shared, 1010)).user_defined_values,
+    ).not.toHaveProperty("cocuk_sayisi");
   });
 
   test("a membership_no update assigns auto, custom, or leaves the number with no", async () => {
@@ -383,11 +468,14 @@ describe("deleteUser", () => {
         permission_value: "silinecek@kisi.example",
       },
     });
-    expect(evidence.permission_list).toMatchObject({
+    expect(evidence.permission_list?.[0]).toMatchObject({
       email: "silinecek@kisi.example",
       allow_comm_via_email: true,
     });
-    expect(evidence.permission_list?.id, "no longer linked").toBeUndefined();
+    expect(
+      evidence.permission_list?.[0]?.id,
+      "no longer linked",
+    ).toBeUndefined();
     const again = await shared.call("deleteUser", {
       path: { user_id: userId },
     });
@@ -444,25 +532,55 @@ describe("getUserDefinedValuesList", () => {
       [15, "ilgi_alanlari", 8],
       [16, "ozgecmis_notu", 1],
     ]);
+    // Production names every field custom, shows it to ngo, groups it under
+    // USER.GROUP.DEFINED_FIELDS and ids it C<number>. Its texts are null, and
+    // only a select field carries a select_text.
     expect(body.udv_list?.[3]).toEqual({
-      id: "udv_14",
+      id: "C14",
       udv_id: 14,
-      type: "select",
+      type: "custom",
       name: "Burs Gönüllüsü",
       value: "burs_gonullusu",
-      group: "Mezun Bilgileri",
+      group: "USER.GROUP.DEFINED_FIELDS",
       key_type: 6,
-      for: "select",
+      for: "select_w_bool",
       options: [
         { id: 1, text: "Evet", order: 0 },
         { id: 2, text: "Hayır", order: 1 },
       ],
-      boolean_true_text: "Evet",
-      boolean_false_text: 0,
-      changable_by_users: true,
-      select_text: 0,
-      display_for: "member",
+      boolean_true_text: null,
+      boolean_false_text: null,
+      select_text: "Seçiniz",
+      validation: {},
+      display_for: "ngo",
     });
+    expect(body.udv_list?.[1]).toMatchObject({
+      for: "text",
+      select_text: null,
+    });
+    for (const udv of body.udv_list ?? []) {
+      expect(udv, `${udv.value} has no changable_by_users`).not.toHaveProperty(
+        "changable_by_users",
+      );
+    }
+  });
+
+  test("describes a field's limits in validation: nothing, a text limit or a numeric cap", async () => {
+    const shared = client();
+    const body = await shared.ok("getUserDefinedValuesList");
+    const validation = Object.fromEntries(
+      (body.udv_list ?? []).map((udv) => [udv.value, udv.validation]),
+    );
+    expect(validation).toEqual({
+      mezuniyet_yili: { max: true, max_value: 2100 },
+      meslek: {},
+      sube: {},
+      burs_gonullusu: {},
+      ilgi_alanlari: {},
+      ozgecmis_notu: { limit: true, limit_value: 500 },
+    });
+    const fors = new Set((body.udv_list ?? []).map((udv) => udv.for));
+    expect(fors).toEqual(new Set(["text", "numeric", "select_w_bool"]));
   });
 });
 
@@ -553,7 +671,7 @@ describe("user tags", () => {
     expect(await list()).toEqual([102]);
   });
 
-  test("answers 404 for an unknown user or tag", async () => {
+  test("answers 404 for an unknown user or tag when adding or removing", async () => {
     const shared = client();
     for (const operation of ["addTagToUser", "removeTagFromUser"] as const) {
       const user = await shared.call(operation, {
@@ -566,9 +684,14 @@ describe("user tags", () => {
       expect(tag.status).toBe(404);
       expect(tag.body).toEqual({ error: "Tag not found" });
     }
+  });
+
+  test("answers 200 with no tags for a user that does not exist, as production does", async () => {
+    const shared = client();
     const list = await shared.call("getUsersTagsList", {
       path: { user_id: 99 },
     });
-    expect(list.status).toBe(404);
+    expect(list.status).toBe(200);
+    expect(list.body).toEqual({ tags: [] });
   });
 });

@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { ORG_SLUGS } from "../src/auth/tenancy";
 import { DEFAULT_SEED } from "../src/core/rng";
 import { isValidTcKimlikNo } from "../src/seed/identity";
+import { NEWEST_PAGE } from "../src/seed/people";
 import { seedWorld, type SeedOptions } from "../src/seed/world";
 import { TEMPLATE_CATEGORIES } from "../src/store/reference";
 import { RELATIONS } from "../src/store/relations";
@@ -84,7 +85,13 @@ describe("the seeded world", () => {
     }
   });
 
-  test("gives every person a checksum-valid TC kimlik number", () => {
+  test("gives every person a checksum-valid TC kimlik number, except where the newest page leaves it empty", () => {
+    const newestPage = new Set(
+      kelder.users
+        .list()
+        .slice(-NEWEST_PAGE)
+        .map((user) => user.id),
+    );
     for (const user of [
       ...kelder.users.list(),
       ...orgStore(store, "ornek").users.list(),
@@ -93,6 +100,15 @@ describe("the seeded world", () => {
         expect(user.tckno, `corporate user ${user.id} has no TC kimlik`).toBe(
           "",
         );
+        continue;
+      }
+      // The newest page leaves some TC kimlik numbers empty, as production's
+      // first page does. No one else does.
+      if (user.tckno === "") {
+        expect(
+          newestPage.has(user.id),
+          `user ${user.id} lacks a TC kimlik`,
+        ).toBe(true);
         continue;
       }
       expect(

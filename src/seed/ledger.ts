@@ -222,13 +222,35 @@ export function seedTimeline(
     if (permission.user_id === null) continue;
     for (const [field, granted, revoked, label] of channels) {
       const allowed = permission[field];
+      const at = permission[`${field}_date`];
+      // A channel never answered has no change to record.
+      if (at === null) continue;
       entry(
         permission.user_id,
         allowed ? granted : revoked,
-        permission[`${field}_date`],
+        at,
         `${label} ile iletişim izni ${allowed ? "verildi" : "geri alındı"}`,
       );
     }
+  }
+  // The newest user, the first of an `order_by=-id` listing, has one lead: a
+  // form submission that was interest only, as production showed. It is
+  // fixed, so it draws nothing from the RNG, and it comes last so no other
+  // timeline id moves.
+  const newest = users.at(-1);
+  if (newest) {
+    entry(
+      newest.id,
+      27,
+      istanbulDateTime(daysBeforeAnchor(9)),
+      "Temas noktası",
+      {
+        lead_type: 4,
+        outcome: 0,
+        sequence_no: 1,
+        is_first_touch: true,
+      },
+    );
   }
 }
 

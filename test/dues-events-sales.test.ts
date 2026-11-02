@@ -287,12 +287,14 @@ describe("getTicketSaleDetails", () => {
 });
 
 describe("ticket-sale members", () => {
+  // A select field holds its chosen option, a yes or no field its "no"
+  // option, and a multiple select its texts.
   const MEMBER_1021 = {
     mezuniyet_yili: 2018,
     meslek: "Mühendis",
-    sube: "Türkçe-Matematik",
-    burs_gonullusu: false,
-    ilgi_alanlari: ["Burs", "Kariyer"],
+    sube: { id: 4, order: 3, text: "Türkçe-Matematik" },
+    burs_gonullusu: { id: 2, order: 1, text: "Hayır" },
+    ilgi_alanlari: "Burs, Kariyer",
   };
 
   test("carry the user-defined values getUserDetails returns", async () => {

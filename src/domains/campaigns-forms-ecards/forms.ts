@@ -246,8 +246,8 @@ function toUdvQuestion(store: OrgStore, udvId: number | null) {
       options: udv.options,
       boolean_true_text: udv.boolean_true_text,
       boolean_false_text: udv.boolean_false_text,
-      changable_by_users: udv.changable_by_users,
       select_text: udv.select_text,
+      validation: udv.validation,
       display_for: udv.display_for,
     }
   );

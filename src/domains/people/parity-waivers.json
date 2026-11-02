@@ -18,8 +18,29 @@
       "status": 404,
       "operations": ["listTemplates"],
       "reason": "The path and body name no object. category_id on paths./templates.get is a list filter. The only documented behavior for an id filter naming no object is paths./debts.get debt_category_id: 'Another organisation's id matches nothing'. An unknown template category therefore returns an empty list, not 404."
+    },
+    {
+      "status": 404,
+      "operations": ["getUsersTagsList"],
+      "reason": "Production answers 200 with an empty tags list for a user id that names no user (probe P7a), so getUsersTagsList never answers 404. The same rule as PARITY.md 'Ids that name no object': an id that matches nothing gives an empty list. addTagToUser and removeTagFromUser still answer 404 for an unknown user."
+    },
+    {
+      "status": 404,
+      "operations": ["getCommunicationPermissions"],
+      "reason": "Production answers 200 with an empty permission_list for a value nobody has (probe P6b), so a lookup never answers 404. updateCommunicationPermissions still answers 404 when nothing matches."
     }
   ],
   "inputs": [],
-  "properties": []
+  "properties": [
+    {
+      "operationId": "getCommunicationPermissions",
+      "path": "permission_list[].phone_slug",
+      "reason": "Production's email lookup carries four keys (id, email, allow_comm_via_email, allow_comm_via_email_date) and no phone_slug (probe P6a). The mock gives sms and phone lookups the same four keys with phone, an inference, so phone_slug stays documented but is never emitted."
+    },
+    {
+      "operationId": "listChangedCommunicationPermissions",
+      "path": "permission_list[].phone_slug",
+      "reason": "The changed-permissions list uses the same item shape as a lookup: four keys and no phone_slug (probe P6a, extended to sms and phone by inference). phone_slug stays documented but is never emitted."
+    }
+  ]
 }

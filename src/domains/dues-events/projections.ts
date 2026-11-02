@@ -1,11 +1,5 @@
 import type { Row } from "../../store/collection";
-import {
-  fullName,
-  nonEmpty,
-  present,
-  userDefinedValues,
-  userName,
-} from "../../store/joins";
+import { fullName, nonEmpty, present, userName } from "../../store/joins";
 import type {
   DebtCategoryRecord,
   EventRecord,
@@ -15,6 +9,11 @@ import type {
 } from "../../store/records";
 import { currencyById, type PaymentStatus } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
+import {
+  dayOf,
+  lastUpdateOf,
+  userDefinedValues,
+} from "../../store/user-projection";
 
 export function toTransaction(store: OrgStore, tx: Row<TransactionRecord>) {
   const settings =
@@ -117,16 +116,17 @@ export function toUserDetails(store: OrgStore, user: Row<UserRecord>) {
     membership_no: user.membership_no,
     admin: user.admin,
     corporate_type: user.corporate_type,
-    apply_date: user.apply_date,
+    apply_date: dayOf(user.apply_date),
     allow_comm_via_phone: permission?.allow_comm_via_phone,
     allow_comm_via_phone_date: permission?.allow_comm_via_phone_date,
     allow_comm_via_sms: permission?.allow_comm_via_sms,
     allow_comm_via_sms_date: permission?.allow_comm_via_sms_date,
     allow_comm_via_email: permission?.allow_comm_via_email,
     allow_comm_via_email_date: permission?.allow_comm_via_email_date,
-    join_date: user.join_date,
+    join_date: dayOf(user.join_date),
+    last_update_date: lastUpdateOf(store, user),
     total_financial: user.total_financial,
-    user_defined_values: userDefinedValues(user),
+    user_defined_values: userDefinedValues(store, user),
   };
 }
 

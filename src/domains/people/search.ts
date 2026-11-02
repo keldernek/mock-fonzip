@@ -2,9 +2,14 @@ import type { Handler } from "../../api/handler";
 import { paginate } from "../../api/listing";
 import type { components } from "../../generated/openapi";
 import type { Row } from "../../store/collection";
-import { fullName, nonEmpty, userDefinedValues } from "../../store/joins";
+import { fullName, nonEmpty } from "../../store/joins";
 import type { UserDefinedValueRecord, UserRecord } from "../../store/records";
 import type { OrgStore } from "../../store/store";
+import {
+  dayOf,
+  textOrNull,
+  userDefinedValues,
+} from "../../store/user-projection";
 import { createFacts, type Facts } from "./facts";
 import {
   compileLeaf,
@@ -189,22 +194,40 @@ function byOrder(orderBy: OrderBy, facts: Facts): (a: User, b: User) => number {
   };
 }
 
+// The columns of `UserSearchValues`, besides `user_defined_values__<key>`.
 const LIST_FIELDS = [
   "id",
   "corporate_type",
   "first_name",
   "last_name",
+  "nationality_text",
+  "country_text",
+  "city_text",
+  "district_text",
   "address",
   "birthday",
   "total_financial",
+  "work_address",
+  "work_phone",
+  "work_country_text",
+  "work_city_text",
+  "work_district_text",
   "email",
   "tags_as_text",
+  "last_update_date",
+  "last_login_date",
   "phone",
+  "profile_pic",
   "membership_no",
   "tckno",
   "apply_date",
   "join_date",
-  "user_defined_values",
+  "allow_comm_via_email",
+  "allow_comm_via_phone",
+  "allow_comm_via_sms",
+  "allow_comm_via_email_date",
+  "allow_comm_via_phone_date",
+  "allow_comm_via_sms_date",
 ] as const;
 
 type ListField = (typeof LIST_FIELDS)[number];
@@ -220,46 +243,91 @@ function tagsAsText(user: User, facts: Facts): string | undefined {
   return names.length > 0 ? names.join(", ") : undefined;
 }
 
-function listItem(
-  user: User,
-  facts: Facts,
-  values: readonly string[] | undefined,
-) {
-  const wanted = (field: ListField): boolean =>
-    values === undefined || values.includes(field);
+// A row holds exactly the requested columns. A column the user has no value
+// for is null, or left out where the schema cannot carry null: an empty
+// `email`, `phone` or `last_name`, a user without a membership number or tags,
+// and the permissions of a user who has no permission record.
+function listItem(user: User, facts: Facts, values: readonly string[]) {
+  const wanted = (field: ListField): boolean => values.includes(field);
   const udvKeys = values
-    ?.filter((value) => value.startsWith(UDV_VALUE))
+    .filter((value) => value.startsWith(UDV_VALUE))
     .map((value) => value.slice(UDV_VALUE.length));
-  const allUdvs = userDefinedValues(user);
-  const udvs =
-    values === undefined || values.includes("user_defined_values")
-      ? allUdvs
-      : udvKeys && udvKeys.length > 0
-        ? Object.fromEntries(
-            Object.entries(allUdvs).filter(([key]) => udvKeys.includes(key)),
-          )
-        : undefined;
+  const permission = facts.permission(user.id);
+  const profile = facts.profile(user.id);
   return {
     id: wanted("id") ? user.id : undefined,
     corporate_type: wanted("corporate_type") ? user.corporate_type : undefined,
     first_name: wanted("first_name") ? nonEmpty(user.first_name) : undefined,
     last_name: wanted("last_name") ? nonEmpty(user.last_name) : undefined,
-    address: wanted("address") ? nonEmpty(user.address) : undefined,
-    birthday: wanted("birthday") ? nonEmpty(user.birthday) : undefined,
+    nationality_text: wanted("nationality_text")
+      ? textOrNull(user.nationality_text)
+      : undefined,
+    country_text: wanted("country_text")
+      ? textOrNull(user.country_text)
+      : undefined,
+    city_text: wanted("city_text") ? textOrNull(user.city_text) : undefined,
+    district_text: wanted("district_text")
+      ? textOrNull(user.district_text)
+      : undefined,
+    address: wanted("address") ? textOrNull(user.address) : undefined,
+    birthday: wanted("birthday") ? textOrNull(user.birthday) : undefined,
     total_financial: wanted("total_financial")
       ? user.total_financial
       : undefined,
+    work_address: wanted("work_address")
+      ? textOrNull(user.work_address)
+      : undefined,
+    work_phone: wanted("work_phone") ? textOrNull(user.work_phone) : undefined,
+    work_country_text: wanted("work_country_text")
+      ? textOrNull(user.work_country_text)
+      : undefined,
+    work_city_text: wanted("work_city_text")
+      ? textOrNull(user.work_city_text)
+      : undefined,
+    work_district_text: wanted("work_district_text")
+      ? textOrNull(user.work_district_text)
+      : undefined,
     email: wanted("email") ? nonEmpty(user.email) : undefined,
     tags_as_text: wanted("tags_as_text") ? tagsAsText(user, facts) : undefined,
+    last_update_date: wanted("last_update_date")
+      ? nonEmpty(lastUpdateDate(user, facts))
+      : undefined,
+    last_login_date: wanted("last_login_date")
+      ? (profile?.last_login?.date ?? null)
+      : undefined,
     phone: wanted("phone") ? nonEmpty(user.phone) : undefined,
+    profile_pic: wanted("profile_pic")
+      ? (profile?.profile_pic ?? null)
+      : undefined,
     membership_no:
       wanted("membership_no") && user.membership_no !== 0
         ? user.membership_no
         : undefined,
-    tckno: wanted("tckno") ? nonEmpty(user.tckno) : undefined,
-    apply_date: wanted("apply_date") ? nonEmpty(user.apply_date) : undefined,
-    join_date: wanted("join_date") ? nonEmpty(user.join_date) : undefined,
-    user_defined_values: udvs,
+    tckno: wanted("tckno") ? textOrNull(user.tckno) : undefined,
+    apply_date: wanted("apply_date") ? dayOf(user.apply_date) : undefined,
+    join_date: wanted("join_date") ? dayOf(user.join_date) : undefined,
+    allow_comm_via_email: wanted("allow_comm_via_email")
+      ? permission?.allow_comm_via_email
+      : undefined,
+    allow_comm_via_phone: wanted("allow_comm_via_phone")
+      ? permission?.allow_comm_via_phone
+      : undefined,
+    allow_comm_via_sms: wanted("allow_comm_via_sms")
+      ? permission?.allow_comm_via_sms
+      : undefined,
+    allow_comm_via_email_date: wanted("allow_comm_via_email_date")
+      ? permission?.allow_comm_via_email_date
+      : undefined,
+    allow_comm_via_phone_date: wanted("allow_comm_via_phone_date")
+      ? permission?.allow_comm_via_phone_date
+      : undefined,
+    allow_comm_via_sms_date: wanted("allow_comm_via_sms_date")
+      ? permission?.allow_comm_via_sms_date
+      : undefined,
+    user_defined_values:
+      udvKeys.length > 0
+        ? userDefinedValues(facts.store, user, udvKeys)
+        : undefined,
   };
 }
 

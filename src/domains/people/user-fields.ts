@@ -157,9 +157,10 @@ export function parseUdvValue(
         : fail(`${label} takes a text`);
     case 2: {
       const number = typeof value === "string" ? Number(value) : value;
-      return typeof number === "number" && Number.isFinite(number)
+      // Production only ever sent a whole number for a number field.
+      return typeof number === "number" && Number.isInteger(number)
         ? ok(number)
-        : fail(`${label} takes a number`);
+        : fail(`${label} takes a whole number`);
     }
     case 3:
       return typeof value === "string" && isCalendarDate(value)

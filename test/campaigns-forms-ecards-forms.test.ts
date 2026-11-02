@@ -290,8 +290,8 @@ describe("form answer details", () => {
       udv_id: 12,
       value: "meslek",
       key_type: 0,
-      boolean_false_text: 0,
-      select_text: 0,
+      boolean_false_text: null,
+      select_text: null,
     });
     const choice = details?.form_answer_list?.[3];
     expect(choice?.question?.custom_question).toEqual({
@@ -317,7 +317,7 @@ describe("form answer details", () => {
     expect(branch?.question?.udv_question).toMatchObject({
       udv_id: udv?.id,
       key_type: 7,
-      for: "select",
+      for: "select_w_bool",
       options: udv?.options,
     });
     expect(udv?.options.length).toBeGreaterThan(1);

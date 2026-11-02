@@ -226,9 +226,18 @@ export function activeDays(events: readonly TimelineEvent[]): number {
   return new Set(events.map((event) => dayOf(event.event_time))).size;
 }
 
-function leadFields(facts: Facts, row: Row<TimelineRecord>) {
-  if (row.event_type !== 27) return {};
+// A lead (event type 27) comes from its own record. Production sends it
+// without the note fields (`custom_date`, the calendar event and the tag),
+// and with no issuer and no details.
+function toLead(event: TimelineEvent, row: Row<TimelineRecord>, facts: Facts) {
   return {
+    id: event.id,
+    details: null,
+    event_time: event.event_time,
+    event_type: event.event_type,
+    issuer__first_name: null,
+    issuer__last_name: null,
+    pinned: false,
     lead_type: present(row.lead_type),
     outcome: present(row.outcome),
     sequence_no: present(row.sequence_no),
@@ -240,8 +249,10 @@ function leadFields(facts: Facts, row: Row<TimelineRecord>) {
   };
 }
 
+// Any other event carries every note field, null when the event has none.
 function toTimeline(facts: Facts, event: TimelineEvent) {
   const row = event.stored;
+  if (row && event.event_type === 27) return toLead(event, row, facts);
   const issuer =
     row && row.issuer_id !== null
       ? facts.store.users.get(row.issuer_id)
@@ -254,17 +265,17 @@ function toTimeline(facts: Facts, event: TimelineEvent) {
     details: event.details,
     event_time: event.event_time,
     event_type: event.event_type,
-    issuer__first_name: issuer?.first_name,
-    issuer__last_name: issuer?.last_name,
-    calendarevent__id: calendar?.id,
-    calendarevent__note: calendar?.note,
-    calendarevent__date: calendar?.date,
-    calendarevent__completed: calendar?.completed,
-    tag_id: tag?.id,
-    tag__name: tag?.name,
-    tag__color: tag?.color,
+    issuer__first_name: issuer?.first_name ?? null,
+    issuer__last_name: issuer?.last_name ?? null,
+    calendarevent__id: calendar?.id ?? null,
+    calendarevent__note: calendar?.note ?? null,
+    calendarevent__date: calendar?.date ?? null,
+    calendarevent__completed: calendar?.completed ?? null,
+    tag_id: tag?.id ?? null,
+    tag__name: tag?.name ?? null,
+    tag__color: tag?.color ?? null,
     custom_date: row?.custom_date ?? false,
-    ...(row ? leadFields(facts, row) : {}),
+    pinned: false,
   };
 }
 
