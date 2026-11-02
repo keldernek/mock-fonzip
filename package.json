@@ -21,6 +21,7 @@
     "sync-spec": "bun scripts/sync-spec.ts",
     "generate": "bun scripts/generate.ts",
     "parity": "bun scripts/parity.ts",
+    "parity:prod": "bun --env-file=.env.prod-parity scripts/prod-parity.ts",
     "smoke": "bash scripts/smoke.sh . 8791"
   },
   "dependencies": {

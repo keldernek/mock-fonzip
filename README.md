@@ -73,6 +73,73 @@ Every response a test receives is validated against the operation's documented s
 
 `bun run smoke` boots the real server on port 8791 and checks it over HTTP with `curl` and `jq`. It covers tokens, auth and plan errors, scopes, a wrong method, a missing parameter, a list from each domain, a donation and a simulated ticket sale with their webhook deliveries, and the rate limit. It exits non-zero on any failed check.
 
+## Check parity with production
+
+```sh
+bun run parity:prod
+bun run parity:prod --live
+bun run parity:prod --live --area people,dues --check spec
+```
+
+`parity:prod --live` calls the real Fonzip API with your key and compares what it answers with the pinned spec and with the mock. Without `--live` it only prints the plan and sends nothing. You run it by hand. With `--live` it refuses to run in CI or under a test runner, and `bun test` never calls it.
+
+It only reads. Every request is a `GET`, except the token exchange and the user search (`POST /users`), which reads. The runner checks each request before it sends it and stops the run on anything else. It follows no redirect, so the token request's client secret goes only to the origin. It never calls `generateLoginLinkForUser`, which creates a working login link, or `sendWebhookTestNotification`, and it calls no operation that needs the write scope.
+
+It does three things:
+
+1. **spec**: calls the read operations of the auth, people, webhooks, templates, dues and forms areas, which `--list` shows. It carries ids from each list into the detail calls that follow. It checks every answer against the spec's strict validator, so it reports undocumented properties, missing required properties, wrong types, values outside an enum, and undocumented statuses.
+2. **mock**: sends the same steps to the in-process mock and compares the shape of the two answers. A property or a JSON kind that production sends and the mock does not is a finding. A property only the mock sends is a note, because production may just have no such data.
+3. **errors**: sends fixed requests with invented inputs to both sides (no token, a token that does not exist, an unknown id, a missing required parameter, a wrong method, a bad grant) and compares the statuses and the shapes. A different error text is a note.
+
+Without `--live`, or with `--list`, the command prints the plan, with what each step sends, and exits. It needs no credentials and makes no calls.
+
+### Environment
+
+| Variable                                             | Meaning                                                                                       |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `FONZIP_PROD_TOKEN`                                  | A bearer token to use as it is. Nothing is minted. The token comparison is skipped.           |
+| `FONZIP_PROD_CLIENT_ID`, `FONZIP_PROD_CLIENT_SECRET` | Used when there is no token. The runner mints one token with them.                            |
+| `FONZIP_PROD_ORIGIN`                                 | The origin to call. It defaults to `https://fonzip.com`. Give no path: `/api/v2` is included. |
+
+Keep the variables in `.env.prod-parity` in the repo root, which is git-ignored. `bun run parity:prod` loads that file and no other. Variables exported in your shell work too.
+
+Do not put them in `.env`. Bun loads `.env`, `.env.local` and the other default env files into every command in the repo, including `bun test` and the dev server. While one of those files defines a `FONZIP_PROD_*` variable, `--live` refuses to run and a dry run prints a warning. Only the file's name is printed.
+
+Use a dedicated read-only API key. Minting a token retires the oldest of the key's five live tokens, so if an integration shares the key, mint the token yourself and pass it as `FONZIP_PROD_TOKEN`. The runner then touches no token at all.
+
+The runner sends a request about every 350 ms. On a 429 it waits for the time in `Retry-After` (at most 65 seconds) and retries once.
+
+### Flags and exit codes
+
+- `--live` calls production. Without it the command is a dry run.
+- `--area people,dues` limits the run to some of `auth`, `people`, `webhooks`, `templates`, `dues` and `forms`. The default is all of them.
+- `--check spec,errors` limits the run to some of `spec`, `mock` and `errors`. The default is all of them.
+- `--list` prints the plan and exits, like a dry run. It cannot go with `--live`.
+
+An unknown value for either flag is an error.
+
+| Exit code | Meaning                                                                                          |
+| --------- | ------------------------------------------------------------------------------------------------ |
+| 0         | Nothing differs, or it was a dry run. Notes alone do not count.                                  |
+| 1         | At least one finding.                                                                            |
+| 2         | A bad flag, missing credentials, or a refusal: CI, a test runner, or credentials in `.env`.      |
+| 3         | The run aborted: production was unreachable, the token request failed, or a request was refused. |
+
+The report goes to stdout. Progress and rate-limit messages go to stderr.
+
+### What it prints
+
+The report is meant to be pasted into an issue, so it holds no production data. It prints only:
+
+- property paths, with array items shown as `[]` and free-form keys shown as `{*}`
+- JSON kinds
+- HTTP status codes
+- values from the spec, such as an enum
+- numbers and booleans that miss a spec enum, because they are codes
+- error texts from production, with email addresses and digit runs of four or more masked, and cut to 160 characters
+
+It never prints a string, an id, an email, a URL that carries one, a token, or a secret from production. For a string that misses an enum, it says only that production sent a string. It writes no response body to disk.
+
 ## Update the spec
 
 1. To download the published spec into `spec/fonzip-openapi.yaml`, run `bun run sync-spec`.
