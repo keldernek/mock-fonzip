@@ -20,23 +20,36 @@ interface ServedMock extends Disposable {
   readonly origin: string;
   readonly api: string;
   readonly credentials: ClientCredentials;
+  readonly lapsedCredentials: ClientCredentials;
   issueToken(): string;
+  onRequest(observe: (request: Request) => void): void;
 }
 
 function serveMock(): ServedMock {
   const { app, runtime } = createMockFonzip({ clock: manualClock() });
-  const server = Bun.serve({ port: 0, fetch: app.fetch });
+  const observers: ((request: Request) => void)[] = [];
+  const server = Bun.serve({
+    port: 0,
+    fetch: (request) => {
+      for (const observe of observers) observe(request);
+      return app.fetch(request);
+    },
+  });
   const origin = `http://localhost:${server.port}`;
   return {
     origin,
     api: `${origin}/api/v2`,
     credentials: runtime.credentials.readWrite,
+    lapsedCredentials: runtime.credentials.lapsed,
     issueToken() {
       const key = runtime.tenancy.findKey(
         runtime.credentials.readWrite.clientId,
       );
       if (!key) throw new Error("the mock has no read-write key");
       return runtime.tokens.issue(key).accessToken;
+    },
+    onRequest(observe) {
+      observers.push(observe);
     },
     [Symbol.dispose]: () => void server.stop(true),
   };
@@ -108,6 +121,48 @@ test("requests a new token and retries once when the mock clock expires the cach
     "POST /api/v2/token",
     "GET /api/v2/me",
   ]);
+});
+
+test("a consumer middleware sees the token refresh and retry as one exchange", async () => {
+  using mock = serveMock();
+  const client = createFonzipClient({
+    baseUrl: mock.api,
+    auth: mock.credentials,
+  });
+  const seen: number[] = [];
+  const traced: (string | null)[] = [];
+  client.use({
+    onRequest: ({ request }) => {
+      request.headers.set("x-trace", "abc");
+    },
+    onResponse: ({ response }) => {
+      seen.push(response.status);
+    },
+  });
+  mock.onRequest((request) => traced.push(request.headers.get("x-trace")));
+  expect((await client.GET("/me")).response.status).toBe(200);
+  await createMockControl({ baseUrl: mock.origin }).POST("/clock/advance", {
+    body: { seconds: 3600 },
+  });
+  expect((await client.GET("/me")).response.status).toBe(200);
+  expect(seen).toEqual([200, 200]);
+  expect(traced.filter((trace) => trace !== null)).toEqual([
+    "abc",
+    "abc",
+    "abc",
+  ]);
+});
+
+test("a refused token request is the call's response", async () => {
+  using mock = serveMock();
+  const client = createFonzipClient({
+    baseUrl: mock.api,
+    auth: mock.lapsedCredentials,
+  });
+  const { data, error, response } = await client.GET("/me");
+  expect(response.status).toBe(402);
+  expect(data).toBeUndefined();
+  expect(error).toMatchObject({ error: expect.any(String) });
 });
 
 test("a fixed token is sent as is, and its 401 is answered without a retry", async () => {

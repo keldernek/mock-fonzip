@@ -1,9 +1,4 @@
-import createClient, {
-  type Client,
-  type ClientOptions,
-  type MergedOptions,
-  type Middleware,
-} from "openapi-fetch";
+import createClient, { type Client, type ClientOptions } from "openapi-fetch";
 
 import type { paths } from "./generated/api.js";
 
@@ -32,15 +27,26 @@ export interface FonzipClientOptions extends ClientOptions {
 
 export type FonzipClient = Client<paths>;
 
+type Fetch = (
+  request: Request,
+  init?: Record<string, unknown>,
+) => Promise<Response>;
+
+type Issued =
+  | { readonly token: string; readonly refused?: never }
+  | { readonly token?: never; readonly refused: Response };
+
 function bearer(request: Request, token: string): void {
   request.headers.set("Authorization", `Bearer ${token}`);
 }
 
 async function requestToken(
-  { fetch, baseUrl }: MergedOptions,
+  send: Fetch,
+  init: Record<string, unknown> | undefined,
+  baseUrl: string,
   { clientId, clientSecret }: ClientCredentialsAuth,
-): Promise<string> {
-  const response = await fetch(
+): Promise<Issued> {
+  const response = await send(
     new Request(`${baseUrl}/token`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -50,69 +56,87 @@ async function requestToken(
         client_secret: clientSecret,
       }),
     }),
+    init,
   );
-  const body: unknown = await response.json().catch(() => null);
+  if (!response.ok) return { refused: response };
+  const body: unknown = await response
+    .clone()
+    .json()
+    .catch(() => null);
   const token =
     typeof body === "object" && body !== null && "access_token" in body
       ? body.access_token
       : undefined;
-  if (!response.ok || typeof token !== "string") {
-    throw new Error(`Fonzip token request failed with HTTP ${response.status}`);
-  }
-  return token;
+  return typeof token === "string" ? { token } : { refused: response };
 }
 
-function clientCredentials(auth: ClientCredentialsAuth): Middleware {
-  let current: Promise<string> | undefined;
-  const token = (options: MergedOptions): Promise<string> => {
+function clientCredentials(
+  send: Fetch,
+  baseUrl: string,
+  auth: ClientCredentialsAuth,
+): Fetch {
+  let current: Promise<Issued> | undefined;
+  const issue = (init: Record<string, unknown> | undefined) => {
     if (current) return current;
-    const issued = requestToken(options, auth);
+    const issued = requestToken(send, init, baseUrl, auth);
     current = issued;
-    issued.catch(() => {
-      if (current === issued) current = undefined;
-    });
+    issued.then(
+      (result) => {
+        if (result.refused && current === issued) current = undefined;
+      },
+      () => {
+        if (current === issued) current = undefined;
+      },
+    );
     return issued;
   };
-  // Sending a request consumes its body, so a retry needs a copy made first.
-  const sent = new Map<
-    string,
-    { readonly issued: Promise<string>; readonly retry: Request }
-  >();
-  return {
-    async onRequest({ request, options, id }) {
-      const issued = token(options);
-      bearer(request, await issued);
-      sent.set(id, { issued, retry: request.clone() });
-    },
-    async onResponse({ response, options, id }) {
-      const attempt = sent.get(id);
-      sent.delete(id);
-      if (response.status !== 401 || attempt === undefined) return undefined;
-      await response.body?.cancel();
-      if (current === attempt.issued) current = undefined;
-      bearer(attempt.retry, await token(options));
-      return options.fetch(attempt.retry);
-    },
-    onError({ id }) {
-      sent.delete(id);
-    },
+  return async (request, init) => {
+    // Sending a request consumes its body, so the retry is copied first.
+    const retry = request.clone();
+    const issued = issue(init);
+    const first = await issued;
+    if (first.refused) return first.refused;
+    bearer(request, first.token);
+    const response = await send(request, init);
+    if (response.status !== 401) return response;
+    await response.body?.cancel();
+    if (current === issued) current = undefined;
+    const second = await issue(init);
+    if (second.refused) return second.refused;
+    bearer(retry, second.token);
+    return send(retry, init);
+  };
+}
+
+function fixedToken(send: Fetch, token: string): Fetch {
+  return (request, init) => {
+    bearer(request, token);
+    return send(request, init);
   };
 }
 
 /**
- * With client credentials the client requests a token on first use, reuses
- * it, and on a 401 requests a new one and retries the call once.
+ * Auth wraps `fetch` rather than using middleware, so a consumer's own
+ * middleware sees every attempt as one authenticated exchange. With client
+ * credentials the client requests a token on first use, reuses it, and on a
+ * 401 requests a new one and retries the call once. A refused token request
+ * is returned as the call's response, so it surfaces as `{ error, response }`.
  */
 export function createFonzipClient({
   auth,
   baseUrl = FONZIP_BASE_URL,
+  fetch: send = globalThis.fetch,
   ...options
 }: FonzipClientOptions): FonzipClient {
-  const client = createClient<paths>({ ...options, baseUrl });
-  client.use(
-    auth.token === undefined
-      ? clientCredentials(auth)
-      : { onRequest: ({ request }) => bearer(request, auth.token) },
-  );
-  return client;
+  // openapi-fetch types `fetch` with one parameter but calls it with
+  // `requestInitExt` as a second, so the wrapper passes it on the same way.
+  const inner = send as Fetch;
+  return createClient<paths>({
+    ...options,
+    baseUrl,
+    fetch:
+      auth.token === undefined
+        ? clientCredentials(inner, baseUrl, auth)
+        : fixedToken(inner, auth.token),
+  });
 }

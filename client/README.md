@@ -8,11 +8,19 @@ The package is a GitHub release asset, not an npm package. Add the tarball URL t
 
 ```json
 "dependencies": {
-  "@keldernek/fonzip-client": "https://github.com/keldernek/mock-fonzip/releases/download/<tag>/keldernek-fonzip-client-<version>.tgz"
+  "@keldernek/fonzip-client": "https://github.com/keldernek/mock-fonzip/releases/download/client-v0.1.0-main.42/keldernek-fonzip-client-0.1.0-main.42.tgz"
 }
 ```
 
-Each push to `main` publishes a release tagged `client-v<version>-main.<run_number>`, such as `client-v0.1.0-main.42`. A numbered release never changes. The rolling `client-latest` release moves to every new build, so its tarball changes under the same URL. Your lockfile records the tarball's integrity hash, which pins the build you installed until you update the dependency. A package manager that checks the hash refuses a newer tarball instead of installing it silently.
+Each push to `main` publishes a release tagged `client-v<base>-main.<run_number>`, such as `client-v0.1.0-main.42`, whose asset is `keldernek-fonzip-client-0.1.0-main.42.tgz`. A numbered release never changes. To follow main instead, use the rolling release:
+
+```json
+"dependencies": {
+  "@keldernek/fonzip-client": "https://github.com/keldernek/mock-fonzip/releases/download/client-latest/keldernek-fonzip-client-latest.tgz"
+}
+```
+
+The rolling `client-latest` release moves to every new build, so its tarball changes under the same URL. Your lockfile records the tarball's integrity hash, which pins the build you installed until you update the dependency. A package manager that checks the hash refuses a newer tarball instead of installing it silently.
 
 ## Call the API
 
@@ -34,7 +42,9 @@ const { data, error } = await fonzip.GET("/tags", {
 `auth` takes one of two shapes:
 
 - `{ token }` sends that bearer token on every call. A 401 comes back as it is.
-- `{ clientId, clientSecret }` requests a token from `POST /token` on the first call and reuses it. On a 401 the client requests a new token and retries the call once.
+- `{ clientId, clientSecret }` requests a token from `POST /token` on the first call and reuses it. On a 401 the client requests a new token and retries the call once. When `POST /token` refuses the credentials, for example with 401 for a wrong secret or 402 for a lapsed plan, that refusal is returned as the call's `{ error, response }`.
+
+Auth wraps `fetch`, so middleware added with `fonzip.use()` sees the token request and the retry as one exchange.
 
 `baseUrl` defaults to `https://fonzip.com/api/v2`. Use `http://localhost:8790/api/v2` for the mock. Every other option goes to openapi-fetch's `createClient`, such as `fetch` or `headers`. The returned `FonzipClient` is an openapi-fetch client, so `fonzip.use()` adds middleware.
 
