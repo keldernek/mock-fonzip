@@ -17,7 +17,11 @@ import type {
   FormRecord,
   UserRecord,
 } from "../../store/records";
-import { currencyById, PAYMENT_STATUS } from "../../store/reference";
+import {
+  APPROVAL_STATUS,
+  currencyById,
+  PAYMENT_STATUS,
+} from "../../store/reference";
 import type { OrgStore } from "../../store/store";
 import { mergePendingDuplicate } from "./contacts";
 import {
@@ -46,9 +50,13 @@ const DEFAULT_ANSWER_STATUS: AnswerStatus = "answer";
 // every answer here comes from the public form.
 const ANSWER_SOURCE = 0;
 
-const APPROVAL_STATUS: Readonly<
+const ANSWER_LIST_OF_APPROVAL: Readonly<
   Record<FormAnswerRecord["approval_status"], AnswerStatus>
-> = { 0: "waiting_approval", 1: "answer", 2: "rejected" };
+> = {
+  [APPROVAL_STATUS.waiting]: "waiting_approval",
+  [APPROVAL_STATUS.approved]: "answer",
+  [APPROVAL_STATUS.rejected]: "rejected",
+};
 
 export function answerStatus(store: OrgStore, answer: Answer): AnswerStatus {
   const payment =
@@ -59,7 +67,7 @@ export function answerStatus(store: OrgStore, answer: Answer): AnswerStatus {
   if (payment && payment.payment_status !== PAYMENT_STATUS.successful) {
     return "failed";
   }
-  return APPROVAL_STATUS[answer.approval_status];
+  return ANSWER_LIST_OF_APPROVAL[answer.approval_status];
 }
 
 interface FormView {

@@ -458,7 +458,8 @@ export interface FormAnswerRecord {
   email_verification: boolean | null;
   complete_date: string;
   transaction_id: number | null;
-  approval_status: 0 | 1 | 2;
+  // 1 waiting, 2 approved, 3 rejected (`APPROVAL_STATUS` in reference.ts).
+  approval_status: 1 | 2 | 3;
   sent_mail_id: number | null;
   ip_address: string;
   // Where the address was located. Null when it could not be.
