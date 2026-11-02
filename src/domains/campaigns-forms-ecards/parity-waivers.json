@@ -20,6 +20,11 @@
         "getEcardTransactionList"
       ],
       "reason": "The path names no object. The id parameters are list filters (category_id, team_campaign_id, payment_settings_id and association_campaign_target_id on /fundraising-campaigns, category_id on /ecards, ecard_id, payment_settings_id, bank_account_id and currency_id on /ecard-transactions). The only documented behavior for an id filter naming no object is paths./debts.get debt_category_id: 'Another organisation's id matches nothing'. An unknown id therefore returns an empty list, not 404."
+    },
+    {
+      "status": 404,
+      "operations": ["getUserAnswerList"],
+      "reason": "Production answers 200 with {\"answer_list\": [], \"total\": 0} for a user that does not exist (bun run parity:prod, probe P7c), so the mock does the same. The user id selects which answers to list, as a filter does, and a filter that names no object matches nothing (PARITY.md, Ids that name no object). 404 cannot occur."
     }
   ],
   "inputs": [],

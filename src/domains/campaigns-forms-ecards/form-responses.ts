@@ -214,8 +214,12 @@ export function applyResponse(
   response: FormResponse,
   now: string,
 ): void {
+  // An API key is not a contact, so nobody is named as the responder, as
+  // nobody is named for a refund made through the API.
   store.formAnswers.update(answer.id, {
     approval_status: response.approvalStatus,
+    respond_date: now,
+    responded_by_id: null,
   });
   assignMembership(store, answer.user_id, response.membership);
   const payment =

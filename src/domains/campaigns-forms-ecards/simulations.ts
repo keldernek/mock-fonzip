@@ -215,6 +215,13 @@ function submitForm(
     transaction_id: transaction?.id ?? null,
     approval_status: form.requires_approval ? 0 : 1,
     sent_mail_id: null,
+    // The public site sends no location. A documentation address stands in,
+    // and nobody has responded yet.
+    ip_address: `203.0.113.${(store.formAnswers.count() % 254) + 1}`,
+    city: null,
+    country: null,
+    respond_date: null,
+    responded_by_id: null,
   });
   answerQuestions(store, form.id, answer.id, person.value.phone);
   ctx.webhooks.emit(

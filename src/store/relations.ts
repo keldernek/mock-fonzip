@@ -107,6 +107,7 @@ export const RELATIONS: readonly Relation[] = [
   relation("formAnswers", "user_id", "users"),
   relation("formAnswers", "transaction_id", "transactions"),
   relation("formAnswers", "sent_mail_id", "sentEmails"),
+  relation("formAnswers", "responded_by_id", "users"),
   relation("formAnswerItems", "answer_id", "formAnswers"),
   relation("formAnswerItems", "question_id", "formQuestions"),
   relation("mergeCandidates", "first_user_id", "users"),

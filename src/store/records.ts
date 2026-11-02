@@ -152,7 +152,12 @@ export type TransactionRecord = WithNull<
   error_group: TransactionErrorGroup;
 };
 
-export type SentEmailRecord = Own<S["SentEmail"]>;
+// The store keeps the message id as the number the flat `sent_mail__message_id`
+// columns document. Production sends it as a string in a `SentEmail` object,
+// so the projections of that object convert it.
+export type SentEmailRecord = Own<Omit<S["SentEmail"], "message_id">> & {
+  message_id: number;
+};
 
 export type DonationRecord = WithNull<
   Own<
@@ -378,11 +383,19 @@ export interface FormAnswerRecord {
   first_name: string;
   last_name: string;
   email: string;
-  email_verification: boolean;
+  // Null when the form does not ask the contact to verify the address.
+  email_verification: boolean | null;
   complete_date: string;
   transaction_id: number | null;
   approval_status: 0 | 1 | 2;
   sent_mail_id: number | null;
+  ip_address: string;
+  // Where the address was located. Null when it could not be.
+  city: string | null;
+  country: string | null;
+  // Null until someone responds to the answer.
+  respond_date: string | null;
+  responded_by_id: number | null;
 }
 
 export interface MergeCandidateRecord {
