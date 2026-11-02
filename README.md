@@ -60,6 +60,14 @@ The control plane lives under `/__mock`, outside the API. It takes and returns J
 | `GET /__mock/simulations`                               | List the simulations of events that only happen on the public site, with their inputs.                                             |
 | `POST /__mock/simulations/{domain}/{name}?org=kelder`   | Run one simulation. The body is the simulation's JSON input.                                                                       |
 
+`spec/mock-control-openapi.yaml` describes these routes and their bodies. `test/control-spec.test.ts` checks every response the router gives against it.
+
+## Typed client
+
+`client/` holds `@keldernek/fonzip-client`, a typed TypeScript client for the API and for the control plane. Its types are generated from the pinned spec and from `spec/mock-control-openapi.yaml`, with a named type for every schema and operation. [client/README.md](client/README.md) covers installing and using it.
+
+`bun run client:check` typechecks the client and tests it against the mock. `bun run client:build` builds it into `client/dist`, and `bun run client:pack` writes `client/keldernek-fonzip-client-<version>.tgz`.
+
 ## Check parity with the spec
 
 ```sh
@@ -143,7 +151,7 @@ It never prints a string, an id, an email, a URL that carries one, a token, or a
 ## Update the spec
 
 1. To download the published spec into `spec/fonzip-openapi.yaml`, run `bun run sync-spec`.
-2. To regenerate `src/generated/openapi.d.ts`, run `bun run generate`.
+2. To regenerate `src/generated/openapi.d.ts` and the client's types in `client/src/generated/`, run `bun run generate`.
 3. Run `bun run test`. `test/spec.test.ts` fails when the committed types are stale.
 
 ## Add an operation
@@ -160,4 +168,4 @@ Operations are split among five domains in `src/operations.ts`. Each domain owns
 
 ## License
 
-The code is released under the [MIT License](LICENSE). `spec/fonzip-openapi.yaml` is Fonzip's published API description, pinned so the mock can be checked against it, and `src/generated/openapi.d.ts` is generated from it. The MIT License does not cover that document.
+The code is released under the [MIT License](LICENSE). `spec/fonzip-openapi.yaml` is Fonzip's published API description, pinned so the mock can be checked against it, and `src/generated/openapi.d.ts` and the client's `client/src/generated/api.ts` and `operations.ts` are generated from it. The MIT License does not cover that document.
