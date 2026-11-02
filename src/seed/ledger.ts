@@ -94,7 +94,7 @@ export function seedBankTransactions(
       type: 2,
       userId: payment.user_id,
       sender: userName(payment.user_id),
-      description: `${payment.period.slice(0, 4)} AIDAT`,
+      description: `${(payment.period ?? payment.operation_date).slice(0, 4)} AIDAT`,
       subscriptionId: payment.id,
     });
   }

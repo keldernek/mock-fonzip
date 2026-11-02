@@ -84,7 +84,8 @@ describe("the seeded world", () => {
     }
   });
 
-  test("gives every person a checksum-valid TC kimlik number", () => {
+  test("gives every person a checksum-valid TC kimlik number, except the four members who have none on file", () => {
+    const without: number[] = [];
     for (const user of [
       ...kelder.users.list(),
       ...orgStore(store, "ornek").users.list(),
@@ -95,11 +96,19 @@ describe("the seeded world", () => {
         );
         continue;
       }
+      if (user.tckno === "") {
+        without.push(user.id);
+        continue;
+      }
       expect(
         isValidTcKimlikNo(user.tckno),
         `user ${user.id} tckno ${user.tckno}`,
       ).toBe(true);
     }
+    // Production's contacts can lack a TC kimlik number. The dues seed leaves
+    // every 30th member without one, and the member behind the newest debt
+    // is among them.
+    expect(without).toEqual([1004, 1034, 1064, 1094]);
     expect(isValidTcKimlikNo("10000000146"), "a known-valid number").toBe(true);
     expect(isValidTcKimlikNo("10000000147"), "a wrong last digit").toBe(false);
   });

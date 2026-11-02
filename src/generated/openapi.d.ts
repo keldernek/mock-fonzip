@@ -2609,7 +2609,7 @@ export interface components {
             /** @description transaction id */
             id?: number;
             /** @description conversation id */
-            conversation_id?: number;
+            conversation_id?: string;
             /**
              * Format: date-time
              * @description complete date
@@ -2629,7 +2629,7 @@ export interface components {
              */
             installment_amount?: number;
             /** @description ip address */
-            ip_address?: string;
+            ip_address?: string | null;
             /** @description payment status */
             payment_status?: number;
             /** @description payment status display */
@@ -2642,42 +2642,54 @@ export interface components {
              * Format: date-time
              * @description refund date
              */
-            refund_date?: string;
+            refund_date?: string | null;
             /** @description bank order id */
             fonzip_id?: string;
             /** @description bank order hashed */
             fonzip_id_hashed?: string;
             /** @description bank transaction id */
-            transaction_id?: string;
+            transaction_id?: string | null;
             /** @description bank provision no */
-            provision_no?: string;
+            provision_no?: string | null;
             /** @description receipt no */
-            receipt_no?: string;
+            receipt_no?: string | null;
             /** @description bank auth code */
-            auth_code?: string;
+            auth_code?: string | null;
             /** @description bank reference id */
-            reference_id?: string;
+            reference_id?: string | null;
             /** @description bank order id */
-            order_id?: string;
+            order_id?: string | null;
             /** @description payment settings id */
-            payment_settings_id?: number;
-            payment_settings?: components["schemas"]["PaymentSettings"];
+            payment_settings_id?: number | null;
+            payment_settings?: components["schemas"]["PaymentSettings"] | null;
             /** @description bank account id */
-            bank_account_id?: number;
-            bank_account?: components["schemas"]["BankAccountReference"];
-            payment_method?: components["schemas"]["PaymentMethod"];
+            bank_account_id?: number | null;
+            bank_account?: components["schemas"]["BankAccountReference"] | null;
+            payment_method?: components["schemas"]["PaymentMethod"] | null;
             /** @description User id who refunded donation */
-            refunded_by_id?: number;
+            refunded_by_id?: number | null;
             /** @description Users name who refunded donation */
             refunded_by__name?: string;
             /** @description Refund Reason */
-            refund_reason?: string;
+            refund_reason?: string | null;
             /** @description transaction through fonzip */
             fonzip_framework?: boolean;
             /** @description card bin number */
-            bin_number?: string;
+            bin_number?: string | null;
             /** @description card last four */
-            last_four?: string;
+            last_four?: string | null;
+            /** @description id of the association the transaction belongs to */
+            association_id?: number;
+            /** @description name on the card; null when not paid by card */
+            cardholder_name?: string | null;
+            /** @description city the payment was made from */
+            city?: string | null;
+            /** @description country the payment was made from */
+            country?: string | null;
+            /** @description paid through 3D Secure */
+            tds?: boolean;
+            /** @description what the transaction pays for: 2 for membership dues and debts */
+            transaction_type?: number;
         };
         TicketSaleDetails: {
             /** @description single ticket id */
@@ -3615,7 +3627,7 @@ export interface components {
             /** @description membership due record status name */
             status_name?: string;
             /** @description details for membership due record */
-            details?: string;
+            details?: string | null;
             /** @description Why the debt was removed, for a removed debt */
             remove_note?: string | null;
             /** @description The debt's category; null for none and for payments */
@@ -3629,7 +3641,7 @@ export interface components {
              * Format: date
              * @description Period Date
              */
-            period?: string;
+            period?: string | null;
             /**
              * Format: double
              * @description Users balance
@@ -3640,14 +3652,14 @@ export interface components {
             /** @description Users last name */
             last_name?: string;
             /** @description phone */
-            phone?: string;
+            phone?: string | null;
             /**
              * Format: email
              * @description email
              */
-            email?: string;
+            email?: string | null;
             /** @description identity number */
-            tckno?: string;
+            tckno?: string | null;
             /**
              * Format: double
              * @description payment/debt amount
@@ -3664,14 +3676,14 @@ export interface components {
              */
             assignment_status?: 0 | 1 | 2 | 3 | 4;
             /** @description masked card number for membership due */
-            card_info?: string;
+            card_info?: string | null;
             /** @description bill no */
-            bill_no?: string;
+            bill_no?: string | null;
             /**
              * Format: date-time
              * @description Debts Due Date
              */
-            due_date?: string;
+            due_date?: string | null;
             /** @description Recurring Debt */
             recurring?: boolean;
             /**
@@ -3689,17 +3701,27 @@ export interface components {
              * Format: date
              * @description Next occurrence date for recurring debt
              */
-            recurring_next_cycle?: string;
+            recurring_next_cycle?: string | null;
             /** @description Recurring debt order id */
-            order_id?: string;
+            order_id?: string | null;
             /** @description User id who added donation */
             added_by_id?: number;
             /** @description Users name who added donation */
             added_by__name?: string;
             /** @description User id who last updated donation */
-            updated_by_id?: number;
+            updated_by_id?: number | null;
             /** @description Users name who last updated donation */
             updated_by__name?: string;
+            /**
+             * Format: date-time
+             * @description Record creation timestamp
+             */
+            create_date?: string;
+            /**
+             * Format: date-time
+             * @description Last update timestamp; null while the record was never updated
+             */
+            last_update_date?: string | null;
         };
         DonationDetailResult: {
             /** @description donation id */
@@ -4000,19 +4022,19 @@ export interface components {
             /** @description Transaction through Fonzip */
             transaction__fonzip_framework?: boolean;
             /** @description Explanation */
-            details?: string;
+            details?: string | null;
             /** @description Bill number */
-            bill_no?: string;
+            bill_no?: string | null;
             /**
              * Format: date
              * @description Period
              */
-            period?: string;
+            period?: string | null;
             /**
              * Format: date
              * @description Due Date
              */
-            due_date?: string;
+            due_date?: string | null;
             /**
              * Format: double
              * @description Amount
@@ -4032,8 +4054,16 @@ export interface components {
             transaction__currency__display?: string;
             /** @description currency iso code */
             transaction__currency__iso_code?: string;
-            /** @description bank order id */
-            transaction__fonzip_id?: string;
+            /** @description Why the debt was removed, for a removed debt */
+            remove_note?: string | null;
+            /** @description Whether the transaction was converted to another currency */
+            transaction__converted?: boolean;
+            /** @description Conversion rate of a converted transaction */
+            transaction__conversion_rate?: number | null;
+            /** @description Amount of a converted transaction in the other currency */
+            transaction__converted_amount?: number | null;
+            /** @description Currency a transaction was converted to */
+            transaction__converted_currency__display?: string | null;
         };
         MembershipDueDebts: {
             /** @description Due id */
@@ -4041,7 +4071,7 @@ export interface components {
             /** @description Related user id */
             user_id?: number;
             /** @description Explanation for membership due record */
-            details?: string;
+            details?: string | null;
             /**
              * Format: date
              * @description Period
@@ -4083,6 +4113,8 @@ export interface components {
             debt_category_id?: number | null;
             /** @description Debt category name */
             debt_category__name?: string | null;
+            /** @description Why the debt was removed, for a removed debt */
+            remove_note?: string | null;
         };
         MembershipDues: {
             /** @description Due id */
@@ -4099,18 +4131,18 @@ export interface components {
              * Format: email
              * @description Email Address
              */
-            email?: string;
+            email?: string | null;
             /** @description Phone number */
-            phone?: string;
+            phone?: string | null;
             /** @description Explanation for membership due record */
-            details?: string;
+            details?: string | null;
             /**
              * Format: date
              * @description Period
              */
-            period?: string;
+            period?: string | null;
             /** @description Identity Number */
-            tckno?: string;
+            tckno?: string | null;
             /** @description Transaction through Fonzip */
             transaction__fonzip_framework?: boolean;
             /**
@@ -4226,9 +4258,9 @@ export interface components {
              * Format: email
              * @description Email
              */
-            email?: string;
+            email?: string | null;
             /** @description Cell Phone */
-            phone?: string;
+            phone?: string | null;
             /** @description first name and last name combined */
             name?: string;
             /** @description first name */
@@ -4236,13 +4268,17 @@ export interface components {
             /** @description last name */
             last_name?: string;
             /** @description Identity Number */
-            tckno?: string;
+            tckno?: string | null;
             /** @description profile pic url */
-            profile_pic?: string;
+            profile_pic?: string | null;
             /** @description True if record is is set as corporate */
             corporate_type?: boolean;
             /** @description users membership number */
             membership_no?: number;
+            /** @description tax department of a corporate user */
+            tax_department?: string | null;
+            /** @description users current balance amount */
+            total_financial?: number;
         };
         UserFormAnswerDetails: {
             /** @description user id */
@@ -5680,7 +5716,7 @@ export interface components {
             };
             content: {
                 "application/json": {
-                    subscription_list?: components["schemas"]["MembershipDues"][];
+                    payment_list?: components["schemas"]["MembershipDues"][];
                     /** @description Total number of membership dues */
                     total?: number;
                 };
@@ -9052,8 +9088,10 @@ export interface operations {
                  *     - paid: for payments
                  *     - refund: for refunds
                  *     - failed: for failed payment transactions
+                 *
+                 *     Production does not require it: without it the answer is the paid list.
                  */
-                status: "paid" | "refund" | "failed";
+                status?: "paid" | "refund" | "failed";
                 /** @description Dues Period Year */
                 period_year?: number;
                 /** @description Dues Period Month */

@@ -133,7 +133,7 @@ describe("giving simulations", () => {
     const detail = await client.ok("getDonationDetails", {
       path: { donation_id: donationId },
     });
-    expect(detail.donation?.transaction).not.toHaveProperty("provision_no");
+    expect(detail.donation?.transaction?.provision_no).toBeNull();
     const total = kelder(client).users.get(1054)?.total_financial;
     const seeded = givingClient();
     expect(total, "a failed payment adds nothing").toBe(

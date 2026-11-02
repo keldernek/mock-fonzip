@@ -10,6 +10,7 @@ import { istanbulDate, istanbulDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { fullName } from "../../store/joins";
 import type { TicketRecord, UserRecord } from "../../store/records";
+import { TRANSACTION_TYPE } from "../../store/transactions";
 import { WEBHOOK_OPERATIONS } from "../../webhooks/emitter";
 import {
   adjustTotalFinancial,
@@ -59,6 +60,8 @@ function duesPayment(
       store.paymentSettings.find((settings) => settings.status === 1)?.id ??
       null,
     installments: 1,
+    associationId: ctx.org.info.id,
+    type: TRANSACTION_TYPE.dues,
   });
   const oldest = store.subscriptions
     .list((row) => row.user_id === user.id && row.status === 1)
@@ -121,6 +124,7 @@ function duesRefund(
     assignment_status: 3,
     added_by_id: null,
     updated_by_id: null,
+    last_update_date: null,
     debt_category_id: null,
   });
   adjustTotalFinancial(store, payment.user_id, tx, -1);
@@ -253,6 +257,8 @@ function ticketSale(
           bankAccountId: accountId ?? null,
           transactionId: undefined,
           receiptNo: undefined,
+          associationId: ctx.org.info.id,
+          type: TRANSACTION_TYPE.ticket,
         }
       : {
           kind: "card",
@@ -260,6 +266,8 @@ function ticketSale(
           outcome,
           paymentSettingsId: event.payment_settings_id,
           installments: 1,
+          associationId: ctx.org.info.id,
+          type: TRANSACTION_TYPE.ticket,
         },
   );
   const name = input.string("name") ?? (user ? fullName(user) : "");

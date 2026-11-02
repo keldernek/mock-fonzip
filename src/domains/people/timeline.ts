@@ -122,7 +122,7 @@ function derivedEvents(user: Row<UserRecord>, facts: Facts): TimelineEvent[] {
           row.id,
           10,
           row.operation_date,
-          `${row.period.slice(0, 4)} aidatı ödendi: ${money(row.amount, 1)}`,
+          `${(row.period ?? row.operation_date).slice(0, 4)} aidatı ödendi: ${money(row.amount, 1)}`,
         ),
       ),
     ...facts

@@ -2,6 +2,7 @@ import type { Rng } from "../../core/rng";
 import { istanbulDateTime } from "../../seed/dates";
 import { unmatchBankTransfers } from "../../store/bank-transfers";
 import type { Row } from "../../store/collection";
+import { blankAsNull } from "../../store/joins";
 import type {
   PaymentMethod,
   SubscriptionRecord,
@@ -15,6 +16,7 @@ import {
   TRY_CURRENCY_ID,
 } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
+import { conversationId, originOf } from "../../store/transactions";
 
 export type Subscription = Row<SubscriptionRecord>;
 export type SubscriptionStatus = SubscriptionRecord["status"];
@@ -127,23 +129,34 @@ export function adjustTotalFinancial(
   });
 }
 
-export type TransactionSpec =
-  | {
-      readonly kind: "card";
-      readonly amount: number;
-      readonly outcome: "successful" | "failed";
-      readonly paymentSettingsId: number | null;
-      readonly installments: number;
-    }
-  | {
-      readonly kind: "manual";
-      readonly status: 0 | 3;
-      readonly amount: number;
-      readonly method: Exclude<PaymentMethod, 0>;
-      readonly bankAccountId: number | null;
-      readonly transactionId: string | undefined;
-      readonly receiptNo: string | undefined;
-    };
+// What every new transaction names: the association it belongs to, and what
+// it pays for (one of `TRANSACTION_TYPE`).
+interface TransactionOwner {
+  readonly associationId: number;
+  readonly type: number;
+}
+
+export type TransactionSpec = TransactionOwner &
+  (
+    | {
+        readonly kind: "card";
+        readonly amount: number;
+        readonly outcome: "successful" | "failed";
+        readonly paymentSettingsId: number | null;
+        readonly installments: number;
+      }
+    | {
+        readonly kind: "manual";
+        readonly status: 0 | 3;
+        readonly amount: number;
+        // Null for the transaction of an unpaid debt: nobody has paid yet,
+        // so it has no method, no paying address and no receipt.
+        readonly method: Exclude<PaymentMethod, 0> | null;
+        readonly bankAccountId: number | null;
+        readonly transactionId: string | undefined;
+        readonly receiptNo: string | undefined;
+      }
+  );
 
 export function newTransaction(
   store: OrgStore,
@@ -154,18 +167,37 @@ export function newTransaction(
   const card = spec.kind === "card";
   const failed = card && spec.outcome === "failed";
   const status = card ? (failed ? 5 : 3) : spec.status;
+  const pending = !card && spec.method === null;
   const error = failed ? rng.pickFrom(PAYMENT_ERRORS) : undefined;
   const installments = card ? spec.installments : 1;
+  // The draws run in the order the record was always built in, and every one
+  // of them runs whatever the record keeps, so no later value moves.
+  const conversation = rng.int(10_000_000, 99_999_999);
+  const ip = card
+    ? `85.${rng.int(96, 111)}.${rng.int(0, 255)}.${rng.int(1, 254)}`
+    : null;
+  const fonzipDigits = rng.digits(10);
+  const fonzipHash = rng.hex(32);
+  const cardTransactionId = card ? rng.digits(12) : null;
+  const provision = card && !failed ? rng.digits(6) : null;
+  const receipt = card
+    ? `MKB-${rng.digits(8)}`
+    : (spec.receiptNo ?? `MKB-${rng.digits(8)}`);
+  const authCode = card && !failed ? rng.digits(6) : null;
+  const reference = rng.hex(16);
+  const order = `ORD-${rng.digits(9)}`;
+  const bin = card ? rng.pick(["454360", "540667", "979203", "402277"]) : null;
+  const lastFour = card ? rng.digits(4) : null;
   return store.transactions.insert({
-    conversation_id: rng.int(10_000_000, 99_999_999),
+    conversation_id: conversationId(conversation),
+    association_id: spec.associationId,
     complete_date: istanbulDateTime(at),
     amount: spec.amount,
     currency_id: TRY_CURRENCY_ID,
     installment_count: installments,
     installment_amount: cents(spec.amount / installments),
-    ip_address: card
-      ? `85.${rng.int(96, 111)}.${rng.int(0, 255)}.${rng.int(1, 254)}`
-      : "",
+    ip_address: ip,
+    ...originOf(ip),
     payment_status: status,
     payment_status_display: PAYMENT_STATUS_DISPLAY[status],
     error_code: error?.code ?? null,
@@ -174,24 +206,25 @@ export function newTransaction(
     refund_date: null,
     refunded_by_id: null,
     refund_reason: null,
-    fonzip_id: `FZ${rng.digits(10)}`,
-    fonzip_id_hashed: rng.hex(32),
-    transaction_id: card ? rng.digits(12) : (spec.transactionId ?? ""),
-    provision_no: card && !failed ? rng.digits(6) : null,
-    receipt_no: card
-      ? `MKB-${rng.digits(8)}`
-      : (spec.receiptNo ?? `MKB-${rng.digits(8)}`),
-    auth_code: card && !failed ? rng.digits(6) : null,
-    reference_id: rng.hex(16),
-    order_id: `ORD-${rng.digits(9)}`,
+    fonzip_id: `FZ${fonzipDigits}`,
+    fonzip_id_hashed: fonzipHash,
+    transaction_id: card ? cardTransactionId : (spec.transactionId ?? null),
+    provision_no: provision,
+    receipt_no: pending ? null : receipt,
+    auth_code: authCode,
+    // The gateway assigns the reference and the order; a payment keyed in by
+    // hand has neither.
+    reference_id: card ? reference : null,
+    order_id: card ? order : null,
     payment_settings_id: card ? spec.paymentSettingsId : null,
     bank_account_id: card ? null : spec.bankAccountId,
     payment_method: card ? 0 : spec.method,
     fonzip_framework: card,
-    bin_number: card
-      ? rng.pick(["454360", "540667", "979203", "402277"])
-      : null,
-    last_four: card ? rng.digits(4) : null,
+    bin_number: bin,
+    last_four: lastFour,
+    cardholder_name: null,
+    tds: card,
+    transaction_type: spec.type,
   });
 }
 
@@ -230,23 +263,30 @@ export function removeRecord(store: OrgStore, row: Subscription): void {
   rebalance(store, row.user_id);
 }
 
+// A record keeps what the member had on file when it was written. A member
+// with no phone, e-mail or TC kimlik number leaves null, as production does.
 export function memberSnapshot(user: Row<UserRecord>) {
   return {
     user_id: user.id,
     first_name: user.first_name,
     last_name: user.last_name,
-    phone: user.phone,
-    email: user.email,
-    tckno: user.tckno,
+    phone: blankAsNull(user.phone),
+    email: blankAsNull(user.email),
+    tckno: blankAsNull(user.tckno),
   };
+}
+
+// Every debt has an order id in production, recurring or not.
+export function debtOrderId(userId: number, debtId: number): string {
+  return `BRC-${userId}-${debtId}`;
 }
 
 export interface PaymentRecord {
   readonly user: Row<UserRecord>;
   readonly tx: Row<TransactionRecord>;
   readonly at: Date;
-  readonly details: string;
-  readonly period: string;
+  readonly details: string | null;
+  readonly period: string | null;
   readonly billNo: string | null;
 }
 
@@ -266,9 +306,9 @@ export function recordPayment(
     balance: 0,
     amount: tx.amount,
     assignment_status: successful ? 1 : 0,
-    card_info: tx.last_four === null ? "" : `**** ${tx.last_four}`,
+    card_info: tx.last_four === null ? null : `**** ${tx.last_four}`,
     bill_no: payment.billNo,
-    due_date: istanbulDateTime(at),
+    due_date: null,
     recurring: false,
     recurring_amount: 0,
     recurring_period: 0,
@@ -279,6 +319,7 @@ export function recordPayment(
     added_by_id: null,
     updated_by_id: null,
     create_date: istanbulDateTime(at),
+    last_update_date: null,
     debt_category_id: null,
     transaction_id: tx.id,
   });

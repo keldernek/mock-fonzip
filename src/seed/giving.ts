@@ -5,6 +5,7 @@ import type {
   UserRecord,
 } from "../store/records";
 import type { PaymentStatus } from "../store/reference";
+import { TRANSACTION_TYPE } from "../store/transactions";
 import type { CampaignRefs } from "./campaigns";
 import {
   createTransaction,
@@ -165,6 +166,7 @@ export function seedDonations(
       bankAccountId:
         plan.method === 2 ? rng.pick(system.tryBankAccountIds) : null,
       installments: card && plan.amount >= 2500 ? 3 : 1,
+      type: TRANSACTION_TYPE.donation,
     });
     const online = card && !plan.micro;
     const sentMail =

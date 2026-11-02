@@ -1,6 +1,7 @@
 import { createRng } from "../core/rng";
 import type { Row } from "../store/collection";
 import type { SubscriptionRecord, UserRecord } from "../store/records";
+import { TRANSACTION_TYPE } from "../store/transactions";
 import { createTransaction, type SeedContext } from "./context";
 import {
   addDays,
@@ -44,6 +45,19 @@ export function seedDues(
 
   const members = users.slice(3, 123);
   for (const [index, user] of members.entries()) {
+    // Production's rows are sparse: a member can have no TC kimlik number,
+    // e-mail or phone on file. Every 30th member has no TC kimlik number at
+    // all, and the member the newest entry fee belongs to is one of them. The
+    // others lack an e-mail or a phone only on the records, which keep what
+    // the member gave when each record was written. No draw is taken here, so
+    // the rest of the seed does not move.
+    const noTckno = index % 30 === 0 || user.tckno === "";
+    if (noTckno && user.tckno !== "") db.users.update(user.id, { tckno: "" });
+    const onFile = {
+      email: index % 7 === 3 || user.email === "" ? null : user.email,
+      phone: index % 11 === 5 || user.phone === "" ? null : user.phone,
+      tckno: noTckno ? null : user.tckno,
+    };
     let balance = 0;
     const base = (
       status: SubscriptionRecord["status"],
@@ -53,21 +67,19 @@ export function seedDues(
     ): Omit<SubscriptionRecord, "id"> => ({
       user_id: user.id,
       status,
-      details: "",
+      details: null,
       remove_note: null,
       operation_date: istanbulDateTime(at),
       period,
       balance,
       first_name: user.first_name,
       last_name: user.last_name,
-      phone: user.phone,
-      email: user.email,
-      tckno: user.tckno,
+      ...onFile,
       amount,
       assignment_status: 0,
-      card_info: "",
+      card_info: null,
       bill_no: null,
-      due_date: istanbulDateTime(addDays(at, 30)),
+      due_date: null,
       recurring: false,
       recurring_amount: 0,
       recurring_period: 0,
@@ -78,18 +90,21 @@ export function seedDues(
       added_by_id: admin,
       updated_by_id: null,
       create_date: istanbulDateTime(at),
+      last_update_date: null,
       debt_category_id: null,
       transaction_id: null,
     });
     const recurringPayer = index % 12 === 3;
+    // A debt keyed in by hand has no category, no note and no due date.
     const debt = (
-      categoryId: number,
+      categoryId: number | null,
       amount: number,
       at: Date,
       period: string,
       outcome: "paid" | "open" | "removed",
     ) => {
       balance -= outcome === "removed" ? 0 : amount;
+      const year = period.slice(0, 4);
       db.subscriptions.insert({
         ...base(
           outcome === "paid" ? 8 : outcome === "open" ? 1 : 6,
@@ -98,11 +113,16 @@ export function seedDues(
           period,
         ),
         debt_category_id: categoryId,
-        details: `${period.slice(0, 4)} yılı aidatı`,
+        details: categoryId === null ? null : `${year} yılı aidatı`,
+        due_date:
+          categoryId === null ? null : istanbulDateTime(addDays(at, 30)),
+        order_id: `BRC-${user.id}-${categoryId ?? 0}-${year}`,
         remove_note:
           outcome === "removed" ? "Onursal üye, aidattan muaf" : null,
         assignment_status: outcome === "paid" ? 2 : 0,
         updated_by_id: outcome === "removed" ? secondAdmin : null,
+        last_update_date:
+          outcome === "removed" ? istanbulDateTime(addDays(at, 40)) : null,
       });
       if (outcome !== "paid") return;
       const paidAt = addDays(at, rng.int(1, 60));
@@ -115,14 +135,26 @@ export function seedDues(
         method,
         paymentSettingsId: method === 0 ? system.cardSettingsIds[0] : null,
         bankAccountId: method === 2 ? system.tryBankAccountIds[0] : null,
+        type: TRANSACTION_TYPE.dues,
+        byHand: method !== 0,
       });
       balance += amount;
+      // The draws keep their order, and run whatever the record keeps.
+      const card = method === 0;
+      const cardInfo = card ? `**** ${rng.digits(4)}` : null;
+      const billNo = `AID-${rng.digits(6)}`;
+      const orderId = recurringPayer ? `SUB-${rng.digits(8)}` : null;
+      // An admin keys in a transfer, a POS slip or cash: the payment has no
+      // note, no period and no bill number. A finance officer checks each
+      // transfer against the bank statement, which updates the record.
+      const checked = method === 2;
       db.subscriptions.insert({
         ...base(2, amount, paidAt, period),
-        details: `${period.slice(0, 4)} aidat ödemesi`,
+        details: card ? `${year} aidat ödemesi` : null,
+        period: card ? period : null,
         assignment_status: 2,
-        card_info: method === 0 ? `**** ${rng.digits(4)}` : "",
-        bill_no: `AID-${rng.digits(6)}`,
+        card_info: cardInfo,
+        bill_no: card ? billNo : null,
         recurring: recurringPayer,
         recurring_amount: recurringPayer ? Math.round(amount / 12) : 0,
         recurring_period: recurringPayer ? 1 : 0,
@@ -131,8 +163,10 @@ export function seedDues(
         recurring_next_cycle: recurringPayer
           ? istanbulDate(addDays(daysBeforeAnchor(0), 15))
           : null,
-        order_id: recurringPayer ? `SUB-${rng.digits(8)}` : null,
-        added_by_id: method === 0 ? null : admin,
+        order_id: orderId,
+        added_by_id: card ? null : admin,
+        updated_by_id: checked ? secondAdmin : null,
+        last_update_date: checked ? istanbulDateTime(addDays(paidAt, 1)) : null,
         transaction_id: transaction.id,
         debt_category_id: null,
       });
@@ -160,9 +194,11 @@ export function seedDues(
       "2026-01-01",
       rng.chance(0.55) ? "paid" : "open",
     );
+    // The members without a TC kimlik number had their entry fee keyed in by
+    // hand. The newest debt is one of those.
     if (index % 15 === 0)
       debt(
-        entry,
+        index % 30 === 0 ? null : entry,
         500,
         daysBeforeAnchor(rng.int(30, 200)),
         "2026-01-01",
@@ -195,9 +231,12 @@ export function seedDebtTransactions(ctx: SeedContext): void {
       amount: debt.amount,
       at: new Date(debt.operation_date),
       status: 0,
-      method: 1,
+      // Nobody has paid the debt: its transaction has no method, no paying
+      // address and no receipt yet.
+      method: null,
       paymentSettingsId: null,
       bankAccountId: null,
+      type: TRANSACTION_TYPE.dues,
     });
     ctx.db.subscriptions.update(debt.id, { transaction_id: transaction.id });
   }
@@ -345,6 +384,7 @@ export function seedEvents(
         paymentSettingsId: plan.paid ? system.cardSettingsIds[0] : null,
         bankAccountId: null,
         installments: plan.paid && count > 2 ? 3 : 1,
+        type: TRANSACTION_TYPE.ticket,
       });
       const member = sale % 6 !== 5;
       const saleRow = db.ticketSales.insert({

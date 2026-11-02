@@ -1,5 +1,6 @@
 import type { Row } from "../store/collection";
 import type { UserRecord } from "../store/records";
+import { TRANSACTION_TYPE } from "../store/transactions";
 import type { EcardRefs } from "./campaigns";
 import { createTransaction, type SeedContext } from "./context";
 import {
@@ -179,6 +180,7 @@ export function seedForms(
             method: 0,
             paymentSettingsId: system.cardSettingsIds[0],
             bankAccountId: null,
+            type: TRANSACTION_TYPE.form,
           })
         : null;
       const answer = db.formAnswers.insert({
@@ -301,6 +303,7 @@ export function seedEcardTransactions(
       method: wire ? 2 : 0,
       paymentSettingsId: wire ? null : system.cardSettingsIds[0],
       bankAccountId: wire ? system.tryBankAccountIds[0] : null,
+      type: TRANSACTION_TYPE.ecard,
     });
     const cargo = ecards.cargoEcardIds.includes(ecardId);
     const scheduled = index % 5 === 2;

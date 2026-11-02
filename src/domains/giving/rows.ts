@@ -3,12 +3,12 @@ import type { OrgCollection, Row } from "../../store/collection";
 import {
   nonEmpty,
   present,
+  transactionDetail,
   transactionJoin,
   userName,
   userReference,
 } from "../../store/joins";
 import type { DonationRecord, TransactionRecord } from "../../store/records";
-import { currencyById } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
 import { paymentStatusOf, transactionOf } from "./payments";
 
@@ -163,61 +163,6 @@ export function donationResult(
   };
 }
 
-function transactionObject(
-  store: OrgStore,
-  transaction: Row<TransactionRecord>,
-): S["Transaction"] {
-  const settings = lookup(
-    store.paymentSettings,
-    transaction.payment_settings_id,
-  );
-  const account = lookup(store.bankAccounts, transaction.bank_account_id);
-  return {
-    id: transaction.id,
-    conversation_id: transaction.conversation_id,
-    complete_date: transaction.complete_date,
-    amount: transaction.amount,
-    currency: currencyById(transaction.currency_id),
-    installment_count: transaction.installment_count,
-    installment_amount: transaction.installment_amount,
-    ip_address: transaction.ip_address,
-    payment_status: transaction.payment_status,
-    payment_status_display: transaction.payment_status_display,
-    error_code: present(transaction.error_code),
-    error_text: present(transaction.error_text),
-    refund_date: present(transaction.refund_date),
-    fonzip_id: transaction.fonzip_id,
-    fonzip_id_hashed: transaction.fonzip_id_hashed,
-    transaction_id: transaction.transaction_id,
-    provision_no: present(transaction.provision_no),
-    receipt_no: transaction.receipt_no,
-    auth_code: present(transaction.auth_code),
-    reference_id: transaction.reference_id,
-    order_id: transaction.order_id,
-    payment_settings_id: settings?.id,
-    payment_settings: settings && {
-      id: settings.id,
-      name: settings.name,
-      provider_no: settings.provider_no,
-      status: settings.status,
-      business_account: settings.business_account,
-    },
-    bank_account_id: account?.id,
-    bank_account: account && {
-      id: account.id,
-      name: account.name,
-      currency_id: account.currency_id,
-    },
-    payment_method: transaction.payment_method,
-    refunded_by_id: present(transaction.refunded_by_id),
-    refunded_by__name: userName(store, transaction.refunded_by_id),
-    refund_reason: present(transaction.refund_reason),
-    fonzip_framework: transaction.fonzip_framework,
-    bin_number: present(transaction.bin_number),
-    last_four: present(transaction.last_four),
-  };
-}
-
 function sentEmail(
   store: OrgStore,
   id: number | null,
@@ -239,7 +184,7 @@ export function donationDetail(
   return {
     id: donation.id,
     user: user && userReference(user),
-    transaction: transactionObject(store, transaction),
+    transaction: transactionDetail(store, transaction),
     d_type: donation.d_type,
     sub_donation_type_id: present(donation.sub_donation_type_id),
     donor_type: donation.donor_type,

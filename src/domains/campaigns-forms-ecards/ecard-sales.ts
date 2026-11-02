@@ -299,7 +299,7 @@ function defaultFields(store: OrgStore, view: SaleView) {
   return {
     certificate__title: view.ecard?.title,
     ...amountFields(view),
-    transaction__payment_method: view.transaction.payment_method,
+    transaction__payment_method: present(view.transaction.payment_method),
     transaction__complete_date: view.transaction.complete_date,
     ...deliveryFields(view),
     ...mailFields(store, view),
@@ -316,22 +316,22 @@ const LIST_FIELDS = {
     transaction__complete_date: view.transaction.complete_date,
   }),
   payment_method: (_store, view) => ({
-    transaction__payment_method: view.transaction.payment_method,
+    transaction__payment_method: present(view.transaction.payment_method),
   }),
   fonzip_id: (_store, view) => ({
     transaction__fonzip_id: view.transaction.fonzip_id,
   }),
   transaction_id: (_store, view) => ({
-    transaction__transaction_id: view.transaction.transaction_id,
+    transaction__transaction_id: present(view.transaction.transaction_id),
   }),
   provision_no: (_store, view) => ({
     transaction__provision_no: present(view.transaction.provision_no),
   }),
   receipt_no: (_store, view) => ({
-    transaction__receipt_no: view.transaction.receipt_no,
+    transaction__receipt_no: present(view.transaction.receipt_no),
   }),
   ip_address: (_store, view) => ({
-    transaction__ip_address: view.transaction.ip_address,
+    transaction__ip_address: present(view.transaction.ip_address),
   }),
   payment_settings_id: (_store, view) => ({
     transaction__payment_settings_id: present(
@@ -588,7 +588,7 @@ function toDetail(store: OrgStore, view: SaleView) {
     transaction__provision_no: present(transaction.provision_no),
     transaction__fonzip_framework: transaction.fonzip_framework,
     certificate__has_cargo: ecard?.has_cargo,
-    transaction__payment_method: transaction.payment_method,
+    transaction__payment_method: present(transaction.payment_method),
     added_by__name: userName(store, sale.added_by_id),
     transaction__refunded_by_id: present(transaction.refunded_by_id),
     transaction__refunded_by__name: userName(store, transaction.refunded_by_id),

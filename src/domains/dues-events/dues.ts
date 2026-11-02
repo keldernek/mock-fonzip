@@ -8,7 +8,7 @@ import {
   parseDateRange,
 } from "../../api/listing";
 import type { Row } from "../../store/collection";
-import { nonEmpty, present, userName, userReference } from "../../store/joins";
+import { present, userName, userReference } from "../../store/joins";
 import type { TransactionRecord } from "../../store/records";
 import { currencyById } from "../../store/reference";
 import type { OrgStore } from "../../store/store";
@@ -50,24 +50,26 @@ export function toMembershipDueDetails(store: OrgStore, row: Subscription) {
     first_name: row.first_name,
     last_name: row.last_name,
     phone: row.phone,
-    email: nonEmpty(row.email),
+    email: row.email,
     tckno: row.tckno,
     amount: row.amount,
     assignment_status: row.assignment_status,
-    card_info: present(row.card_info),
-    bill_no: present(row.bill_no),
+    card_info: row.card_info,
+    bill_no: row.bill_no,
     due_date: row.due_date,
     recurring: row.recurring,
     recurring_amount: row.recurring_amount,
     recurring_period: row.recurring_period,
     recurring_collection_period: row.recurring_collection_period,
     recurring_withdrawal: row.recurring_withdrawal,
-    recurring_next_cycle: present(row.recurring_next_cycle),
-    order_id: present(row.order_id),
+    recurring_next_cycle: row.recurring_next_cycle,
+    order_id: row.order_id,
     added_by_id: present(row.added_by_id),
     added_by__name: userName(store, row.added_by_id),
-    updated_by_id: present(row.updated_by_id),
+    updated_by_id: row.updated_by_id,
     updated_by__name: userName(store, row.updated_by_id),
+    create_date: row.create_date,
+    last_update_date: row.last_update_date,
   };
 }
 
@@ -83,7 +85,7 @@ function toMembershipDues(
     user__name: userName(store, row.user_id),
     first_name: row.first_name,
     last_name: row.last_name,
-    email: nonEmpty(row.email),
+    email: row.email,
     phone: row.phone,
     details: row.details,
     period: row.period,
@@ -92,14 +94,15 @@ function toMembershipDues(
     transaction__amount: tx.amount,
     transaction__complete_date: tx.complete_date,
     transaction__payment_status: paymentStatus(tx.payment_status),
-    transaction__payment_method: tx.payment_method,
+    transaction__payment_method: present(tx.payment_method),
     transaction__currency__display: currency.display,
     transaction__currency__iso_code: currency.iso_code,
     transaction__fonzip_id: tx.fonzip_id,
+    // Production sends none of these on a paid payment.
     transaction__refund_date: present(tx.refund_date),
     transaction__transaction_error__code: present(tx.error_code),
     transaction__transaction_error__text: present(tx.error_text),
-    transaction__transaction_error__group: tx.error_group,
+    transaction__transaction_error__group: present(tx.error_group),
   };
 }
 
@@ -129,7 +132,8 @@ export const getMembershipDuesList: Handler<"getMembershipDuesList"> = (
 ) => {
   const range = parseDateRange(query.start_date, query.end_date);
   if ("error" in range) return { status: 400, body: { error: range.error } };
-  const listed = LISTED_AS[query.status];
+  // Production lists the paid payments when status is left out.
+  const listed = LISTED_AS[query.status ?? "paid"];
   const matching = store.subscriptions.list().flatMap((row) => {
     const tx = transactionOf(store, row.transaction_id);
     if (!tx || !listed(row, tx)) return [];
@@ -180,7 +184,7 @@ export const getMembershipDuesList: Handler<"getMembershipDuesList"> = (
   return {
     status: 200,
     body: {
-      subscription_list: paginate(sorted, query).map((item) =>
+      payment_list: paginate(sorted, query).map((item) =>
         toMembershipDues(store, item.row, item.tx),
       ),
       total: sorted.length,
@@ -223,7 +227,8 @@ export const getUsersMembershipDueList: Handler<"getUsersMembershipDueList"> = (
   { path, query },
   { store },
 ) => {
-  if (!store.users.get(path.user_id)) return notFound("User");
+  // Production answers 200 with an empty list for a user it does not know,
+  // and for a user of another organisation.
   const listed = LISTING[query.listing ?? "a"];
   const rows = sortRows(
     store.subscriptions.list(
@@ -245,15 +250,20 @@ export const getUsersMembershipDueList: Handler<"getUsersMembershipDueList"> = (
           recurring_amount: row.recurring_amount,
           transaction__fonzip_framework: tx?.fonzip_framework,
           details: row.details,
-          bill_no: present(row.bill_no),
+          bill_no: row.bill_no,
           period: row.period,
-          due_date: row.due_date.slice(0, 10),
+          due_date: row.due_date === null ? null : row.due_date.slice(0, 10),
+          remove_note: row.remove_note,
           amount: row.amount,
           operation_date: row.operation_date,
           balance: row.balance,
           transaction__currency__display: currency?.display,
           transaction__currency__iso_code: currency?.iso_code,
-          transaction__fonzip_id: tx?.fonzip_id,
+          // The mock converts no currency.
+          transaction__converted: false,
+          transaction__conversion_rate: null,
+          transaction__converted_amount: null,
+          transaction__converted_currency__display: null,
         };
       }),
       total: rows.length,

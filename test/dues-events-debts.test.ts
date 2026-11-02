@@ -56,6 +56,7 @@ describe("getMembershipDueDebtsList", () => {
       user_id: 1004,
       details: "2026 yılı aidatı",
       period: "2026-01-01",
+      remove_note: null,
       status: 1,
       amount: 1500,
       operation_date: "2026-01-15T10:00:00+03:00",
@@ -381,7 +382,7 @@ describe("getMembershipDueDebtsList", () => {
 });
 
 describe("getDebtDetails", () => {
-  test("leaves out the email of a member who has none", async () => {
+  test("answers null for the email of a member who has none", async () => {
     const client = createTestClient();
     const created = await client.ok("createUser", {
       body: { first_name: "Ece" },
@@ -397,7 +398,8 @@ describe("getDebtDetails", () => {
     const details = await client.ok("getDebtDetails", {
       path: { debt_id: debtId },
     });
-    expect(details.subscription?.email, "the debt details").toBeUndefined();
+    expect(details.subscription?.email, "the debt details").toBeNull();
+    expect(details.subscription?.user?.email, "the user reference").toBeNull();
   });
 
   test("returns a debt with its category and the transaction that holds its amount", async () => {
@@ -419,7 +421,7 @@ describe("getDebtDetails", () => {
         complete_date: "2026-01-15T10:00:00+03:00",
         payment_status: 0,
         payment_status_display: "Başlatıldı",
-        payment_method: 1,
+        payment_method: null,
         currency: { iso_code: "TRY" },
         fonzip_framework: false,
       },
@@ -504,10 +506,14 @@ describe("createDebt", () => {
       bill_no: "GALA-1",
       assignment_status: 0,
       debt_category: { id: 504, name: "Gala Katılım Bedeli", deleted: false },
-      transaction: { amount: 450, payment_status: 0, payment_method: 1 },
+      transaction: { amount: 450, payment_status: 0, payment_method: null },
       balance: before - 450,
       first_name: "Mustafa",
       last_name: "Aksoy",
+      // Every debt has an order id, and nobody has changed this one yet.
+      order_id: expect.stringMatching(/^BRC-1004-\d+$/),
+      create_date: "2026-11-01T09:00:00+03:00",
+      last_update_date: null,
     });
     expect(detail.subscription, "created through the API").not.toHaveProperty(
       "added_by_id",
@@ -518,7 +524,7 @@ describe("createDebt", () => {
     expect(await currentBalance(client, 1004)).toBe(before - 450);
   });
 
-  test("defaults the dates to now and takes the amount from a user defined value", async () => {
+  test("defaults the operation date to now, leaves the rest empty and takes the amount from a user defined value", async () => {
     const client = createTestClient();
     const created = await client.ok("createDebt", {
       body: {
@@ -533,9 +539,9 @@ describe("createDebt", () => {
     expect(detail.subscription).toMatchObject({
       amount: 2013,
       operation_date: "2026-11-01T09:00:00+03:00",
-      due_date: "2026-11-01T09:00:00+03:00",
+      due_date: null,
       period: "2026-11-01",
-      details: "",
+      details: null,
       debt_category: null,
       recurring: false,
     });
@@ -621,7 +627,7 @@ describe("createDebt", () => {
         end_date: "2026-11-02T00:00:00+03:00",
       },
     });
-    expect(ids(listed.subscription_list ?? [])).toEqual([
+    expect(ids(listed.payment_list ?? [])).toEqual([
       created.subscription_id ?? 0,
     ]);
   });
@@ -866,7 +872,13 @@ describe("updateDebt", () => {
         complete_date: "2026-02-10T10:00:00+03:00",
       },
     });
-    expect(detail.subscription).not.toHaveProperty("updated_by_id");
+    expect(
+      detail.subscription,
+      "the API names no admin, and records when the debt changed",
+    ).toMatchObject({
+      updated_by_id: null,
+      last_update_date: "2026-11-01T09:00:00+03:00",
+    });
     expect(
       await currentBalance(client, 1004),
       "the balance follows the amount",
@@ -879,12 +891,12 @@ describe("updateDebt", () => {
     const cleared = await client.ok("getDebtDetails", {
       path: { debt_id: 20003 },
     });
-    expect(cleared.subscription?.details, "a left-out field is replaced").toBe(
-      "",
-    );
-    expect(cleared.subscription).not.toHaveProperty("bill_no");
+    expect(
+      cleared.subscription,
+      "a left-out field is replaced by null",
+    ).toMatchObject({ details: null, bill_no: null });
     expect(cleared.subscription?.transaction).toMatchObject({
-      transaction_id: "",
+      transaction_id: null,
       payment_method: 2,
     });
   });
@@ -983,6 +995,7 @@ describe("updateDebtStatus", () => {
     expect(removed.subscription).toMatchObject({
       status: 6,
       status_name: "Silinmiş Borç",
+      last_update_date: "2026-11-01T09:00:00+03:00",
     });
     expect(
       await currentBalance(client, 1004),
