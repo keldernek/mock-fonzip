@@ -6,7 +6,7 @@ import {
   type SimulationInput,
   type SimulationResult,
 } from "../../control/simulation";
-import { istanbulDate, istanbulDateTime } from "../../seed/dates";
+import { istanbulDate, apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { fullName } from "../../store/joins";
 import type { TicketRecord, UserRecord } from "../../store/records";
@@ -119,8 +119,8 @@ function duesRefund(
     ...paid,
     status: 4,
     details: "Aidat ödemesi iadesi",
-    operation_date: istanbulDateTime(at),
-    create_date: istanbulDateTime(at),
+    operation_date: apiDateTime(at),
+    create_date: apiDateTime(at),
     assignment_status: 3,
     added_by_id: null,
     updated_by_id: null,

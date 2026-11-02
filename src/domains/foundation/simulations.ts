@@ -3,7 +3,7 @@ import {
   missing,
   type SimulationFragment,
 } from "../../control/simulation";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import { currencyById } from "../../store/reference";
 
 export const simulations: SimulationFragment = {
@@ -28,7 +28,7 @@ export const simulations: SimulationFragment = {
         bank_account_id: account.id,
         amount,
         currency_code: currencyById(account.currency_id).iso_code,
-        complete_date: istanbulDateTime(ctx.clock.now()),
+        complete_date: apiDateTime(ctx.clock.now()),
         payment_status: 8,
         transaction_type: null,
         counterparty_name:

@@ -1,5 +1,5 @@
 import type { components } from "../../generated/openapi";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import type {
   UdvValue,
@@ -62,7 +62,7 @@ function dateTimeRule(
     const at = typeof value === "string" ? Date.parse(value) : Number.NaN;
     if (Number.isNaN(at)) return fail(`${key} takes a date-time`);
     const patch: Patch = {};
-    patch[key] = istanbulDateTime(new Date(at));
+    patch[key] = apiDateTime(new Date(at));
     return ok(patch);
   };
 }
@@ -177,7 +177,7 @@ export function parseUdvValue(
       const at = typeof value === "string" ? Date.parse(value) : Number.NaN;
       return Number.isNaN(at)
         ? fail(`${label} takes a date-time`)
-        : ok(istanbulDateTime(new Date(at)));
+        : ok(apiDateTime(new Date(at)));
     }
     case 6:
       return typeof value === "boolean"

@@ -39,6 +39,8 @@ curl -s -X DELETE "$B/__mock/webhooks/deliveries" >/dev/null
 don=$(curl -s -H "$H" -H 'Content-Type: application/json' -X POST "$A/donations" -d '{"payment_method_select":"other","payment_method":1,"amount":750,"first_name":"Deniz","last_name":"Yılmaz","email":"deniz.yilmaz@eposta.example"}')
 echo "createDonation: $don"
 check "createDonation result" ok "$(echo "$don" | jq -r .result)"
+dd=$(curl -s -H "$H" "$A/donation/$(echo "$don" | jq -r .donation_id)")
+check "donation date-time is UTC with milliseconds" true "$(echo "$dd" | jq '.donation.transaction.complete_date | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$")')"
 sale=$(curl -s -H 'Content-Type: application/json' -X POST "$B/__mock/simulations/dues-events/ticket-sale?org=kelder" -d '{"ticket_id":6101,"name":"Ayşe Demir","email":"ayse.demir@eposta.example"}')
 echo "ticket-sale simulation: $(echo "$sale" | head -c 300)"
 sleep 1

@@ -1,7 +1,7 @@
 import { notFound } from "../../api/errors";
 import type { Handler, HandlerInput } from "../../api/handler";
 import { inList, matchesQuery, paginate } from "../../api/listing";
-import { istanbulDate, istanbulDateTime } from "../../seed/dates";
+import { istanbulDate, apiDateTime } from "../../seed/dates";
 import { slugify } from "../../seed/identity";
 import type { Row } from "../../store/collection";
 import { present, userName } from "../../store/joins";
@@ -396,7 +396,7 @@ export const createFundraisingCampaign: Handler<"createFundraisingCampaign"> = (
     store,
     body ?? {},
     org.info.url,
-    istanbulDateTime(clock.now()),
+    apiDateTime(clock.now()),
   );
   if (!record.ok) return record.failure;
   const campaign = store.fundraisingCampaigns.insert(record.value);
@@ -470,12 +470,7 @@ export const updateFundraisingCampaignStatus: Handler<
 > = ({ path, body }, { store, clock }) => {
   const campaign = liveCampaign(store, path.campaign_id);
   if (!campaign) return notFound("Fundraising campaign");
-  const patch = statusChange(
-    store,
-    campaign,
-    body,
-    istanbulDateTime(clock.now()),
-  );
+  const patch = statusChange(store, campaign, body, apiDateTime(clock.now()));
   if (!patch.ok) return patch.failure;
   store.fundraisingCampaigns.update(campaign.id, patch.value);
   return { status: 200, body: { result: "ok" } };

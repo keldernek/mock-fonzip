@@ -7,6 +7,7 @@ import {
   paginate,
   parseDateRange,
 } from "../../api/listing";
+import { istanbulDayOf } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { present, userName, userReference } from "../../store/joins";
 import type { TransactionRecord } from "../../store/records";
@@ -252,7 +253,7 @@ export const getUsersMembershipDueList: Handler<"getUsersMembershipDueList"> = (
           details: row.details,
           bill_no: row.bill_no,
           period: row.period,
-          due_date: row.due_date === null ? null : row.due_date.slice(0, 10),
+          due_date: row.due_date === null ? null : istanbulDayOf(row.due_date),
           remove_note: row.remove_note,
           amount: row.amount,
           operation_date: row.operation_date,

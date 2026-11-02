@@ -1,6 +1,7 @@
 import { notFound } from "../../api/errors";
 import type { Handler } from "../../api/handler";
 import { newestFirst, paginate } from "../../api/listing";
+import { istanbulDayOf, istanbulMidnight } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { present, userName } from "../../store/joins";
 import type {
@@ -93,7 +94,7 @@ function donationEvents(
           8,
           donation.id,
           8,
-          `${donation.recurring_cancel_date}T00:00:00+03:00`,
+          istanbulMidnight(donation.recurring_cancel_date),
           `Düzenli bağışını iptal etti${donation.recurring_cancel_reason ? `: ${donation.recurring_cancel_reason}` : ""}`,
         ),
       );
@@ -122,7 +123,7 @@ function derivedEvents(user: Row<UserRecord>, facts: Facts): TimelineEvent[] {
           row.id,
           10,
           row.operation_date,
-          `${(row.period ?? row.operation_date).slice(0, 4)} aidatı ödendi: ${money(row.amount, 1)}`,
+          `${istanbulDayOf(row.period ?? row.operation_date).slice(0, 4)} aidatı ödendi: ${money(row.amount, 1)}`,
         ),
       ),
     ...facts

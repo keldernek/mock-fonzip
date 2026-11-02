@@ -7,6 +7,7 @@ import {
   expectOrdered,
   expectSplit,
   ids,
+  istanbulDay,
   kelder,
   sortedIds,
   PAGE,
@@ -270,8 +271,8 @@ describe("getMembershipDuesList", () => {
       all,
       await duesList(client, { create_date: sameDay }),
       (row) =>
-        db.subscriptions.get(row.id ?? 0)?.create_date.slice(0, 10) ===
-        sameDay.slice(0, 10),
+        istanbulDay(db.subscriptions.get(row.id ?? 0)?.create_date) ===
+        istanbulDay(sameDay),
       "create_date on the same day",
     );
     const name = all[0]?.user__name ?? "";

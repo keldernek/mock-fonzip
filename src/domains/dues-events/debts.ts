@@ -1,7 +1,7 @@
 import { notFound } from "../../api/errors";
 import type { Handler, HandlerInput } from "../../api/handler";
 import { matchesAmount, matchesQuery, paginate } from "../../api/listing";
-import { addDays, istanbulDate, istanbulDateTime } from "../../seed/dates";
+import { addDays, istanbulDate, apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { userName } from "../../store/joins";
 import type { UserRecord } from "../../store/records";
@@ -280,7 +280,7 @@ export const createDebt: Handler<"createDebt"> = (
     status: 1,
     details: body.details ?? null,
     remove_note: null,
-    operation_date: istanbulDateTime(at),
+    operation_date: apiDateTime(at),
     period,
     balance: 0,
     amount,
@@ -288,9 +288,7 @@ export const createDebt: Handler<"createDebt"> = (
     card_info: null,
     bill_no: body.bill_no ?? null,
     due_date:
-      body.due_date === undefined
-        ? null
-        : istanbulDateTime(new Date(body.due_date)),
+      body.due_date === undefined ? null : apiDateTime(new Date(body.due_date)),
     recurring,
     recurring_amount: recurring ? amount : 0,
     recurring_period: recurringPeriod,
@@ -303,7 +301,7 @@ export const createDebt: Handler<"createDebt"> = (
     order_id: null,
     added_by_id: null,
     updated_by_id: null,
-    create_date: istanbulDateTime(now),
+    create_date: apiDateTime(now),
     last_update_date: null,
     debt_category_id: categoryId,
     transaction_id: debtTransaction.id,
@@ -413,7 +411,7 @@ export const updateDebt: Handler<"updateDebt"> = (
   store.transactions.update(tx.id, {
     amount,
     installment_amount: amount,
-    complete_date: istanbulDateTime(at),
+    complete_date: apiDateTime(at),
     transaction_id: body.transaction?.transaction_id ?? null,
     payment_method: body.transaction?.payment_method ?? tx.payment_method,
   });
@@ -422,14 +420,14 @@ export const updateDebt: Handler<"updateDebt"> = (
     details: body.details ?? null,
     remove_note: row.status === 6 ? (body.remove_note ?? null) : null,
     debt_category_id: categoryId,
-    operation_date: istanbulDateTime(at),
+    operation_date: apiDateTime(at),
     bill_no: body.bill_no ?? null,
-    due_date: istanbulDateTime(new Date(body.due_date)),
+    due_date: apiDateTime(new Date(body.due_date)),
     recurring_period: body.recurring_period ?? 0,
     amount,
     recurring_amount: row.recurring ? amount : 0,
     updated_by_id: null,
-    last_update_date: istanbulDateTime(clock.now()),
+    last_update_date: apiDateTime(clock.now()),
     transaction_id: tx.id,
   });
   rebalance(store, row.user_id);
@@ -450,7 +448,7 @@ export const updateDebtStatus: Handler<"updateDebtStatus"> = (
       store.subscriptions.update(row.id, {
         status: 6,
         updated_by_id: null,
-        last_update_date: istanbulDateTime(clock.now()),
+        last_update_date: apiDateTime(clock.now()),
       });
     }
   } else if (row.status === 6) {
@@ -458,7 +456,7 @@ export const updateDebtStatus: Handler<"updateDebtStatus"> = (
       status: 1,
       remove_note: null,
       updated_by_id: null,
-      last_update_date: istanbulDateTime(clock.now()),
+      last_update_date: apiDateTime(clock.now()),
     });
   }
   rebalance(store, row.user_id);

@@ -303,7 +303,7 @@ describe("updateCommunicationPermissions", () => {
         id: 1010,
         email: record.email,
         allow_comm_via_email: !record.allow_comm_via_email,
-        allow_comm_via_email_date: "2026-11-01T08:30:00+03:00",
+        allow_comm_via_email_date: "2026-11-01T05:30:00.000Z",
       },
     ]);
     const timeline = await shared.ok("getUsersTimeline", {
@@ -370,7 +370,7 @@ describe("updateCommunicationPermissions", () => {
         id: 1010,
         phone: record.phone,
         allow_comm_via_phone: true,
-        allow_comm_via_phone_date: "2001-01-01T00:00:00+03:00",
+        allow_comm_via_phone_date: "2000-12-31T21:00:00.000Z",
       },
     ]);
   });
@@ -452,7 +452,7 @@ describe("the withdraw-permission simulation", () => {
     expect(after.permission_list?.[0]).toMatchObject({
       email: target.email,
       allow_comm_via_email: false,
-      allow_comm_via_email_date: "2026-11-01T09:00:00+03:00",
+      allow_comm_via_email_date: "2026-11-01T06:00:00.000Z",
     });
     const invalid = await shared.request(
       "/__mock/simulations/people/withdraw-permission?org=kelder",

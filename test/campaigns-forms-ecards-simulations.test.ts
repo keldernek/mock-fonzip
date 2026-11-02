@@ -80,7 +80,7 @@ describe("a form answered on the public site", () => {
       id: answerId,
       approval_status: 1,
       email_verification: false,
-      complete_date: "2026-11-01T09:00:00+03:00",
+      complete_date: "2026-11-01T06:00:00.000Z",
       user: { id: userId, name: "Deniz Ergin", membership_no: 0 },
       transaction: {
         amount: 450,
@@ -105,7 +105,7 @@ describe("a form answered on the public site", () => {
     expect(count(after)).toBe(count(before) + 1);
     expect(
       after.form_list?.find((form) => form.id === 703)?.last_answer_date,
-    ).toBe("2026-11-01T09:00:00+03:00");
+    ).toBe("2026-11-01T06:00:00.000Z");
     const mine = await client.ok("getUserAnswerList", {
       path: { user_id: userId },
       query: PAGE,
@@ -442,7 +442,7 @@ describe("an e-card refund", () => {
       "the newest refund comes first, though its sale is older",
     ).toEqual([95003, 95028, 95008, 95018]);
     expect(refunds.sale_list?.[0]).toMatchObject({
-      transaction__refund_date: "2026-11-01T09:00:00+03:00",
+      transaction__refund_date: "2026-11-01T06:00:00.000Z",
       transaction__refund_reason: "Alıcıya ulaşılamadı",
       transaction__refunded_by_id: 1002,
       transaction__refunded_by__name: expect.any(String),

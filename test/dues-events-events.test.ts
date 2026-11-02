@@ -43,15 +43,15 @@ describe("getEventList", () => {
       id: 601,
       url: "https://kelder.example/etkinlik/1-mezunlar-gecesi-2026",
       name: "Mezunlar Gecesi 2026",
-      start_date: "2026-11-21T09:00:00+03:00",
-      end_date: "2026-11-21T13:00:00+03:00",
+      start_date: "2026-11-21T06:00:00.000Z",
+      end_date: "2026-11-21T10:00:00.000Z",
       all_day: false,
       active: true,
       timezone: "Europe/Istanbul",
-      create_date: "2026-09-22T09:00:00+03:00",
+      create_date: "2026-09-22T06:00:00.000Z",
       created_by_id: 1001,
       created_by__name: "Umut Korkmaz",
-      update_date: "2026-10-02T09:00:00+03:00",
+      update_date: "2026-10-02T06:00:00.000Z",
       updated_by_id: 1002,
       updated_by__name: "Hüseyin Korkmaz",
     });
@@ -60,7 +60,7 @@ describe("getEventList", () => {
     expect(archived[0]).toMatchObject({
       archived_by_id: 1001,
       archived_by__name: "Umut Korkmaz",
-      archive_date: "2026-02-04T09:00:00+03:00",
+      archive_date: "2026-02-04T06:00:00.000Z",
     });
   });
 
@@ -250,7 +250,7 @@ describe("createEvent", () => {
     const listed = (await events(client)).find((event) => event.id === eventId);
     expect(listed).toMatchObject({
       name: "Bahar Şenliği",
-      create_date: "2026-11-01T09:00:00+03:00",
+      create_date: "2026-11-01T06:00:00.000Z",
     });
     expect(listed, "created through the API").not.toHaveProperty(
       "created_by_id",
@@ -331,12 +331,12 @@ describe("updateEvent", () => {
     expect(detail.event).toMatchObject({
       name: "Burs Ödül Gecesi",
       details: "Yeni saat",
-      start_date: "2026-12-16T09:00:00+03:00",
-      end_date: "2026-12-16T22:00:00+03:00",
+      start_date: "2026-12-16T06:00:00.000Z",
+      end_date: "2026-12-16T19:00:00.000Z",
       address: "Kabataş Erkek Lisesi Konferans Salonu, Ortaköy/İstanbul",
     });
     const listed = (await events(client)).find((event) => event.id === 603);
-    expect(listed).toMatchObject({ update_date: "2026-11-01T10:00:00+03:00" });
+    expect(listed).toMatchObject({ update_date: "2026-11-01T07:00:00.000Z" });
     expect(listed).not.toHaveProperty("updated_by_id");
   });
 
@@ -364,7 +364,13 @@ describe("updateEvent", () => {
     const detail = await client.ok("getEventDetails", {
       path: { event_id: 603 },
     });
-    expect(detail.event).toMatchObject({ id: 603, ...body });
+    // The request gave the instants in Istanbul time. The API answers in UTC.
+    expect(detail.event).toMatchObject({
+      id: 603,
+      ...body,
+      start_date: "2026-12-17T16:00:00.000Z",
+      end_date: "2026-12-17T18:00:00.000Z",
+    });
   });
 
   test("replaces the event's tickets, freeing the ones it drops", async () => {
@@ -501,9 +507,9 @@ describe("tickets", () => {
       details: "Akşam yemeği dahildir.",
       post_sale_message: "Biletiniz e-posta adresinize gönderildi.",
       sales_start_on_date: true,
-      sales_start: "2026-09-22T09:00:00+03:00",
+      sales_start: "2026-09-22T06:00:00.000Z",
       sales_end_on_date: true,
-      sales_end: "2026-11-21T09:00:00+03:00",
+      sales_end: "2026-11-21T06:00:00.000Z",
       max_per_person: 4,
       order: 1,
       tag_control: 0,
@@ -546,9 +552,9 @@ describe("tickets", () => {
       details: "Sahne önü",
       post_sale_message: "Görüşmek üzere",
       sales_start_on_date: true,
-      sales_start: "2026-11-02T09:00:00+03:00",
+      sales_start: "2026-11-02T06:00:00.000Z",
       sales_end_on_date: true,
-      sales_end: "2026-11-20T09:00:00+03:00",
+      sales_end: "2026-11-20T06:00:00.000Z",
       max_per_person: 2,
       order: 0,
       tag_control: 2,
@@ -651,7 +657,7 @@ describe("tickets", () => {
       quantity: 120,
       max_per_person: 4,
       order: 1,
-      sales_end: "2026-11-21T09:00:00+03:00",
+      sales_end: "2026-11-21T06:00:00.000Z",
     });
     const event = await client.ok("getEventDetails", {
       path: { event_id: 601 },
@@ -703,6 +709,8 @@ describe("tickets", () => {
     expect(updated.ticket).toMatchObject({
       id: 6103,
       ...body,
+      sales_start: "2026-10-01T06:00:00.000Z",
+      sales_end: "2026-11-20T06:00:00.000Z",
       order: 3,
       quantity: 120,
     });

@@ -1,7 +1,7 @@
 import { errorBody, notFound } from "../../api/errors";
 import type { Handler, HandlerContext } from "../../api/handler";
 import type { components } from "../../generated/openapi";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { fullName, nonEmpty } from "../../store/joins";
 import type {
@@ -172,10 +172,10 @@ function grantPermissions(
   ) {
     return;
   }
-  const now = istanbulDateTime(ctx.clock.now());
+  const now = apiDateTime(ctx.clock.now());
   const at = (channel: Channel): string => {
     const given = body[`allow_comm_via_${channel}_date`];
-    return given === undefined ? now : istanbulDateTime(new Date(given));
+    return given === undefined ? now : apiDateTime(new Date(given));
   };
   ctx.store.communicationPermissions.insert({
     user_id: user.id,
@@ -225,7 +225,7 @@ export const createUser: Handler<"createUser"> = ({ body }, ctx) => {
   const tagIds = [...new Set(body.tags ?? [])];
   const missingTag = tagIds.find((id) => !store.tags.get(id));
   if (missingTag !== undefined) return notFound("Tag");
-  const now = istanbulDateTime(clock.now());
+  const now = apiDateTime(clock.now());
   const user = store.users.insert(
     newUser({
       first_name: body.first_name,
@@ -392,7 +392,7 @@ export const updateUser: Handler<"updateUser"> = (
           },
         });
   if (updated) syncPermission(store, updated);
-  const now = istanbulDateTime(clock.now());
+  const now = apiDateTime(clock.now());
   recordEvent(
     store,
     user.id,

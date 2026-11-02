@@ -610,8 +610,11 @@ describe("getDonationList field projection", () => {
         transaction.bin_number ?? undefined,
       );
       if (donation.recurring_cancel_date !== null) {
+        // Istanbul midnight of the stored day, as the same instant in UTC.
         expect(row.recurring_cancel_date).toBe(
-          `${donation.recurring_cancel_date}T00:00:00+03:00`,
+          new Date(
+            `${donation.recurring_cancel_date}T00:00:00+03:00`,
+          ).toISOString(),
         );
       }
     }

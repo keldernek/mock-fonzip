@@ -1,7 +1,7 @@
 import { notFound } from "../../api/errors";
 import type { Handler } from "../../api/handler";
 import { paginate } from "../../api/listing";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { userName } from "../../store/joins";
 import type { DebtCategoryRecord } from "../../store/records";
@@ -118,7 +118,7 @@ export const createDebtCategory: Handler<"createDebtCategory"> = (
   if (typeof name !== "string") return { status: 400, body: name };
   const category = store.debtCategories.insert({
     name,
-    create_date: istanbulDateTime(clock.now()),
+    create_date: apiDateTime(clock.now()),
     created_by_id: null,
     update_date: null,
     updated_by_id: null,
@@ -149,7 +149,7 @@ export const updateDebtCategory: Handler<"updateDebtCategory"> = (
   if (typeof name !== "string") return { status: 400, body: name };
   const renamed = store.debtCategories.update(category.id, {
     name,
-    update_date: istanbulDateTime(clock.now()),
+    update_date: apiDateTime(clock.now()),
     updated_by_id: null,
   });
   return {

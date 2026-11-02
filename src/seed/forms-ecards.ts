@@ -4,12 +4,7 @@ import type { UdvValue, UserRecord } from "../store/records";
 import { TRANSACTION_TYPE } from "../store/transactions";
 import type { EcardRefs } from "./campaigns";
 import { createTransaction, type SeedContext } from "./context";
-import {
-  addDays,
-  daysBeforeAnchor,
-  istanbulDate,
-  istanbulDateTime,
-} from "./dates";
+import { addDays, daysBeforeAnchor, istanbulDate, apiDateTime } from "./dates";
 import type { SystemRefs } from "./system";
 
 const FORM_PRICE = 450;
@@ -126,13 +121,13 @@ export function seedForms(
       order: order + 1,
       listing: order < 3,
       application_limit: plan.limit,
-      create_date: istanbulDateTime(created),
+      create_date: apiDateTime(created),
       created_by_id: creator,
-      update_date: edited ? istanbulDateTime(addDays(created, 20)) : null,
+      update_date: edited ? apiDateTime(addDays(created, 20)) : null,
       updated_by_id: edited ? secondAdmin : null,
       archived_by_id: plan.archived ? admin : null,
       archive_date: plan.archived
-        ? istanbulDateTime(addDays(created, ARCHIVED_AFTER_DAYS))
+        ? apiDateTime(addDays(created, ARCHIVED_AFTER_DAYS))
         : null,
       requires_approval: plan.approval,
       price: plan.paid ? FORM_PRICE : null,
@@ -285,7 +280,7 @@ export function seedForms(
         last_name: user.last_name,
         email: user.email,
         email_verification: plan.verifiesEmail ? index % 5 !== 4 : null,
-        complete_date: istanbulDateTime(at),
+        complete_date: apiDateTime(at),
         transaction_id: transaction?.id ?? null,
         approval_status: approval,
         sent_mail_id: sentMailId,
@@ -293,7 +288,7 @@ export function seedForms(
         city: anonymous ? null : user.city_text || null,
         country: anonymous ? null : user.country_text || null,
         respond_date: responded
-          ? istanbulDateTime(
+          ? apiDateTime(
               new Date(
                 Math.min(
                   addDays(at, 1 + (index % 3)).getTime(),
@@ -504,7 +499,7 @@ export function seedEcardTransactions(
       deliver_as_cargo: cargo,
       ecard_date: istanbulDate(at),
       updated_by_id: index % 6 === 1 ? ctx.adminIds[0] : null,
-      last_update_date: istanbulDateTime(at),
+      last_update_date: apiDateTime(at),
       transaction_id: transaction.id,
       marketing_channel_id:
         index % 3 === 1 ? rng.pick(system.marketingChannelIds) : null,

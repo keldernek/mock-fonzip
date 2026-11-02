@@ -6,7 +6,7 @@ import type {
 } from "../store/records";
 import { newUser, type NewUser } from "../store/users";
 import type { SeedContext } from "./context";
-import { daysBeforeAnchor, istanbulDate, istanbulDateTime } from "./dates";
+import { daysBeforeAnchor, istanbulDate, apiDateTime } from "./dates";
 import { mobilePhone, slugify, tcKimlikNo } from "./identity";
 import {
   CITIES,
@@ -174,8 +174,8 @@ export function seedUsers(
       phone: mobilePhone(rng),
       membership_no: index + 1,
       tckno: corporate ? "" : tcKimlikNo(rng),
-      apply_date: istanbulDateTime(applied),
-      join_date: istanbulDateTime(joined),
+      apply_date: apiDateTime(applied),
+      join_date: apiDateTime(joined),
       user_defined_values: values,
       nationality_text: "Türkiye Cumhuriyeti",
       home_phone_first: rng.chance(0.3) ? `+90212${rng.digits(7)}` : "",
@@ -243,7 +243,7 @@ export function seedTags(
       db.userTags.insert({
         user_id: user.id,
         tag_id: tagId,
-        create_date: istanbulDateTime(daysBeforeAnchor(rng.int(1, 700))),
+        create_date: apiDateTime(daysBeforeAnchor(rng.int(1, 700))),
       });
     }
   }
@@ -295,7 +295,7 @@ export function seedContactProfiles(
       () => between(created),
     ).sort((a, b) => a.getTime() - b.getTime());
     for (const at of updates) {
-      note(user.id, 1, istanbulDateTime(at), "Profil bilgileri güncellendi");
+      note(user.id, 1, apiDateTime(at), "Profil bilgileri güncellendi");
     }
     const hasPassword = admin || (person && rng.chance(0.6));
     const reminder =
@@ -310,18 +310,18 @@ export function seedContactProfiles(
       note(
         user.id,
         26,
-        istanbulDateTime(reminder.asked),
+        apiDateTime(reminder.asked),
         `${reminder.period_months} ayda bir bağış hatırlatması istedi`,
       );
     }
     db.contactProfiles.insert({
       user_id: user.id,
       create_date: user.apply_date,
-      last_update_date: istanbulDateTime(updates.at(-1) ?? created),
+      last_update_date: apiDateTime(updates.at(-1) ?? created),
       has_password: hasPassword,
       last_login: hasPassword
         ? {
-            date: istanbulDateTime(between(created)),
+            date: apiDateTime(between(created)),
             ip_address: `78.${rng.int(160, 191)}.${rng.int(0, 255)}.${rng.int(1, 254)}`,
           }
         : null,
@@ -334,7 +334,7 @@ export function seedContactProfiles(
         person && rng.chance(0.7)
           ? {
               version: rng.pick([1, 2, 3]),
-              sign_date: istanbulDateTime(between(created)),
+              sign_date: apiDateTime(between(created)),
             }
           : null,
       blocked_mail: rng.chance(0.04),
@@ -354,7 +354,7 @@ export function seedContactProfiles(
     const holder = users[10 + index * 9];
     const related = users[11 + index * 9];
     if (!holder || !related) continue;
-    const at = istanbulDateTime(between(new Date(holder.join_date)));
+    const at = apiDateTime(between(new Date(holder.join_date)));
     db.contactRelations.insert({
       user_id: holder.id,
       related_user_id: related.id,
@@ -390,7 +390,7 @@ export function seedCommunicationPermissions(
   ) => {
     const changed = (allowed: boolean) => ({
       allowed,
-      date: istanbulDateTime(
+      date: apiDateTime(
         daysBeforeAnchor(
           recentlyChanged ? rng.int(0, 2) : rng.int(8, 900),
           rng.int(0, 600),

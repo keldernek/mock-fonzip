@@ -1,7 +1,7 @@
 import type { Organisation } from "../../auth/tenancy";
 import type { Clock } from "../../core/clock";
 import type { Rng } from "../../core/rng";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { transactionDetail } from "../../store/joins";
 import type { TransactionRecord } from "../../store/records";
@@ -58,7 +58,7 @@ export function recordPayment(
   return store.transactions.insert({
     conversation_id: conversationId(conversation),
     association_id: org.info.id,
-    complete_date: istanbulDateTime(clock.now()),
+    complete_date: apiDateTime(clock.now()),
     amount,
     currency_id: currencyId,
     installment_count: 1,

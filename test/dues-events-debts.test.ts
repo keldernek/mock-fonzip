@@ -7,6 +7,7 @@ import {
   expectOrdered,
   expectSplit,
   ids,
+  istanbulDay,
   kelder,
   sortedIds,
   PAGE,
@@ -59,11 +60,11 @@ describe("getMembershipDueDebtsList", () => {
       remove_note: null,
       status: 1,
       amount: 1500,
-      operation_date: "2026-01-15T10:00:00+03:00",
+      operation_date: "2026-01-15T07:00:00.000Z",
       user__name: "Mustafa Aksoy",
       user__total_financial: 2700,
       user__membership_no: 4,
-      create_date: "2026-01-15T10:00:00+03:00",
+      create_date: "2026-01-15T07:00:00.000Z",
       added_by_id: 1001,
       added_by__name: "Umut Korkmaz",
       debt_category_id: 502,
@@ -129,7 +130,7 @@ describe("getMembershipDueDebtsList", () => {
     expectSplit(
       all,
       await debtList(client, { operation_date: "2026-01-15T00:00:00+03:00" }),
-      (row) => row.operation_date?.startsWith("2026-01-15") === true,
+      (row) => istanbulDay(row.operation_date) === "2026-01-15",
       "operation_date",
     );
   });
@@ -213,7 +214,7 @@ describe("getMembershipDueDebtsList", () => {
     expectSplit(
       all,
       await debtList(client, { create_date: today }),
-      (row) => row.create_date?.startsWith("2026-11-01") === true,
+      (row) => istanbulDay(row.create_date) === "2026-11-01",
       "create_date on the same day",
     );
     expectSplit(
@@ -418,7 +419,7 @@ describe("getDebtDetails", () => {
       user: { id: 1004, name: "Mustafa Aksoy" },
       transaction: {
         amount: 1500,
-        complete_date: "2026-01-15T10:00:00+03:00",
+        complete_date: "2026-01-15T07:00:00.000Z",
         payment_status: 0,
         payment_status_display: "Başlatıldı",
         payment_method: null,
@@ -501,8 +502,8 @@ describe("createDebt", () => {
       amount: 450,
       details: "Gala katılım bedeli",
       period: "2026-11-01",
-      operation_date: "2026-10-30T12:00:00+03:00",
-      due_date: "2026-11-30T12:00:00+03:00",
+      operation_date: "2026-10-30T09:00:00.000Z",
+      due_date: "2026-11-30T09:00:00.000Z",
       bill_no: "GALA-1",
       assignment_status: 0,
       debt_category: { id: 504, name: "Gala Katılım Bedeli", deleted: false },
@@ -512,7 +513,7 @@ describe("createDebt", () => {
       last_name: "Aksoy",
       // Every debt has an order id, and nobody has changed this one yet.
       order_id: expect.stringMatching(/^BRC-1004-\d+$/),
-      create_date: "2026-11-01T09:00:00+03:00",
+      create_date: "2026-11-01T06:00:00.000Z",
       last_update_date: null,
     });
     expect(detail.subscription, "created through the API").not.toHaveProperty(
@@ -538,7 +539,7 @@ describe("createDebt", () => {
     });
     expect(detail.subscription).toMatchObject({
       amount: 2013,
-      operation_date: "2026-11-01T09:00:00+03:00",
+      operation_date: "2026-11-01T06:00:00.000Z",
       due_date: null,
       period: "2026-11-01",
       details: null,
@@ -859,8 +860,8 @@ describe("updateDebt", () => {
     expect(detail.subscription).toMatchObject({
       period: "2026-02-01",
       details: "Düzeltilmiş aidat",
-      operation_date: "2026-02-10T10:00:00+03:00",
-      due_date: "2026-03-10T10:00:00+03:00",
+      operation_date: "2026-02-10T07:00:00.000Z",
+      due_date: "2026-03-10T07:00:00.000Z",
       bill_no: "AID-9",
       amount: 1000,
       remove_note: null,
@@ -869,7 +870,7 @@ describe("updateDebt", () => {
         amount: 1000,
         transaction_id: "HVL-77",
         payment_method: 2,
-        complete_date: "2026-02-10T10:00:00+03:00",
+        complete_date: "2026-02-10T07:00:00.000Z",
       },
     });
     expect(
@@ -877,7 +878,7 @@ describe("updateDebt", () => {
       "the API names no admin, and records when the debt changed",
     ).toMatchObject({
       updated_by_id: null,
-      last_update_date: "2026-11-01T09:00:00+03:00",
+      last_update_date: "2026-11-01T06:00:00.000Z",
     });
     expect(
       await currentBalance(client, 1004),
@@ -995,7 +996,7 @@ describe("updateDebtStatus", () => {
     expect(removed.subscription).toMatchObject({
       status: 6,
       status_name: "Silinmiş Borç",
-      last_update_date: "2026-11-01T09:00:00+03:00",
+      last_update_date: "2026-11-01T06:00:00.000Z",
     });
     expect(
       await currentBalance(client, 1004),

@@ -1,5 +1,5 @@
 import type { Rng } from "../../core/rng";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import { unmatchBankTransfers } from "../../store/bank-transfers";
 import type { Row } from "../../store/collection";
 import { blankAsNull } from "../../store/joins";
@@ -191,7 +191,7 @@ export function newTransaction(
   return store.transactions.insert({
     conversation_id: conversationId(conversation),
     association_id: spec.associationId,
-    complete_date: istanbulDateTime(at),
+    complete_date: apiDateTime(at),
     amount: spec.amount,
     currency_id: TRY_CURRENCY_ID,
     installment_count: installments,
@@ -237,7 +237,7 @@ export function refundTransaction(
   store.transactions.update(tx.id, {
     payment_status: 4,
     payment_status_display: PAYMENT_STATUS_DISPLAY[4],
-    refund_date: istanbulDateTime(at),
+    refund_date: apiDateTime(at),
     refund_reason: reason,
     refunded_by_id: null,
   });
@@ -301,7 +301,7 @@ export function recordPayment(
     status: 2,
     details: payment.details,
     remove_note: null,
-    operation_date: istanbulDateTime(at),
+    operation_date: apiDateTime(at),
     period: payment.period,
     balance: 0,
     amount: tx.amount,
@@ -318,7 +318,7 @@ export function recordPayment(
     order_id: null,
     added_by_id: null,
     updated_by_id: null,
-    create_date: istanbulDateTime(at),
+    create_date: apiDateTime(at),
     last_update_date: null,
     debt_category_id: null,
     transaction_id: tx.id,

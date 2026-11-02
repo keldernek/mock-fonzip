@@ -1,6 +1,6 @@
 import type { Handler } from "../../api/handler";
 import { paginate } from "../../api/listing";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { nonEmpty, present } from "../../store/joins";
 import type { CommunicationPermissionRecord } from "../../store/records";
@@ -179,7 +179,7 @@ export function changePermissions(
     };
   }
   const channel = CHANNELS[change.type];
-  const at = istanbulDateTime(change.at);
+  const at = apiDateTime(change.at);
   let updated = 0;
   for (const row of found.rows) {
     const current = row[channel.date];

@@ -1,5 +1,5 @@
 import type { HandlerContext } from "../../api/handler";
-import { istanbulDate, istanbulDateTime } from "../../seed/dates";
+import { istanbulDate, apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import type {
   DonationRecord,
@@ -271,7 +271,7 @@ export function refundDonation(
   ctx.store.transactions.update(transaction.id, {
     payment_status: 4,
     payment_status_display: PAYMENT_STATUS_DISPLAY[4],
-    refund_date: istanbulDateTime(ctx.clock.now()),
+    refund_date: apiDateTime(ctx.clock.now()),
     refund_reason: reason,
     refunded_by_id: refundedById,
   });
@@ -284,5 +284,5 @@ export function today(ctx: Pick<GivingContext, "clock">): string {
 }
 
 export function now(ctx: Pick<GivingContext, "clock">): string {
-  return istanbulDateTime(ctx.clock.now());
+  return apiDateTime(ctx.clock.now());
 }

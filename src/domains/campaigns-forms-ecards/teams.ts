@@ -1,7 +1,7 @@
 import { notFound } from "../../api/errors";
 import type { Handler, HandlerInput } from "../../api/handler";
 import { matchesQuery, paginate } from "../../api/listing";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import { slugify } from "../../seed/identity";
 import type { Row } from "../../store/collection";
 import { userName } from "../../store/joins";
@@ -233,7 +233,7 @@ export const createFundraisingTeam: Handler<"createFundraisingTeam"> = (
     details: body.details,
     slug: uniqueSlug(store, title),
     currency_id: currencyId,
-    create_date: istanbulDateTime(clock.now()),
+    create_date: apiDateTime(clock.now()),
     status: APPROVED_TEAM,
     update_title: null,
     update_details: null,

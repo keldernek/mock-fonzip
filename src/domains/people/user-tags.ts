@@ -1,6 +1,6 @@
 import { notFound } from "../../api/errors";
 import type { Handler } from "../../api/handler";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 
 // An id that names no user has no tags: production answers 200 with an empty
 // list, not 404.
@@ -36,7 +36,7 @@ export const addTagToUser: Handler<"addTagToUser"> = (
     store.userTags.insert({
       user_id: path.user_id,
       tag_id: path.tag_id,
-      create_date: istanbulDateTime(clock.now()),
+      create_date: apiDateTime(clock.now()),
     });
   }
   return { status: 200, body: { result: "ok" } };

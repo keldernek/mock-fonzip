@@ -10,7 +10,7 @@ import {
 } from "../store/reference";
 import type { OrgStore } from "../store/store";
 import { conversationId, originOf } from "../store/transactions";
-import { istanbulDateTime } from "./dates";
+import { apiDateTime } from "./dates";
 
 export interface SeedContext {
   readonly db: OrgStore;
@@ -70,7 +70,7 @@ export function createTransaction(
   return ctx.db.transactions.insert({
     conversation_id: conversationId(conversation),
     association_id: ASSOCIATION_ID,
-    complete_date: istanbulDateTime(spec.at),
+    complete_date: apiDateTime(spec.at),
     amount: spec.amount,
     currency_id: spec.currencyId ?? TRY_CURRENCY_ID,
     installment_count: installments,
@@ -83,7 +83,7 @@ export function createTransaction(
     error_text: error?.text ?? null,
     error_group: error?.group ?? null,
     refund_date: refunded
-      ? istanbulDateTime(new Date(spec.at.getTime() + 3 * 86_400_000))
+      ? apiDateTime(new Date(spec.at.getTime() + 3 * 86_400_000))
       : null,
     refunded_by_id: refunded ? ctx.adminIds[0] : null,
     refund_reason: refunded ? "Bağışçının talebi üzerine iade edildi" : null,

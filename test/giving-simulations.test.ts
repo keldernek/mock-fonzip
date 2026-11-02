@@ -160,7 +160,7 @@ describe("giving simulations", () => {
       body: {
         donation_id: donationId,
         payment_status: 4,
-        refund_date: "2026-11-01T09:00:00+03:00",
+        refund_date: "2026-11-01T06:00:00.000Z",
       },
     });
     expect(deliveries(client).map((delivery) => delivery.body)).toEqual([
@@ -173,7 +173,7 @@ describe("giving simulations", () => {
     expect(refunds.rows).toContainEqual(
       expect.objectContaining({
         id: donationId,
-        transaction__refund_date: "2026-11-01T09:00:00+03:00",
+        transaction__refund_date: "2026-11-01T06:00:00.000Z",
         transaction__refunded_by_id: 1002,
       }),
     );

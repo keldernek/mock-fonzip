@@ -1,7 +1,7 @@
 import { notFound } from "../../api/errors";
 import type { Handler, HandlerInput } from "../../api/handler";
 import { matchesQuery, paginate } from "../../api/listing";
-import { istanbulDateTime } from "../../seed/dates";
+import { apiDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
 import { present, userName } from "../../store/joins";
 import type { EventRecord } from "../../store/records";
@@ -166,7 +166,7 @@ function attachTickets(
 }
 
 function dateTime(value: string): string {
-  return istanbulDateTime(new Date(value));
+  return apiDateTime(new Date(value));
 }
 
 export const createEvent: Handler<"createEvent"> = (
@@ -196,7 +196,7 @@ export const createEvent: Handler<"createEvent"> = (
     all_day: body.all_day ?? false,
     active: true,
     timezone: "Europe/Istanbul",
-    create_date: istanbulDateTime(clock.now()),
+    create_date: apiDateTime(clock.now()),
     created_by_id: null,
     update_date: null,
     updated_by_id: null,
@@ -263,7 +263,7 @@ export const updateEvent: Handler<"updateEvent"> = (
     ask_billing_info: body.ask_billing_info ?? event.ask_billing_info,
     location: body.location ?? event.location,
     sender_account_id: body.sender_account_id ?? event.sender_account_id,
-    update_date: istanbulDateTime(clock.now()),
+    update_date: apiDateTime(clock.now()),
     updated_by_id: null,
   });
   return { status: 200, body: { result: "ok" } };
@@ -278,7 +278,7 @@ export const updateEventStatus: Handler<"updateEventStatus"> = (
   if (body.active === undefined) return invalid("active is required");
   store.events.update(event.id, {
     active: body.active,
-    update_date: istanbulDateTime(clock.now()),
+    update_date: apiDateTime(clock.now()),
     updated_by_id: null,
   });
   return { status: 200, body: { result: "ok" } };
