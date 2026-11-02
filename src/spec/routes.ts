@@ -66,7 +66,7 @@ export interface RouteTable {
   readonly byPath: ReadonlyMap<string, readonly RouteEntry[]>;
 }
 
-function isMethod(key: string): key is HttpMethod {
+export function isMethod(key: string): key is HttpMethod {
   return METHODS.some((method) => method === key);
 }
 
