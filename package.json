@@ -9,6 +9,9 @@
   "engines": {
     "bun": ">=1.4.4"
   },
+  "workspaces": [
+    "client"
+  ],
   "scripts": {
     "dev": "bun --watch src/main.ts",
     "start": "bun src/main.ts",
