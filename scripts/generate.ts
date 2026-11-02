@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 
-import { readPinnedSpec } from "../src/spec/document";
+import { readControlSpec, readPinnedSpec } from "../src/spec/document";
 import { GENERATED_TYPES_PATH } from "../src/spec/source";
 import { generateOperations } from "./generate-operations";
 import { generateTypes } from "./generate-types";
@@ -14,6 +14,10 @@ export async function generatedFiles(): Promise<ReadonlyMap<string, string>> {
     [GENERATED_TYPES_PATH, await generateTypes({ spec })],
     [clientFile("api.ts"), await generateTypes({ spec, rootTypes: true })],
     [clientFile("operations.ts"), generateOperations(spec)],
+    [
+      clientFile("mock-control.ts"),
+      await generateTypes({ spec: readControlSpec(), rootTypes: true }),
+    ],
   ]);
 }
 

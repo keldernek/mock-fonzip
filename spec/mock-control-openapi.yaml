@@ -1,0 +1,499 @@
+openapi: 3.0.3
+info:
+  title: mock-fonzip control plane
+  version: 0.1.0
+  description: |
+    Drives the local Fonzip mock: reseeds its world, moves its clock, toggles organisation plans, shows webhook traffic and runs simulations of what happens outside the API.
+
+    The paths are relative to `/__mock` on the mock's origin. Fonzip itself has none of these routes.
+servers:
+  - url: http://localhost:8790/__mock
+    description: A mock started with `bun run start`
+paths:
+  /reset:
+    post:
+      operationId: reset
+      summary: Reseed the world
+      description: Rebuilds every organisation's data from the seed, empties the webhook logs and restores each organisation's default plan. The clock and issued tokens are kept.
+      responses:
+        '200':
+          $ref: '#/components/responses/ResetResult'
+  /clock:
+    get:
+      operationId: getClock
+      summary: Read the mock clock
+      responses:
+        '200':
+          $ref: '#/components/responses/Clock'
+  /clock/advance:
+    post:
+      operationId: advanceClock
+      summary: Move the mock clock forward
+      description: Tokens expire an hour after they were issued on this clock, so advancing it by 3600 seconds expires every token issued until now.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClockAdvance'
+      responses:
+        '200':
+          $ref: '#/components/responses/Clock'
+        '400':
+          $ref: '#/components/responses/ControlError'
+  /orgs:
+    get:
+      operationId: listOrgs
+      summary: List the organisations and their plans
+      responses:
+        '200':
+          $ref: '#/components/responses/OrgList'
+  /orgs/{org}/plan:
+    put:
+      operationId: setOrgPlan
+      summary: Set an organisation's plan
+      description: A lapsed plan answers every API call and token request of that organisation with 402.
+      parameters:
+        - name: org
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/OrgSlug'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanChange'
+      responses:
+        '200':
+          $ref: '#/components/responses/OrgPlan'
+        '400':
+          $ref: '#/components/responses/ControlError'
+        '404':
+          $ref: '#/components/responses/ControlError'
+  /credentials:
+    get:
+      operationId: listCredentials
+      summary: List the API keys, their scopes and the rate limit
+      responses:
+        '200':
+          $ref: '#/components/responses/CredentialList'
+  /webhooks/deliveries:
+    get:
+      operationId: listWebhookDeliveries
+      summary: List the webhook notifications the mock sent
+      responses:
+        '200':
+          $ref: '#/components/responses/WebhookDeliveryList'
+    delete:
+      operationId: clearWebhookDeliveries
+      summary: Empty the webhook delivery log
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+  /webhooks/sink:
+    post:
+      operationId: receiveWebhook
+      summary: Receive a webhook notification
+      description: A webhook receiver inside the mock. Point a webhook's URL here to see its notifications under `/webhooks/received`.
+      parameters:
+        - name: receiver
+          in: query
+          required: false
+          description: Labels the notification, so one sink can stand in for several receivers.
+          schema:
+            type: string
+        - name: X-FZ-Auth-Token
+          in: header
+          required: false
+          description: The webhook's token, sent when its authentication is on.
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {}
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+  /webhooks/received:
+    get:
+      operationId: listReceivedWebhooks
+      summary: List the notifications the sink received
+      responses:
+        '200':
+          $ref: '#/components/responses/ReceivedNotificationList'
+  /simulations:
+    get:
+      operationId: listSimulations
+      summary: List the simulations and their inputs
+      responses:
+        '200':
+          $ref: '#/components/responses/SimulationList'
+  /simulations/{domain}/{name}:
+    post:
+      operationId: runSimulation
+      summary: Run a simulation
+      description: Makes something happen that the API cannot do, such as a donor paying on the public site, and fires the webhooks it would. Each simulation documents its own input in the listing and answers with its own result.
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Domain'
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: org
+          in: query
+          required: false
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/OrgSlug'
+            default: kelder
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulationInput'
+      responses:
+        '200':
+          $ref: '#/components/responses/SimulationResult'
+        '400':
+          $ref: '#/components/responses/ControlError'
+        '404':
+          $ref: '#/components/responses/ControlError'
+        '409':
+          $ref: '#/components/responses/ControlError'
+components:
+  responses:
+    ResetResult:
+      description: The world was reseeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResetResult'
+    Clock:
+      description: The mock clock
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Clock'
+    OrgList:
+      description: The organisations
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OrgList'
+    OrgPlan:
+      description: The organisation's new plan
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OrgPlan'
+    CredentialList:
+      description: The API keys
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CredentialList'
+    WebhookDeliveryList:
+      description: Every webhook notification sent since the last reset or clear, oldest first
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WebhookDeliveryList'
+    ReceivedNotificationList:
+      description: Every notification the sink received since the last reset, oldest first
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReceivedNotificationList'
+    SimulationList:
+      description: The simulations
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SimulationList'
+    SimulationResult:
+      description: What the simulation did
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SimulationResult'
+    Ok:
+      description: Done
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Ok'
+    ControlError:
+      description: The request was refused
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ControlError'
+  schemas:
+    OrgSlug:
+      type: string
+      enum: [kelder, ornek]
+    Plan:
+      type: string
+      enum: [active, lapsed]
+    Scope:
+      type: string
+      enum: [read, write]
+    Domain:
+      type: string
+      enum: [foundation, people, giving, dues-events, campaigns-forms-ecards]
+    Ok:
+      type: object
+      required: [result]
+      properties:
+        result:
+          type: string
+          enum: [ok]
+    ControlError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    Clock:
+      type: object
+      required: [now]
+      properties:
+        now:
+          type: string
+          format: date-time
+    ResetResult:
+      type: object
+      required: [result, now]
+      properties:
+        result:
+          type: string
+          enum: [ok]
+        now:
+          type: string
+          format: date-time
+    ClockAdvance:
+      type: object
+      required: [seconds]
+      properties:
+        seconds:
+          type: number
+          description: Seconds to add to the clock.
+    Org:
+      type: object
+      required: [slug, name, plan]
+      properties:
+        slug:
+          $ref: '#/components/schemas/OrgSlug'
+        name:
+          type: string
+        plan:
+          $ref: '#/components/schemas/Plan'
+    OrgList:
+      type: object
+      required: [orgs]
+      properties:
+        orgs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Org'
+    PlanChange:
+      type: object
+      required: [plan]
+      properties:
+        plan:
+          $ref: '#/components/schemas/Plan'
+    OrgPlan:
+      type: object
+      required: [slug, plan]
+      properties:
+        slug:
+          $ref: '#/components/schemas/OrgSlug'
+        plan:
+          $ref: '#/components/schemas/Plan'
+    Credential:
+      type: object
+      required: [org, label, client_id, client_secret, scopes, plan]
+      properties:
+        org:
+          $ref: '#/components/schemas/OrgSlug'
+        label:
+          type: string
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        scopes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Scope'
+        plan:
+          $ref: '#/components/schemas/Plan'
+    RateLimit:
+      type: object
+      required: [limit, windowMs]
+      properties:
+        limit:
+          type: integer
+          description: Calls each API key may make to one operation per window.
+        windowMs:
+          type: integer
+    CredentialList:
+      type: object
+      required: [token_url, keys, rate_limit]
+      properties:
+        token_url:
+          type: string
+          description: The token endpoint's path on the mock's origin.
+        keys:
+          type: array
+          items:
+            $ref: '#/components/schemas/Credential'
+        rate_limit:
+          $ref: '#/components/schemas/RateLimit'
+    WebhookNotification:
+      type: object
+      description: The body Fonzip posts to a webhook.
+      required: [id, webhook_id, operation, status]
+      properties:
+        id:
+          type: integer
+        webhook_id:
+          type: integer
+        operation:
+          type: integer
+          enum: [1, 2, 3, 4, 5, 6]
+        status:
+          type: integer
+          enum: [0, 3, 4, 5]
+    OutcomePending:
+      type: object
+      required: [state]
+      properties:
+        state:
+          type: string
+          enum: [pending]
+    OutcomeDelivered:
+      type: object
+      required: [state, status]
+      properties:
+        state:
+          type: string
+          enum: [delivered]
+        status:
+          type: integer
+          description: The receiver's HTTP status.
+    OutcomeFailed:
+      type: object
+      required: [state, error]
+      properties:
+        state:
+          type: string
+          enum: [failed]
+        error:
+          type: string
+    DeliveryOutcome:
+      oneOf:
+        - $ref: '#/components/schemas/OutcomePending'
+        - $ref: '#/components/schemas/OutcomeDelivered'
+        - $ref: '#/components/schemas/OutcomeFailed'
+    WebhookDelivery:
+      type: object
+      required: [id, at, org, url, headers, body, outcome]
+      properties:
+        id:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        org:
+          $ref: '#/components/schemas/OrgSlug'
+        url:
+          type: string
+        headers:
+          type: object
+          required: [content-type]
+          properties:
+            content-type:
+              type: string
+            X-FZ-Auth-Token:
+              type: string
+        body:
+          $ref: '#/components/schemas/WebhookNotification'
+        outcome:
+          $ref: '#/components/schemas/DeliveryOutcome'
+    WebhookDeliveryList:
+      type: object
+      required: [deliveries]
+      properties:
+        deliveries:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookDelivery'
+    ReceivedNotification:
+      type: object
+      required: [at, receiver, auth_token, body]
+      properties:
+        at:
+          type: string
+          format: date-time
+        receiver:
+          type: string
+          nullable: true
+        auth_token:
+          type: string
+          nullable: true
+        body:
+          description: The JSON the sink received, or its raw text when it was not JSON.
+    ReceivedNotificationList:
+      type: object
+      required: [received]
+      properties:
+        received:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReceivedNotification'
+    Simulation:
+      type: object
+      required: [domain, name, path, description, input]
+      properties:
+        domain:
+          $ref: '#/components/schemas/Domain'
+        name:
+          type: string
+        path:
+          type: string
+          description: The simulation's path on the mock's origin.
+        description:
+          type: string
+        input:
+          type: object
+          description: Each input field the simulation reads, with a description of its value.
+          additionalProperties:
+            type: string
+    SimulationList:
+      type: object
+      required: [simulations]
+      properties:
+        simulations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Simulation'
+    SimulationInput:
+      type: object
+      additionalProperties: true
+    SimulationResult:
+      type: object
+      additionalProperties: true
