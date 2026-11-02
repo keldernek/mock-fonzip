@@ -3,7 +3,7 @@ import type { Handler, HandlerContext } from "../../api/handler";
 import type { components } from "../../generated/openapi";
 import { istanbulDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
-import { fullName, nonEmpty, userDefinedValues } from "../../store/joins";
+import { fullName, nonEmpty } from "../../store/joins";
 import type {
   CommunicationPermissionRecord,
   UdvValue,
@@ -12,6 +12,12 @@ import type {
 } from "../../store/records";
 import type { OrgStore } from "../../store/store";
 import { newUser } from "../../store/users";
+import {
+  dayOf,
+  lastUpdateOf,
+  textOrNull,
+  userDefinedValues,
+} from "../../store/user-projection";
 import { recordEvent } from "./timeline";
 import {
   applyFields,
@@ -48,38 +54,39 @@ function toUserDetails(store: OrgStore, user: User) {
     first_name: user.first_name,
     last_name: nonEmpty(user.last_name),
     name: fullName(user),
-    nationality_text: nonEmpty(user.nationality_text),
-    tckno: nonEmpty(user.tckno),
-    birthday: nonEmpty(user.birthday),
+    nationality_text: textOrNull(user.nationality_text),
+    tckno: textOrNull(user.tckno),
+    birthday: textOrNull(user.birthday),
     email: nonEmpty(user.email),
     phone: nonEmpty(user.phone),
-    home_phone_first: nonEmpty(user.home_phone_first),
-    address: nonEmpty(user.address),
-    post_code: nonEmpty(user.post_code),
-    district_text: nonEmpty(user.district_text),
-    city_text: nonEmpty(user.city_text),
-    country_text: nonEmpty(user.country_text),
-    work_phone: nonEmpty(user.work_phone),
-    work_address: nonEmpty(user.work_address),
-    work_post_code: nonEmpty(user.work_post_code),
+    home_phone_first: textOrNull(user.home_phone_first),
+    address: textOrNull(user.address),
+    post_code: textOrNull(user.post_code),
+    district_text: textOrNull(user.district_text),
+    city_text: textOrNull(user.city_text),
+    country_text: textOrNull(user.country_text),
+    work_phone: textOrNull(user.work_phone),
+    work_address: textOrNull(user.work_address),
+    work_post_code: textOrNull(user.work_post_code),
     private: user.private,
-    work_district_text: nonEmpty(user.work_district_text),
-    work_city_text: nonEmpty(user.work_city_text),
-    work_country_text: nonEmpty(user.work_country_text),
-    email_second: nonEmpty(user.email_second),
+    work_district_text: textOrNull(user.work_district_text),
+    work_city_text: textOrNull(user.work_city_text),
+    work_country_text: textOrNull(user.work_country_text),
+    email_second: textOrNull(user.email_second),
     membership_no: user.membership_no === 0 ? undefined : user.membership_no,
     admin: user.admin,
     corporate_type: user.corporate_type,
-    apply_date: nonEmpty(user.apply_date),
+    apply_date: dayOf(user.apply_date),
     allow_comm_via_phone: permission?.allow_comm_via_phone,
     allow_comm_via_phone_date: permission?.allow_comm_via_phone_date,
     allow_comm_via_sms: permission?.allow_comm_via_sms,
     allow_comm_via_sms_date: permission?.allow_comm_via_sms_date,
     allow_comm_via_email: permission?.allow_comm_via_email,
     allow_comm_via_email_date: permission?.allow_comm_via_email_date,
-    join_date: nonEmpty(user.join_date),
+    join_date: dayOf(user.join_date),
+    last_update_date: lastUpdateOf(store, user),
     total_financial: user.total_financial,
-    user_defined_values: userDefinedValues(user),
+    user_defined_values: userDefinedValues(store, user),
   };
 }
 
@@ -499,10 +506,10 @@ function toUserDefinedValue(udv: Row<UserDefinedValueRecord>) {
     key_type: udv.key_type,
     for: udv.for,
     options: udv.options,
-    boolean_true_text: nonEmpty(udv.boolean_true_text),
+    boolean_true_text: udv.boolean_true_text,
     boolean_false_text: udv.boolean_false_text,
-    changable_by_users: udv.changable_by_users,
     select_text: udv.select_text,
+    validation: udv.validation,
     display_for: udv.display_for,
   };
 }

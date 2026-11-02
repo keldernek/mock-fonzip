@@ -2,11 +2,12 @@ import { notFound } from "../../api/errors";
 import type { Handler } from "../../api/handler";
 import { istanbulDateTime } from "../../seed/dates";
 
+// An id that names no user has no tags: production answers 200 with an empty
+// list, not 404.
 export const getUsersTagsList: Handler<"getUsersTagsList"> = (
   { path },
   { store },
 ) => {
-  if (!store.users.get(path.user_id)) return notFound("User");
   const linked = new Set(
     store.userTags
       .list((link) => link.user_id === path.user_id)

@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { specRuntime } from "../src/spec/runtime";
 import { isJsonObject } from "../src/spec/json";
 import {
+  ALL_USER_COLUMNS,
   cardInfo,
   client,
   day,
@@ -599,9 +600,7 @@ describe("ordering", () => {
     const list = ascending.user_list ?? [];
     expect(list.length, "1004 and the corporate users").toBeGreaterThan(2);
     expect(list[0]?.id, "the only birthday comes first ascending").toBe(1004);
-    expect(list.slice(1).every((user) => user.birthday === undefined)).toBe(
-      true,
-    );
+    expect(list.slice(1).every((user) => user.birthday === null)).toBe(true);
     const descending = await search(shared, corporatesAnd1004, {
       orderBy: "-birthday",
       values: ["id"],
@@ -611,7 +610,7 @@ describe("ordering", () => {
 });
 
 describe("values_list and pagination", () => {
-  test("returns exactly the requested fields, one user-defined value by key, and drops values the User schema cannot carry", async () => {
+  test("returns exactly the requested columns, and a user-defined value by key", async () => {
     const shared = client();
     const found = await search(
       shared,
@@ -634,6 +633,7 @@ describe("values_list and pagination", () => {
         ...(found.user_list?.[0]?.tags_as_text === undefined
           ? {}
           : { tags_as_text: expect.any(String) }),
+        city_text: user?.city_text,
         user_defined_values: {
           mezuniyet_yili: user?.user_defined_values.mezuniyet_yili,
         },
@@ -641,39 +641,130 @@ describe("values_list and pagination", () => {
     ]);
   });
 
-  test("without values_list returns every User property the user has", async () => {
+  test("a select field comes back as the chosen option, a yes or no field as its yes or no option, and a multiple select as its texts", async () => {
     const shared = client();
     const db = kelder(shared);
-    const tagged = db.userTags.list()[0]?.user_id ?? 0;
-    const found = await search(shared, {
-      condition: "and",
-      attributes: [leaf("id", "eq", tagged)],
-    });
-    expect(Object.keys(found.user_list?.[0] ?? {}).sort()).toEqual(
-      [
-        "address",
-        "apply_date",
-        "birthday",
-        "corporate_type",
-        "email",
-        "first_name",
-        "id",
-        "join_date",
-        "last_name",
-        "membership_no",
-        "phone",
-        "tags_as_text",
-        "tckno",
-        "total_financial",
-        "user_defined_values",
-      ].sort(),
+    const user = db.users.get(1004);
+    const udv = (value: string) =>
+      db.userDefinedValues.find((row) => row.value === value);
+    const option = (value: string, text: string) => {
+      const options = udv(value)?.options ?? [];
+      const position = options.findIndex((item) => item.text === text);
+      return { id: position + 1, order: position, text };
+    };
+    const found = await search(
+      shared,
+      { condition: "and", attributes: [leaf("id", "eq", 1004)] },
+      {
+        values: [
+          "user_defined_values__mezuniyet_yili",
+          "user_defined_values__sube",
+          "user_defined_values__burs_gonullusu",
+          "user_defined_values__ilgi_alanlari",
+          "user_defined_values__meslek",
+        ],
+      },
     );
+    const values = user?.user_defined_values ?? {};
+    expect(found.user_list).toEqual([
+      {
+        user_defined_values: {
+          mezuniyet_yili: values.mezuniyet_yili,
+          sube: option("sube", String(values.sube)),
+          burs_gonullusu: option(
+            "burs_gonullusu",
+            values.burs_gonullusu === true ? "Evet" : "Hayır",
+          ),
+          ilgi_alanlari: (values.ilgi_alanlari as string[]).join(", "),
+          meslek: values.meslek,
+        },
+      },
+    ]);
+    const mezuniyet = found.user_list?.[0]?.user_defined_values?.mezuniyet_yili;
+    expect(Number.isInteger(mezuniyet), "a number field is an integer").toBe(
+      true,
+    );
+  });
+
+  test("a search without values_list is refused with production's text", async () => {
+    const shared = client();
+    const response = await shared.call("getUserList", {
+      body: {
+        search: {
+          start_page: 1,
+          how_many: 10,
+          order_by: "id",
+          filter: EVERYONE,
+        },
+      },
+    });
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: "values_list parametresi eksik" });
+    const empty = await search(shared, EVERYONE, { values: [], howMany: 2 });
+    expect(empty.user_list, "an empty list asks for no column").toEqual([
+      {},
+      {},
+    ]);
+  });
+
+  test("returns every column the schema names for a user that has them all", async () => {
+    const shared = client();
+    const db = kelder(shared);
+    const tagged = db.users.find(
+      (user) =>
+        !user.corporate_type &&
+        user.email !== "" &&
+        db.userTags.count((link) => link.user_id === user.id) > 0,
+    );
+    if (!tagged) throw new Error("no tagged person");
+    const found = await search(
+      shared,
+      { condition: "and", attributes: [leaf("id", "eq", tagged.id)] },
+      { values: ALL_USER_COLUMNS },
+    );
+    const [row] = found.user_list ?? [];
+    expect(Object.keys(row ?? {}).sort()).toEqual([...ALL_USER_COLUMNS].sort());
     const names = db.userTags
-      .list((link) => link.user_id === tagged)
+      .list((link) => link.user_id === tagged.id)
       .map((link) => link.tag_id)
       .sort((a, b) => a - b)
       .map((id) => db.tags.get(id)?.name);
-    expect(found.user_list?.[0]?.tags_as_text).toBe(names.join(", "));
+    expect(row?.tags_as_text).toBe(names.join(", "));
+    const permission = db.communicationPermissions.find(
+      (record) => record.user_id === tagged.id,
+    );
+    expect(row).toMatchObject({
+      allow_comm_via_email: permission?.allow_comm_via_email,
+      allow_comm_via_email_date: permission?.allow_comm_via_email_date,
+      allow_comm_via_phone: permission?.allow_comm_via_phone,
+      allow_comm_via_sms: permission?.allow_comm_via_sms,
+      apply_date: tagged.apply_date.slice(0, 10),
+      join_date: tagged.join_date.slice(0, 10),
+    });
+    expect(row?.apply_date, "a calendar day, not a date-time").toMatch(
+      /^\d{4}-\d{2}-\d{2}$/,
+    );
+    const profile = db.contactProfiles.find(
+      (record) => record.user_id === tagged.id,
+    );
+    expect(row?.last_update_date).toBe(profile?.last_update_date);
+    expect(row?.last_login_date).toBe(profile?.last_login?.date ?? null);
+    expect(row?.profile_pic).toBe(profile?.profile_pic ?? null);
+  });
+
+  test("a column a user lacks is null, and a user who never logged in has a null last_login_date", async () => {
+    const shared = client();
+    const db = kelder(shared);
+    const lapsed = db.contactProfiles.find(
+      (record) => record.last_login === null,
+    );
+    if (!lapsed) throw new Error("no profile without a login");
+    const found = await search(
+      shared,
+      { condition: "and", attributes: [leaf("id", "eq", lapsed.user_id)] },
+      { values: ["last_login_date", "profile_pic"] },
+    );
+    expect(found.user_list?.[0]?.last_login_date).toBeNull();
   });
 
   test("pages through the matching users with a total that ignores paging", async () => {

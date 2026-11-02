@@ -2138,12 +2138,12 @@ export interface components {
             /** @description last name */
             last_name?: string;
             /** @description address */
-            address?: string;
+            address?: string | null;
             /**
              * Format: date
              * @description birthday
              */
-            birthday?: string;
+            birthday?: string | null;
             /** @description users current balance amount */
             total_financial?: number;
             /**
@@ -2158,19 +2158,70 @@ export interface components {
             /** @description users membership number */
             membership_no?: number;
             /** @description Users Identity Number */
-            tckno?: string;
+            tckno?: string | null;
             /**
-             * Format: date-time
+             * Format: date
              * @description users apply date
              */
             apply_date?: string;
             /**
-             * Format: date-time
+             * Format: date
              * @description users join date
              */
             join_date?: string;
             /** @description user defined values as key value pairs */
             user_defined_values?: Record<string, unknown>;
+            /** @description if user has communication permission via email */
+            allow_comm_via_email?: boolean;
+            /**
+             * Format: date-time
+             * @description email communication permission update date
+             */
+            allow_comm_via_email_date?: string;
+            /** @description if user has communication permission via phone */
+            allow_comm_via_phone?: boolean;
+            /**
+             * Format: date-time
+             * @description phone communication permission update date
+             */
+            allow_comm_via_phone_date?: string | null;
+            /** @description if user has communication permission via sms */
+            allow_comm_via_sms?: boolean;
+            /**
+             * Format: date-time
+             * @description sms communication permission update date
+             */
+            allow_comm_via_sms_date?: string | null;
+            /** @description City */
+            city_text?: string | null;
+            /** @description Country */
+            country_text?: string | null;
+            /** @description District */
+            district_text?: string | null;
+            /** @description nationality */
+            nationality_text?: string | null;
+            /**
+             * Format: date-time
+             * @description last login date
+             */
+            last_login_date?: string | null;
+            /**
+             * Format: date-time
+             * @description profile last update date
+             */
+            last_update_date?: string;
+            /** @description profile picture URL */
+            profile_pic?: string | null;
+            /** @description Work address */
+            work_address?: string | null;
+            /** @description Work city */
+            work_city_text?: string | null;
+            /** @description Work country */
+            work_country_text?: string | null;
+            /** @description Work district */
+            work_district_text?: string | null;
+            /** @description Work phone */
+            work_phone?: string | null;
         };
         AssociationInfo: {
             id?: number;
@@ -2290,7 +2341,7 @@ export interface components {
              */
             id?: number | string;
             /** @description timeline event details */
-            details?: string;
+            details?: string | null;
             /**
              * Format: date-time
              * @description event time
@@ -2331,29 +2382,29 @@ export interface components {
              */
             event_type?: 0 | 1 | 2 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27;
             /** @description Issuer first name (for custom notes) */
-            issuer__first_name?: string;
+            issuer__first_name?: string | null;
             /** @description Issuer last name (for custom notes) */
-            issuer__last_name?: string;
+            issuer__last_name?: string | null;
             /** @description calendar event id if timeline note is connected to a calendar event */
-            calendarevent__id?: number;
+            calendarevent__id?: number | null;
             /** @description calendar event note if timeline note is connected to a calendar event */
-            calendarevent__note?: string;
+            calendarevent__note?: string | null;
             /**
              * Format: date-time
              * @description calendar event date if timeline note is connected to a calendar event
              */
-            calendarevent__date?: string;
+            calendarevent__date?: string | null;
             /** @description if time events connected calendar event is marked as completed */
-            calendarevent__completed?: boolean;
+            calendarevent__completed?: boolean | null;
             /** @description custom note tag id */
-            tag_id?: number;
+            tag_id?: number | null;
             /** @description custom note tag name */
-            tag__name?: string;
+            tag__name?: string | null;
             /**
              * @description custom note tag color
-             * @enum {string}
+             * @enum {string|null}
              */
-            tag__color?: "tag-1" | "tag-2" | "tag-3" | "tag-4" | "tag-5" | "tag-6" | "tag-7" | "tag-8";
+            tag__color?: "tag-1" | "tag-2" | "tag-3" | "tag-4" | "tag-5" | "tag-6" | "tag-7" | "tag-8" | null;
             /** @description if timeline event has custom date */
             custom_date?: boolean;
             /**
@@ -2407,6 +2458,8 @@ export interface components {
              *     when event_type is 27
              */
             added_by__name?: string | null;
+            /** @description if the event is pinned to the top of the timeline */
+            pinned?: boolean;
         };
         Tag: {
             /** @description Tag id */
@@ -4286,14 +4339,14 @@ export interface components {
             /** @description first name and last name combined */
             name?: string;
             /** @description nationality */
-            nationality_text?: string;
+            nationality_text?: string | null;
             /** @description Identity Number */
-            tckno?: string;
+            tckno?: string | null;
             /**
              * Format: date
              * @description Birthday
              */
-            birthday?: string;
+            birthday?: string | null;
             /**
              * Format: email
              * @description Email
@@ -4302,36 +4355,36 @@ export interface components {
             /** @description Cell Phone */
             phone?: string;
             /** @description Home phone */
-            home_phone_first?: string;
+            home_phone_first?: string | null;
             /** @description Address */
-            address?: string;
+            address?: string | null;
             /** @description Post code */
-            post_code?: string;
+            post_code?: string | null;
             /** @description District */
-            district_text?: string;
+            district_text?: string | null;
             /** @description City */
-            city_text?: string;
+            city_text?: string | null;
             /** @description Country */
-            country_text?: string;
+            country_text?: string | null;
             /** @description Work phone */
-            work_phone?: string;
+            work_phone?: string | null;
             /** @description Work address */
-            work_address?: string;
+            work_address?: string | null;
             /** @description Work post code */
-            work_post_code?: string;
+            work_post_code?: string | null;
             /** @description if users profile is private */
             private?: boolean;
             /** @description Work district */
-            work_district_text?: string;
+            work_district_text?: string | null;
             /** @description Work city */
-            work_city_text?: string;
+            work_city_text?: string | null;
             /** @description Work country */
-            work_country_text?: string;
+            work_country_text?: string | null;
             /**
              * Format: email
              * @description second email
              */
-            email_second?: string;
+            email_second?: string | null;
             /** @description users membership number */
             membership_no?: number;
             /** @description if user is admin or not */
@@ -4339,7 +4392,7 @@ export interface components {
             /** @description if record is a corporate or person */
             corporate_type?: boolean;
             /**
-             * Format: date-time
+             * Format: date
              * @description users application date
              */
             apply_date?: string;
@@ -4349,14 +4402,14 @@ export interface components {
              * Format: date-time
              * @description phone communication permission update date
              */
-            allow_comm_via_phone_date?: string;
+            allow_comm_via_phone_date?: string | null;
             /** @description if user has communication permission via sms */
             allow_comm_via_sms?: boolean;
             /**
              * Format: date-time
              * @description sms communication permission update date
              */
-            allow_comm_via_sms_date?: string;
+            allow_comm_via_sms_date?: string | null;
             /** @description if user has communication permission via email */
             allow_comm_via_email?: boolean;
             /**
@@ -4365,13 +4418,28 @@ export interface components {
              */
             allow_comm_via_email_date?: string;
             /**
-             * Format: date-time
+             * Format: date
              * @description users join date
              */
             join_date?: string;
             /** @description users current balance amount */
             total_financial?: number;
-            user_defined_values?: components["schemas"]["UserDefinedValuesReference"];
+            /** @description user defined values as key value pairs. The key is the field's key (UserDefinedValues.value). A select field holds its chosen option. */
+            user_defined_values?: {
+                [key: string]: number | string | {
+                    /** @description option id */
+                    id: number;
+                    /** @description options order */
+                    order: number;
+                    /** @description option text */
+                    text: string;
+                };
+            };
+            /**
+             * Format: date-time
+             * @description profile last update date
+             */
+            last_update_date?: string;
         };
         /** @description user defined values as key value pairs */
         UserDefinedValuesReference: {
@@ -4422,7 +4490,7 @@ export interface components {
              * @description input type for key
              * @enum {string}
              */
-            for?: "text" | "numeric" | "date" | "select";
+            for?: "text" | "numeric" | "date" | "select" | "select_w_bool";
             options?: {
                 /** @description option id */
                 id?: number;
@@ -4432,15 +4500,24 @@ export interface components {
                 order?: number;
             }[];
             /** @description True text for boolean field */
-            boolean_true_text?: string;
+            boolean_true_text?: string | null;
             /** @description False text for boolean field */
-            boolean_false_text?: number;
-            /** @description If members can change the value of udv from their profiles */
-            changable_by_users?: boolean;
+            boolean_false_text?: string | null;
             /** @description Select text for select and multiple select fields */
-            select_text?: number;
+            select_text?: string | null;
             /** @description association type, for display purposes, irrelevant for API */
             display_for?: string;
+            /** @description Limits of the field. Empty when the field has none. A text field can limit its length, a numeric field can cap its value. */
+            validation?: {
+                /** @description if the text length is limited */
+                limit?: boolean;
+                /** @description maximum text length */
+                limit_value?: number;
+                /** @description if the value has an upper bound */
+                max?: boolean;
+                /** @description maximum value */
+                max_value?: number;
+            };
         };
         Form: {
             /** @description form id */
@@ -6767,6 +6844,7 @@ export interface components {
                 "application/json": {
                     /** @description Total number of records */
                     total?: number;
+                    /** @description permissions changed in the window, newest change first */
                     permission_list?: {
                         /** @description user id */
                         id?: number;
@@ -6785,14 +6863,14 @@ export interface components {
                          * Format: date-time
                          * @description phone communication permission update date
                          */
-                        allow_comm_via_phone_date?: string;
+                        allow_comm_via_phone_date?: string | null;
                         /** @description if user has communication permission via sms */
                         allow_comm_via_sms?: boolean;
                         /**
                          * Format: date-time
                          * @description sms communication permission update date
                          */
-                        allow_comm_via_sms_date?: string;
+                        allow_comm_via_sms_date?: string | null;
                         /** @description if user has communication permission via email */
                         allow_comm_via_email?: boolean;
                         /**
@@ -6800,7 +6878,7 @@ export interface components {
                          * @description email communication permission update date
                          */
                         allow_comm_via_email_date?: string;
-                    };
+                    }[];
                 };
             };
         };
@@ -7137,7 +7215,7 @@ export interface components {
             content: {
                 "application/json": {
                     search: components["schemas"]["UserSearch"];
-                    values_list?: components["schemas"]["UserSearchValues"][];
+                    values_list: components["schemas"]["UserSearchValues"][];
                 };
             };
         };
@@ -8275,7 +8353,51 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            200: components["responses"]["CommunicationPermissionList"];
+            /** @description Permissions Listed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description the permission records of the value */
+                        permission_list?: {
+                            /** @description user id */
+                            id?: number;
+                            /**
+                             * Format: email
+                             * @description email
+                             */
+                            email?: string;
+                            /** @description phone in international format */
+                            phone?: string;
+                            /** @description phone in E164 format */
+                            phone_slug?: string;
+                            /** @description if user has communication permission via phone */
+                            allow_comm_via_phone?: boolean;
+                            /**
+                             * Format: date-time
+                             * @description phone communication permission update date
+                             */
+                            allow_comm_via_phone_date?: string | null;
+                            /** @description if user has communication permission via sms */
+                            allow_comm_via_sms?: boolean;
+                            /**
+                             * Format: date-time
+                             * @description sms communication permission update date
+                             */
+                            allow_comm_via_sms_date?: string | null;
+                            /** @description if user has communication permission via email */
+                            allow_comm_via_email?: boolean;
+                            /**
+                             * Format: date-time
+                             * @description email communication permission update date
+                             */
+                            allow_comm_via_email_date?: string;
+                        }[];
+                    };
+                };
+            };
             400: components["responses"]["OperationFailed"];
             401: components["responses"]["UnauthorizedAccess"];
             402: components["responses"]["NoValidPlan"];

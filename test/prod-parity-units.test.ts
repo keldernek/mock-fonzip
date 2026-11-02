@@ -929,6 +929,7 @@ describe("specIssues against real routes", () => {
   async function userList(): Promise<Obj> {
     return bodyOf("getUserList", {
       body: {
+        values_list: ["id", "email"],
         search: {
           start_page: 1,
           how_many: 3,

@@ -23,11 +23,6 @@ export type TransactionErrorGroup = Exclude<
 >;
 export type UdvValue = string | number | boolean | readonly string[] | null;
 
-type CommunicationPermissionItem = Exclude<
-  components["responses"]["CommunicationPermissionList"]["content"]["application/json"]["permission_list"],
-  undefined
->;
-
 type AllowComm =
   | "allow_comm_via_phone"
   | "allow_comm_via_phone_date"
@@ -36,12 +31,41 @@ type AllowComm =
   | "allow_comm_via_email"
   | "allow_comm_via_email_date";
 
+// Production sends null for these texts. The store keeps "" for an absent
+// text, and the projections turn it into null.
+type UserText =
+  | "address"
+  | "birthday"
+  | "tckno"
+  | "nationality_text"
+  | "country_text"
+  | "city_text"
+  | "district_text"
+  | "email_second"
+  | "home_phone_first"
+  | "post_code"
+  | "work_address"
+  | "work_city_text"
+  | "work_country_text"
+  | "work_district_text"
+  | "work_phone"
+  | "work_post_code";
+
+// The contact profile holds the last login and the last update.
+type ProfileDate = "last_login_date" | "last_update_date";
+
 export type UserRecord = Own<
   Omit<
     S["User"] & S["UserDetails"],
-    "user_defined_values" | "tags_as_text" | "name" | AllowComm
+    | "user_defined_values"
+    | "tags_as_text"
+    | "name"
+    | "profile_pic"
+    | AllowComm
+    | ProfileDate
+    | UserText
   >
-> & {
+> & { [K in UserText]: string } & {
   user_defined_values: Record<string, UdvValue>;
   profile_pic: string | null;
 };
@@ -62,8 +86,9 @@ export interface UserTagRecord {
   create_date: string;
 }
 
+// `pinned` is not stored: no operation pins an event.
 export type TimelineRecord = WithNull<
-  Own<Omit<S["Timeline"], "id">>,
+  Own<Omit<S["Timeline"], "id" | "pinned" | "details">>,
   | "tag_id"
   | "amount"
   | "lead_type"
@@ -72,6 +97,7 @@ export type TimelineRecord = WithNull<
   | "is_first_touch"
 > & {
   id: number;
+  details: string;
   user_id: number;
   issuer_id: number | null;
   currency_id: number | null;
@@ -84,9 +110,21 @@ export type TimelineRecord = WithNull<
   } | null;
 };
 
-export type CommunicationPermissionRecord = Own<CommunicationPermissionItem> & {
+// A channel's date is null until the person has answered for that channel.
+// The email date is always set.
+export interface CommunicationPermissionRecord {
+  id: number;
   user_id: number | null;
-};
+  email: string;
+  phone: string;
+  phone_slug: string;
+  allow_comm_via_phone: boolean;
+  allow_comm_via_phone_date: string | null;
+  allow_comm_via_sms: boolean;
+  allow_comm_via_sms_date: string | null;
+  allow_comm_via_email: boolean;
+  allow_comm_via_email_date: string;
+}
 
 export interface ContactProfileRecord {
   id: number;

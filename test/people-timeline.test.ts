@@ -172,4 +172,166 @@ describe("getUsersTimeline", () => {
     });
     expect(missing.status).toBe(404);
   });
+
+  // Production sends every note field on a non-lead event, null when empty,
+  // and none of the lead fields. A lead carries its own fields instead.
+  const NOTE_KEYS = [
+    "calendarevent__completed",
+    "calendarevent__date",
+    "calendarevent__id",
+    "calendarevent__note",
+    "custom_date",
+    "details",
+    "event_time",
+    "event_type",
+    "id",
+    "issuer__first_name",
+    "issuer__last_name",
+    "pinned",
+    "tag__color",
+    "tag__name",
+    "tag_id",
+  ];
+  const LEAD_KEYS = [
+    "added_by__name",
+    "amount",
+    "currency__display",
+    "details",
+    "event_time",
+    "event_type",
+    "id",
+    "is_first_touch",
+    "issuer__first_name",
+    "issuer__last_name",
+    "lead_type",
+    "outcome",
+    "pinned",
+    "sequence_no",
+  ];
+
+  test("a non-lead event carries every note field, null when empty, and no lead field", async () => {
+    const shared = client();
+    const db = kelder(shared);
+    const calendar = db.timeline.find(
+      (row) => row.event_type === 7 && row.calendar_event !== null,
+    );
+    const tagged = db.timeline.find(
+      (row) => row.event_type === 7 && row.tag_id !== null,
+    );
+    if (!calendar?.calendar_event || !tagged)
+      throw new Error("no seeded notes");
+    const eventsOf = async (userId: number) =>
+      (
+        await shared.ok("getUsersTimeline", {
+          path: { user_id: userId },
+          query: PAGE,
+        })
+      ).timeline ?? [];
+    const withCalendar = (await eventsOf(calendar.user_id)).find(
+      (event) => event.id === calendar.id,
+    );
+    expect(Object.keys(withCalendar ?? {}).sort()).toEqual(NOTE_KEYS);
+    expect(withCalendar).toMatchObject({
+      calendarevent__id: calendar.calendar_event.id,
+      calendarevent__note: calendar.calendar_event.note,
+      calendarevent__date: calendar.calendar_event.date,
+      calendarevent__completed: calendar.calendar_event.completed,
+      tag_id: null,
+      tag__name: null,
+      tag__color: null,
+      pinned: false,
+    });
+    const withTag = (await eventsOf(tagged.user_id)).find(
+      (event) => event.id === tagged.id,
+    );
+    expect(Object.keys(withTag ?? {}).sort()).toEqual(NOTE_KEYS);
+    expect(withTag?.tag_id).toBe(tagged.tag_id);
+    expect(withTag?.tag__name).toEqual(expect.any(String));
+    expect(withTag?.tag__color).toEqual(expect.stringMatching(/^tag-[1-8]$/));
+    expect(withTag?.calendarevent__id).toBeNull();
+    // A derived event has no stored row, so every note field is null.
+    const joined = (await eventsOf(tagged.user_id)).find(
+      (event) => event.event_type === 0,
+    );
+    expect(Object.keys(joined ?? {}).sort()).toEqual(NOTE_KEYS);
+    expect(joined).toMatchObject({
+      issuer__first_name: null,
+      issuer__last_name: null,
+      calendarevent__id: null,
+      calendarevent__note: null,
+      calendarevent__date: null,
+      calendarevent__completed: null,
+      tag_id: null,
+      tag__name: null,
+      tag__color: null,
+      custom_date: false,
+      pinned: false,
+    });
+  });
+
+  test("a lead carries its own fields, with no issuer, no details and none of the note fields", async () => {
+    const shared = client();
+    const db = kelder(shared);
+    const lead = db.timeline.find(
+      (row) => row.event_type === 27 && row.added_by_id !== null,
+    );
+    if (!lead) throw new Error("no seeded lead with an operator");
+    const body = await shared.ok("getUsersTimeline", {
+      path: { user_id: lead.user_id },
+      query: PAGE,
+    });
+    const found = body.timeline?.find(
+      (event) => event.id === `lead-${lead.id}`,
+    );
+    expect(Object.keys(found ?? {}).sort()).toEqual(LEAD_KEYS);
+    expect(found).toMatchObject({
+      details: null,
+      issuer__first_name: null,
+      issuer__last_name: null,
+      pinned: false,
+    });
+    expect(typeof found?.id, "a lead id is a string").toBe("string");
+    for (const event of body.timeline ?? []) {
+      expect(
+        Object.keys(event).sort(),
+        `event ${event.id} is a lead or a note`,
+      ).toEqual(event.event_type === 27 ? LEAD_KEYS : NOTE_KEYS);
+    }
+  });
+
+  test("the newest user has a lead and plain events, as the user production showed did", async () => {
+    const shared = client();
+    const db = kelder(shared);
+    const newest = Math.max(...db.users.list().map((user) => user.id));
+    const body = await shared.ok("getUsersTimeline", {
+      path: { user_id: newest },
+      query: PAGE,
+    });
+    const events = body.timeline ?? [];
+    const leads = events.filter((event) => event.event_type === 27);
+    expect(leads).toHaveLength(1);
+    expect(leads[0]).toEqual({
+      id: expect.stringMatching(/^lead-\d+$/),
+      details: null,
+      event_time: expect.any(String),
+      event_type: 27,
+      issuer__first_name: null,
+      issuer__last_name: null,
+      pinned: false,
+      lead_type: 4,
+      outcome: 0,
+      sequence_no: 1,
+      is_first_touch: true,
+      amount: null,
+      currency__display: null,
+      added_by__name: null,
+    });
+    const plain = events.filter((event) => event.event_type !== 27);
+    expect(plain.length).toBeGreaterThan(2);
+    for (const event of plain) {
+      expect(event.calendarevent__id).toBeNull();
+      expect(event.tag_id).toBeNull();
+      expect(event.issuer__first_name).toBeNull();
+    }
+  });
 });

@@ -39,17 +39,6 @@ export function userName(
   return user ? fullName(user) : undefined;
 }
 
-export function userDefinedValues(
-  user: Pick<UserRecord, "user_defined_values">,
-): Record<string, string | number | boolean | string[]> {
-  const values: Record<string, string | number | boolean | string[]> = {};
-  for (const [key, value] of Object.entries(user.user_defined_values)) {
-    if (value === null) continue;
-    values[key] = typeof value === "object" ? [...value] : value;
-  }
-  return values;
-}
-
 export function present<T>(value: T | null): T | undefined {
   return value === null ? undefined : value;
 }

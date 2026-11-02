@@ -74,7 +74,6 @@ test("the spec's own response examples pass strict validation, except the getUse
   expect(responseExamples().length, "examples found").toBe(62);
   expect(failures).toEqual([
     "getUserList 200 /user_list/0 additionalProperties",
-    "getUserList 200 /user_list/0/tckno type",
     "getUserList 200 /user_list/1 additionalProperties",
   ]);
 });

@@ -2,7 +2,7 @@ import type { Handler } from "../../api/handler";
 import { paginate } from "../../api/listing";
 import { istanbulDateTime } from "../../seed/dates";
 import type { Row } from "../../store/collection";
-import { present } from "../../store/joins";
+import { nonEmpty, present } from "../../store/joins";
 import type { CommunicationPermissionRecord } from "../../store/records";
 import type { OrgStore } from "../../store/store";
 import { recordEvent } from "./timeline";
@@ -38,25 +38,42 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const E164 = /^\+[1-9]\d{7,14}$/;
 const DAY_MS = 86_400_000;
 
-function toPermission(row: Permission) {
-  return {
-    id: present(row.user_id),
-    email: row.email === "" ? undefined : row.email,
-    phone: row.phone === "" ? undefined : row.phone,
-    phone_slug: row.phone_slug === "" ? undefined : row.phone_slug,
-    allow_comm_via_phone: row.allow_comm_via_phone,
-    allow_comm_via_phone_date: row.allow_comm_via_phone_date,
-    allow_comm_via_sms: row.allow_comm_via_sms,
-    allow_comm_via_sms_date: row.allow_comm_via_sms_date,
-    allow_comm_via_email: row.allow_comm_via_email,
-    allow_comm_via_email_date: row.allow_comm_via_email_date,
-  };
+// A lookup answers with the keys of the channel it asked about: the contact
+// point (`email` or `phone`), the permission and its date. Production showed
+// this for email; sms and phone are inferred.
+function toPermission(row: Permission, type: PermissionType) {
+  const id = present(row.user_id);
+  switch (type) {
+    case "email":
+      return {
+        id,
+        email: nonEmpty(row.email),
+        allow_comm_via_email: row.allow_comm_via_email,
+        allow_comm_via_email_date: row.allow_comm_via_email_date,
+      };
+    case "sms":
+      return {
+        id,
+        phone: nonEmpty(row.phone),
+        allow_comm_via_sms: row.allow_comm_via_sms,
+        allow_comm_via_sms_date: row.allow_comm_via_sms_date,
+      };
+    case "phone":
+      return {
+        id,
+        phone: nonEmpty(row.phone),
+        allow_comm_via_phone: row.allow_comm_via_phone,
+        allow_comm_via_phone_date: row.allow_comm_via_phone_date,
+      };
+  }
 }
 
 type Lookup =
   | { readonly ok: true; readonly rows: Permission[] }
   | { readonly ok: false; readonly status: 400 | 404; readonly error: string };
 
+// A value that names no record finds no rows. Reading answers with an empty
+// list, and changing answers 404.
 function findPermissions(
   store: OrgStore,
   type: PermissionType,
@@ -71,12 +88,12 @@ function findPermissions(
       };
     }
     const wanted = value.toLowerCase();
-    const rows = store.communicationPermissions.list(
-      (row) => row.email.toLowerCase() === wanted,
-    );
-    return rows.length > 0
-      ? { ok: true, rows }
-      : { ok: false, status: 404, error: "Communication permission not found" };
+    return {
+      ok: true,
+      rows: store.communicationPermissions.list(
+        (row) => row.email.toLowerCase() === wanted,
+      ),
+    };
   }
   if (!E164.test(value)) {
     return {
@@ -86,12 +103,12 @@ function findPermissions(
     };
   }
   const digits = value.slice(1);
-  const rows = store.communicationPermissions.list(
-    (row) => row.phone_slug === digits,
-  );
-  return rows.length > 0
-    ? { ok: true, rows }
-    : { ok: false, status: 404, error: "Communication permission not found" };
+  return {
+    ok: true,
+    rows: store.communicationPermissions.list(
+      (row) => row.phone_slug === digits,
+    ),
+  };
 }
 
 export const getCommunicationPermissions: Handler<
@@ -103,12 +120,12 @@ export const getCommunicationPermissions: Handler<
     path.permission_value,
   );
   if (!found.ok) return { status: found.status, body: { error: found.error } };
-  const [first] = found.rows;
   return {
     status: 200,
     body: {
-      total: found.rows.length,
-      ...(first ? { permission_list: toPermission(first) } : {}),
+      permission_list: found.rows.map((row) =>
+        toPermission(row, path.permission_type),
+      ),
     },
   };
 };
@@ -119,22 +136,23 @@ export const listChangedCommunicationPermissions: Handler<
   const channel = CHANNELS[path.permission_type];
   const now = clock.now().getTime();
   const since = now - (query.days ?? 3) * DAY_MS;
+  const changeOf = (row: Permission): number | null => {
+    const date = row[channel.date];
+    return date === null ? null : Date.parse(date);
+  };
   const changed = store.communicationPermissions
     .list((row) => {
-      const at = Date.parse(row[channel.date]);
-      return at >= since && at <= now;
+      const at = changeOf(row);
+      return at !== null && at >= since && at <= now;
     })
-    .sort(
-      (a, b) =>
-        Date.parse(b[channel.date]) - Date.parse(a[channel.date]) ||
-        a.id - b.id,
-    );
-  const [first] = paginate(changed, query);
+    .sort((a, b) => (changeOf(b) ?? 0) - (changeOf(a) ?? 0) || a.id - b.id);
   return {
     status: 200,
     body: {
       total: changed.length,
-      ...(first ? { permission_list: toPermission(first) } : {}),
+      permission_list: paginate(changed, query).map((row) =>
+        toPermission(row, path.permission_type),
+      ),
     },
   };
 };
@@ -153,11 +171,19 @@ export function changePermissions(
 ): { ok: true; updated: number } | (Lookup & { ok: false }) {
   const found = findPermissions(store, change.type, change.value);
   if (!found.ok) return found;
+  if (found.rows.length === 0) {
+    return {
+      ok: false,
+      status: 404,
+      error: "Communication permission not found",
+    };
+  }
   const channel = CHANNELS[change.type];
   const at = istanbulDateTime(change.at);
   let updated = 0;
   for (const row of found.rows) {
-    if (Date.parse(row[channel.date]) > change.at.getTime()) continue;
+    const current = row[channel.date];
+    if (current !== null && Date.parse(current) > change.at.getTime()) continue;
     const patch: Partial<Omit<CommunicationPermissionRecord, "id">> = {};
     patch[channel.allowed] = change.permission;
     patch[channel.date] = at;
